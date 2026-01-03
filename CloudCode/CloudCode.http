@@ -1,0 +1,6 @@
+@CloudCode_HostAddress = http://localhost:5072
+
+GET {{CloudCode_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
