@@ -13,6 +13,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloudCode.Application", "sr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloudCode.Infrastructure", "src\CloudCode.Infrastructure\CloudCode.Infrastructure.csproj", "{06CC4E8F-5BB9-48E4-B892-60BC522CAD7D}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{271D8CF6-318B-4064-93FF-F4B61792BA29}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloudCode.Tests", "tests\CloudCode.Tests\CloudCode.Tests.csproj", "{E7ED1030-D21B-401F-BCC4-0D2C2998B66E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -38,10 +42,15 @@ Global
 		{06CC4E8F-5BB9-48E4-B892-60BC522CAD7D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{06CC4E8F-5BB9-48E4-B892-60BC522CAD7D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{06CC4E8F-5BB9-48E4-B892-60BC522CAD7D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E7ED1030-D21B-401F-BCC4-0D2C2998B66E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E7ED1030-D21B-401F-BCC4-0D2C2998B66E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E7ED1030-D21B-401F-BCC4-0D2C2998B66E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E7ED1030-D21B-401F-BCC4-0D2C2998B66E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{4DCD0919-0A5F-4BE2-B390-DF95B168DEC9} = {D117AE3B-D7C2-4F3D-AC60-0DA0AAAF9148}
 		{6917CBE0-5ADE-4D97-9D29-6C0B58ADDC59} = {D117AE3B-D7C2-4F3D-AC60-0DA0AAAF9148}
 		{06CC4E8F-5BB9-48E4-B892-60BC522CAD7D} = {D117AE3B-D7C2-4F3D-AC60-0DA0AAAF9148}
+		{E7ED1030-D21B-401F-BCC4-0D2C2998B66E} = {271D8CF6-318B-4064-93FF-F4B61792BA29}
 	EndGlobalSection
 EndGlobal

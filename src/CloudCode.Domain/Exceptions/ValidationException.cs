@@ -13,13 +13,22 @@ public class ValidationException : DomainException
         Errors = new Dictionary<string, string[]>();
     }
 
+    /// <summary>
+    /// Constructeur avec code personnalisé et message.
+    /// </summary>
+    public ValidationException(string code, string message)
+        : base(message, code)
+    {
+        Errors = new Dictionary<string, string[]>();
+    }
+
     public ValidationException(IDictionary<string, string[]> errors)
         : base("One or more validation errors occurred", "VALIDATION_ERROR")
     {
         Errors = errors;
     }
 
-    public ValidationException(string field, string error)
+    public ValidationException(string field, string error, bool useFieldError)
         : base($"Validation failed for {field}: {error}", "VALIDATION_ERROR")
     {
         Errors = new Dictionary<string, string[]>

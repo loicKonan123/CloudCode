@@ -13,7 +13,15 @@ public class UnauthorizedException : DomainException
     {
     }
 
-    public UnauthorizedException(string resource, string action)
+    /// <summary>
+    /// Constructeur avec code personnalisé et message.
+    /// </summary>
+    public UnauthorizedException(string code, string message)
+        : base(message, code)
+    {
+    }
+
+    public UnauthorizedException(string resource, string action, bool useResourceAction)
         : base($"You don't have permission to {action} this {resource}", "UNAUTHORIZED")
     {
         Resource = resource;

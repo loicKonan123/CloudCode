@@ -15,6 +15,15 @@ public class NotFoundException : DomainException
         EntityId = entityId;
     }
 
+    /// <summary>
+    /// Constructeur avec code personnalisé et message.
+    /// </summary>
+    public NotFoundException(string code, string message)
+        : base(message, code)
+    {
+        EntityName = code;
+    }
+
     public static NotFoundException ForEntity<T>(Guid id) where T : class
     {
         return new NotFoundException(typeof(T).Name, id);
