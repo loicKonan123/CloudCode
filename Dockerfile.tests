@@ -1,0 +1,24 @@
+# ===========================================
+# Dockerfile pour les tests CloudCode
+# Utilisé pour CI/CD et tests locaux
+# ===========================================
+
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS test
+WORKDIR /src
+
+# Copier tous les fichiers de projet
+COPY ["src/CloudCode.API/CloudCode.API.csproj", "src/CloudCode.API/"]
+COPY ["src/CloudCode.Application/CloudCode.Application.csproj", "src/CloudCode.Application/"]
+COPY ["src/CloudCode.Domain/CloudCode.Domain.csproj", "src/CloudCode.Domain/"]
+COPY ["src/CloudCode.Infrastructure/CloudCode.Infrastructure.csproj", "src/CloudCode.Infrastructure/"]
+COPY ["tests/CloudCode.Tests/CloudCode.Tests.csproj", "tests/CloudCode.Tests/"]
+
+# Restaurer les dépendances
+RUN dotnet restore "tests/CloudCode.Tests/CloudCode.Tests.csproj"
+
+# Copier tout le code
+COPY . .
+
+# Exécuter les tests
+WORKDIR "/src/tests/CloudCode.Tests"
+ENTRYPOINT ["dotnet", "test", "--no-restore", "--verbosity", "normal"]

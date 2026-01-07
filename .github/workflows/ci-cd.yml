@@ -1,0 +1,129 @@
+# ===========================================
+# GitHub Actions CI/CD pour CloudCode
+# Build, Test, et Docker
+# ===========================================
+
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  DOCKER_IMAGE: cloudcode-api
+
+jobs:
+  # ===========================================
+  # Job 1: Build et Tests
+  # ===========================================
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Run tests
+        run: dotnet test --no-build --configuration Release --verbosity normal --collect:"XPlat Code Coverage" --results-directory ./coverage
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
+        with:
+          directory: ./coverage
+          fail_ci_if_error: false
+        continue-on-error: true
+
+  # ===========================================
+  # Job 2: Analyse de code (optionnel)
+  # ===========================================
+  code-analysis:
+    name: Code Analysis
+    runs-on: ubuntu-latest
+    needs: build-and-test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Run code analysis
+        run: dotnet build --no-restore -warnaserror
+
+  # ===========================================
+  # Job 3: Build Docker Image
+  # ===========================================
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          tags: ${{ env.DOCKER_IMAGE }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Test Docker image
+        run: |
+          docker build -t ${{ env.DOCKER_IMAGE }}:test .
+          docker run --rm -d --name test-container -p 8080:8080 ${{ env.DOCKER_IMAGE }}:test
+          sleep 10
+          curl -f http://localhost:8080/health || exit 1
+          docker stop test-container
+
+  # ===========================================
+  # Job 4: Deploy (exemple - à adapter)
+  # ===========================================
+  # deploy:
+  #   name: Deploy to Production
+  #   runs-on: ubuntu-latest
+  #   needs: [build-and-test, docker-build]
+  #   if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+  #   environment: production
+  #
+  #   steps:
+  #     - name: Deploy to server
+  #       run: |
+  #         echo "Deploying to production..."
+  #         # Ajoutez ici vos commandes de déploiement

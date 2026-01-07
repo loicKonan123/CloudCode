@@ -47,6 +47,9 @@ builder.Services.AddInfrastructureServices(builder.Configuration);
 // SignalR
 builder.Services.AddSignalR();
 
+// Health Checks
+builder.Services.AddHealthChecks();
+
 // CORS
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
     ?? new[] { "http://localhost:3000" };
@@ -85,6 +88,9 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Health Check endpoint
+app.MapHealthChecks("/health");
 
 // SignalR Hubs
 app.MapHub<CodeHub>("/hubs/code");

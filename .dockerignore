@@ -1,0 +1,39 @@
+# ===========================================
+# Docker Ignore - Fichiers à exclure du build
+# ===========================================
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vs
+.vscode
+.idea
+*.user
+*.suo
+
+# Build outputs
+**/bin
+**/obj
+**/out
+
+# Tests results
+**/TestResults
+**/coverage
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Docker files (éviter la récursion)
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# Autres
+*.db
+*.log
+.env
+.env.*
