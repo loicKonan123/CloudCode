@@ -16,6 +16,7 @@ public class UnitOfWork : IUnitOfWork
     private IProjectRepository? _projects;
     private ICodeFileRepository? _files;
     private ICollaborationRepository? _collaborations;
+    private IProjectDependencyRepository? _dependencies;
 
     public UnitOfWork(ApplicationDbContext context)
     {
@@ -33,6 +34,9 @@ public class UnitOfWork : IUnitOfWork
 
     public ICollaborationRepository Collaborations =>
         _collaborations ??= new CollaborationRepository(_context);
+
+    public IProjectDependencyRepository Dependencies =>
+        _dependencies ??= new ProjectDependencyRepository(_context);
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

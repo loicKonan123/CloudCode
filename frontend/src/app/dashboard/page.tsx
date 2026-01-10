@@ -15,8 +15,11 @@ import {
   LogOut,
   Loader2,
   Search,
+  Trash2,
+  Pencil,
 } from 'lucide-react';
 import CreateProjectModal from '@/components/projects/CreateProjectModal';
+import { ConfirmDialog, InputDialog, ToastContainer, useToast } from '@/components/ui';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -25,6 +28,26 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
+
+  // Toast notifications
+  const toast = useToast();
+
+  // Dialog states
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    variant?: 'danger' | 'warning' | 'info';
+    onConfirm: () => void;
+  }>({ isOpen: false, title: '', message: '', onConfirm: () => {} });
+
+  const [inputDialog, setInputDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    message?: string;
+    defaultValue?: string;
+    onConfirm: (value: string) => void;
+  }>({ isOpen: false, title: '', onConfirm: () => {} });
 
   useEffect(() => {
     checkAuth();
@@ -54,6 +77,49 @@ export default function DashboardPage() {
 
   const handleProjectClick = (projectId: string) => {
     router.push(`/ide/${projectId}`);
+  };
+
+  const handleDeleteProject = (e: React.MouseEvent, project: ProjectListItem) => {
+    e.stopPropagation();
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Supprimer le projet',
+      message: `Êtes-vous sûr de vouloir supprimer "${project.name}" ? Cette action est irréversible.`,
+      variant: 'danger',
+      onConfirm: async () => {
+        setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+        try {
+          await projectsApi.delete(project.id);
+          setProjects(projects.filter(p => p.id !== project.id));
+          toast.success('Projet supprimé');
+        } catch (error: any) {
+          console.error('Error deleting project:', error);
+          toast.error(error.response?.data?.message || 'Erreur lors de la suppression du projet');
+        }
+      },
+    });
+  };
+
+  const handleRenameProject = (e: React.MouseEvent, project: ProjectListItem) => {
+    e.stopPropagation();
+    setInputDialog({
+      isOpen: true,
+      title: 'Renommer le projet',
+      message: 'Entrez le nouveau nom du projet',
+      defaultValue: project.name,
+      onConfirm: async (newName) => {
+        setInputDialog(prev => ({ ...prev, isOpen: false }));
+        if (newName === project.name) return;
+        try {
+          await projectsApi.update(project.id, { name: newName });
+          setProjects(projects.map(p => p.id === project.id ? { ...p, name: newName } : p));
+          toast.success('Projet renommé');
+        } catch (error: any) {
+          console.error('Error renaming project:', error);
+          toast.error(error.response?.data?.message || 'Erreur lors du renommage du projet');
+        }
+      },
+    });
   };
 
   const filteredProjects = projects.filter(
@@ -174,13 +240,29 @@ export default function DashboardPage() {
                       </span>
                     </div>
                   </div>
-                  <span title={project.isPublic ? "Public" : "Privé"}>
-                    {project.isPublic ? (
-                      <Globe className="w-4 h-4 text-green-400" />
-                    ) : (
-                      <Lock className="w-4 h-4 text-gray-500" />
-                    )}
-                  </span>
+                  <div className="flex items-center gap-1">
+                    <span title={project.isPublic ? "Public" : "Privé"}>
+                      {project.isPublic ? (
+                        <Globe className="w-4 h-4 text-green-400" />
+                      ) : (
+                        <Lock className="w-4 h-4 text-gray-500" />
+                      )}
+                    </span>
+                    <button
+                      onClick={(e) => handleRenameProject(e, project)}
+                      className="p-1.5 text-gray-500 hover:text-white hover:bg-gray-600 rounded opacity-0 group-hover:opacity-100 transition"
+                      title="Renommer"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={(e) => handleDeleteProject(e, project)}
+                      className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-gray-600 rounded opacity-0 group-hover:opacity-100 transition"
+                      title="Supprimer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
 
                 {project.description && (
@@ -208,6 +290,29 @@ export default function DashboardPage() {
           }}
         />
       )}
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        variant={confirmDialog.variant}
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
+      />
+
+      {/* Input Dialog */}
+      <InputDialog
+        isOpen={inputDialog.isOpen}
+        title={inputDialog.title}
+        message={inputDialog.message}
+        defaultValue={inputDialog.defaultValue}
+        onConfirm={inputDialog.onConfirm}
+        onCancel={() => setInputDialog(prev => ({ ...prev, isOpen: false }))}
+      />
+
+      {/* Toast Notifications */}
+      <ToastContainer toasts={toast.toasts} onClose={toast.removeToast} />
     </div>
   );
 }

@@ -78,3 +78,62 @@ export function getFileIcon(filename: string, isFolder: boolean): string {
   };
   return icons[ext || ''] || '📄';
 }
+
+// Get ProgrammingLanguage enum value from filename extension (for execution)
+// Values must match backend: CloudCode.Domain.Enums.ProgrammingLanguage
+export function getProgrammingLanguageFromFilename(filename: string): number | null {
+  const ext = filename.split('.').pop()?.toLowerCase();
+  const languages: Record<string, number> = {
+    // Backend enum values:
+    js: 1,      // JavaScript = 1
+    jsx: 1,     // JavaScript = 1
+    py: 2,      // Python = 2
+    cs: 3,      // CSharp = 3
+    java: 4,    // Java = 4
+    go: 5,      // Go = 5
+    ts: 6,      // TypeScript = 6
+    tsx: 6,     // TypeScript = 6
+    rs: 15,     // Rust = 15
+  };
+  return languages[ext || ''] ?? null;
+}
+
+export function getMonacoLanguageFromFilename(filename: string): string {
+  const ext = filename.split('.').pop()?.toLowerCase();
+  const languages: Record<string, string> = {
+    ts: 'typescript',
+    tsx: 'typescript',
+    js: 'javascript',
+    jsx: 'javascript',
+    py: 'python',
+    cs: 'csharp',
+    java: 'java',
+    cpp: 'cpp',
+    c: 'c',
+    h: 'cpp',
+    hpp: 'cpp',
+    go: 'go',
+    rs: 'rust',
+    rb: 'ruby',
+    php: 'php',
+    html: 'html',
+    htm: 'html',
+    css: 'css',
+    scss: 'scss',
+    sass: 'scss',
+    less: 'less',
+    json: 'json',
+    md: 'markdown',
+    markdown: 'markdown',
+    xml: 'xml',
+    yaml: 'yaml',
+    yml: 'yaml',
+    sql: 'sql',
+    sh: 'shell',
+    bash: 'shell',
+    ps1: 'powershell',
+    dockerfile: 'dockerfile',
+    txt: 'plaintext',
+  };
+  return languages[ext || ''] || 'plaintext';
+}

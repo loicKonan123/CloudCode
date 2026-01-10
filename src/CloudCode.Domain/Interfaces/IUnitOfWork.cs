@@ -10,6 +10,7 @@ public interface IUnitOfWork : IDisposable
     IProjectRepository Projects { get; }
     ICodeFileRepository Files { get; }
     ICollaborationRepository Collaborations { get; }
+    IProjectDependencyRepository Dependencies { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     Task BeginTransactionAsync(CancellationToken cancellationToken = default);

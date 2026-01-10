@@ -5,7 +5,7 @@ import { AuthResponse, ApiError } from '@/types';
 // Configuration de l'API Client
 // ===========================================
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5072';
 
 export const api = axios.create({
   baseURL: `${API_URL}/api`,
@@ -114,30 +114,51 @@ export const projectsApi = {
 // ===========================================
 export const filesApi = {
   getProjectFiles: (projectId: string) =>
-    api.get<import('@/types').CodeFile[]>(`/projects/${projectId}/files`),
+    api.get<import('@/types').CodeFile[]>(`/Files/project/${projectId}/tree`),
 
-  getFile: (projectId: string, fileId: string) =>
-    api.get<import('@/types').CodeFile>(`/projects/${projectId}/files/${fileId}`),
+  getFile: (_projectId: string, fileId: string) =>
+    api.get<import('@/types').CodeFile>(`/Files/${fileId}`),
 
   create: (projectId: string, data: import('@/types').CreateFileDto) =>
-    api.post<import('@/types').CodeFile>(`/projects/${projectId}/files`, data),
+    api.post<import('@/types').CodeFile>(`/Files/project/${projectId}`, data),
 
-  update: (projectId: string, fileId: string, content: string) =>
-    api.put<import('@/types').CodeFile>(`/projects/${projectId}/files/${fileId}`, { content }),
+  update: (_projectId: string, fileId: string, content: string) =>
+    api.put<import('@/types').CodeFile>(`/Files/${fileId}/content`, { content }),
 
-  rename: (projectId: string, fileId: string, name: string) =>
-    api.patch<import('@/types').CodeFile>(`/projects/${projectId}/files/${fileId}/rename`, { name }),
+  rename: (_projectId: string, fileId: string, name: string) =>
+    api.put<import('@/types').CodeFile>(`/Files/${fileId}/rename`, { name }),
 
-  delete: (projectId: string, fileId: string) =>
-    api.delete(`/projects/${projectId}/files/${fileId}`),
+  delete: (_projectId: string, fileId: string) =>
+    api.delete(`/Files/${fileId}`),
+
+  downloadProject: async (projectId: string, projectName: string) => {
+    const response = await api.get(`/Files/project/${projectId}/download`, {
+      responseType: 'blob',
+    });
+    // Create download link
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `${projectName}.zip`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  },
 };
 
 // ===========================================
 // Execution API
 // ===========================================
 export const executionApi = {
-  run: (projectId: string, fileId: string) =>
-    api.post<import('@/types').ExecutionResult>(`/execution/run`, { projectId, fileId }),
+  run: (projectId: string, fileId: string, code: string, language: number, input?: string) =>
+    api.post<import('@/types').ExecutionResult>(`/execution/run`, {
+      projectId,
+      fileId,
+      code,
+      language,
+      input
+    }),
 };
 
 // ===========================================
@@ -145,16 +166,46 @@ export const executionApi = {
 // ===========================================
 export const collaborationsApi = {
   getCollaborators: (projectId: string) =>
-    api.get<import('@/types').Collaborator[]>(`/projects/${projectId}/collaborators`),
+    api.get<import('@/types').Collaborator[]>(`/collaborations/project/${projectId}`),
 
   invite: (projectId: string, email: string, role: import('@/types').CollaboratorRole) =>
-    api.post<import('@/types').Collaborator>(`/projects/${projectId}/collaborators`, { email, role }),
+    api.post<import('@/types').Collaborator>(`/collaborations/project/${projectId}/invite`, { email, role }),
 
   updateRole: (projectId: string, userId: string, role: import('@/types').CollaboratorRole) =>
-    api.put<import('@/types').Collaborator>(`/projects/${projectId}/collaborators/${userId}`, { role }),
+    api.put<import('@/types').Collaborator>(`/collaborations/project/${projectId}/user/${userId}`, { role }),
 
   remove: (projectId: string, userId: string) =>
-    api.delete(`/projects/${projectId}/collaborators/${userId}`),
+    api.delete(`/collaborations/project/${projectId}/user/${userId}`),
+
+  // Get pending invitations for current user
+  getPendingInvitations: () =>
+    api.get<import('@/types').Collaborator[]>(`/collaborations/invitations`),
+
+  // Accept invitation
+  acceptInvitation: (collaborationId: string) =>
+    api.post(`/collaborations/invitations/${collaborationId}/accept`),
+
+  // Decline invitation
+  declineInvitation: (collaborationId: string) =>
+    api.post(`/collaborations/invitations/${collaborationId}/decline`),
+
+  // Leave project
+  leaveProject: (projectId: string) =>
+    api.post(`/collaborations/project/${projectId}/leave`),
+};
+
+// ===========================================
+// Dependencies API
+// ===========================================
+export const dependenciesApi = {
+  getProjectDependencies: (projectId: string) =>
+    api.get<import('@/types').ProjectDependencies>(`/dependencies/project/${projectId}`),
+
+  add: (projectId: string, data: import('@/types').AddDependencyDto) =>
+    api.post<import('@/types').Dependency>(`/dependencies/project/${projectId}`, data),
+
+  remove: (projectId: string, dependencyId: string) =>
+    api.delete(`/dependencies/project/${projectId}/${dependencyId}`),
 };
 
 export default api;

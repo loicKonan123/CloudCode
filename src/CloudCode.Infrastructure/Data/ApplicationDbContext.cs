@@ -18,6 +18,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<CodeFile> CodeFiles => Set<CodeFile>();
     public DbSet<Collaboration> Collaborations => Set<Collaboration>();
     public DbSet<ExecutionResult> ExecutionResults => Set<ExecutionResult>();
+    public DbSet<ProjectDependency> ProjectDependencies => Set<ProjectDependency>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

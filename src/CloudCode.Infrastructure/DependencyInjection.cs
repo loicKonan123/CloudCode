@@ -32,6 +32,7 @@ public static class DependencyInjection
         services.AddScoped<IProjectRepository, ProjectRepository>();
         services.AddScoped<ICodeFileRepository, CodeFileRepository>();
         services.AddScoped<ICollaborationRepository, CollaborationRepository>();
+        services.AddScoped<IProjectDependencyRepository, ProjectDependencyRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         // Services
@@ -40,6 +41,7 @@ public static class DependencyInjection
         services.AddScoped<IProjectService, ProjectService>();
         services.AddScoped<IFileService, FileService>();
         services.AddScoped<ICollaborationService, CollaborationService>();
+        services.AddScoped<IDependencyService, DependencyService>();
         services.AddHttpClient<IAIService, AIService>();
         services.AddSingleton<PasswordHasher>();
 

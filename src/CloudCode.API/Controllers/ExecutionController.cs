@@ -1,4 +1,5 @@
 using CloudCode.Application.DTOs.Execution;
+using CloudCode.Application.Interfaces;
 using CloudCode.Domain.Entities;
 using CloudCode.Domain.Enums;
 using CloudCode.Domain.Interfaces;
@@ -16,11 +17,13 @@ public class ExecutionController : BaseApiController
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IConfiguration _configuration;
+    private readonly IDependencyService _dependencyService;
 
-    public ExecutionController(IUnitOfWork unitOfWork, IConfiguration configuration)
+    public ExecutionController(IUnitOfWork unitOfWork, IConfiguration configuration, IDependencyService dependencyService)
     {
         _unitOfWork = unitOfWork;
         _configuration = configuration;
+        _dependencyService = dependencyService;
     }
 
     /// <summary>
@@ -51,6 +54,28 @@ public class ExecutionController : BaseApiController
 
         try
         {
+            // Installer les dépendances avant l'exécution
+            var dependencies = await _unitOfWork.Dependencies.GetByProjectIdAsync(dto.ProjectId);
+            var dependencyList = dependencies.ToList();
+
+            if (dependencyList.Any())
+            {
+                var installResult = await InstallDependenciesAsync(dependencyList, dto.Language, timeoutSeconds);
+                if (!installResult.Success)
+                {
+                    return Ok(new ExecutionResultDto
+                    {
+                        Id = Guid.NewGuid(),
+                        Output = "",
+                        ErrorOutput = $"Erreur lors de l'installation des dépendances:\n{installResult.Error}",
+                        ExitCode = -1,
+                        Status = ExecutionStatus.Failed,
+                        ExecutionTimeMs = stopwatch.Elapsed.TotalMilliseconds,
+                        ExecutedAt = DateTime.UtcNow
+                    });
+                }
+            }
+
             var result = await ExecuteCodeInternal(dto.Code, dto.Language, dto.Input, timeoutSeconds);
             output = result.Output;
             errorOutput = result.ErrorOutput;
@@ -224,6 +249,86 @@ public class ExecutionController : BaseApiController
             ProgrammingLanguage.Python => ("python", "{file}", ".py"),
             ProgrammingLanguage.TypeScript => ("npx", "ts-node {file}", ".ts"),
             _ => ("", "", "")
+        };
+    }
+
+    private async Task<(bool Success, string Error)> InstallDependenciesAsync(
+        List<ProjectDependency> dependencies,
+        ProgrammingLanguage language,
+        int timeoutSeconds)
+    {
+        // Déterminer la commande d'installation selon le langage
+        var (installCommand, packageArgs) = GetInstallCommand(language);
+
+        if (string.IsNullOrEmpty(installCommand))
+        {
+            return (true, ""); // Pas de gestionnaire de packages pour ce langage
+        }
+
+        // Construire la liste des packages à installer
+        var packages = dependencies
+            .Select(d => string.IsNullOrEmpty(d.Version) ? d.Name : $"{d.Name}=={d.Version}")
+            .ToList();
+
+        if (!packages.Any())
+        {
+            return (true, "");
+        }
+
+        try
+        {
+            var psi = new ProcessStartInfo
+            {
+                FileName = installCommand,
+                Arguments = packageArgs.Replace("{packages}", string.Join(" ", packages)),
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            using var process = new Process { StartInfo = psi };
+            var errorBuilder = new System.Text.StringBuilder();
+
+            process.ErrorDataReceived += (s, e) =>
+            {
+                if (e.Data != null) errorBuilder.AppendLine(e.Data);
+            };
+
+            process.Start();
+            process.BeginErrorReadLine();
+
+            // Timeout plus long pour l'installation (30s par défaut, ou 3x le timeout d'exécution)
+            var installTimeout = Math.Max(30, timeoutSeconds * 3);
+            var completed = await Task.Run(() => process.WaitForExit(installTimeout * 1000));
+
+            if (!completed)
+            {
+                process.Kill(true);
+                return (false, "Installation timeout - les dépendances n'ont pas pu être installées à temps");
+            }
+
+            if (process.ExitCode != 0)
+            {
+                return (false, errorBuilder.ToString());
+            }
+
+            return (true, "");
+        }
+        catch (Exception ex)
+        {
+            return (false, ex.Message);
+        }
+    }
+
+    private (string Command, string Args) GetInstallCommand(ProgrammingLanguage language)
+    {
+        return language switch
+        {
+            ProgrammingLanguage.Python => ("pip", "install --quiet {packages}"),
+            ProgrammingLanguage.JavaScript => ("npm", "install --silent {packages}"),
+            ProgrammingLanguage.TypeScript => ("npm", "install --silent {packages}"),
+            _ => ("", "")
         };
     }
 

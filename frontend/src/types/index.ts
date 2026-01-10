@@ -131,13 +131,60 @@ export interface Collaborator {
 }
 
 // ===== Execution Types =====
+export enum ExecutionStatus {
+  Pending = 0,
+  Running = 1,
+  Completed = 2,
+  Failed = 3,
+  Timeout = 4,
+  Cancelled = 5
+}
+
 export interface ExecutionResult {
   id: string;
   output: string;
-  errors?: string;
+  errorOutput?: string;
   exitCode: number;
-  executionTime: number;
-  status: 'pending' | 'running' | 'completed' | 'failed' | 'timeout';
+  executionTimeMs: number;
+  status: ExecutionStatus;
+  memoryUsedBytes?: number;
+  executedAt?: string;
+}
+
+// ===== Dependency Types =====
+export enum DependencyType {
+  Pip = 1,
+  Npm = 2,
+  Cargo = 3,
+  Go = 4,
+}
+
+export const DependencyTypeNames: Record<DependencyType, string> = {
+  [DependencyType.Pip]: 'pip',
+  [DependencyType.Npm]: 'npm',
+  [DependencyType.Cargo]: 'cargo',
+  [DependencyType.Go]: 'go',
+};
+
+export interface Dependency {
+  id: string;
+  name: string;
+  version?: string;
+  type: DependencyType;
+  isInstalled: boolean;
+  installedAt?: string;
+  createdAt: string;
+}
+
+export interface ProjectDependencies {
+  projectId: string;
+  defaultType: DependencyType;
+  dependencies: Dependency[];
+}
+
+export interface AddDependencyDto {
+  name: string;
+  version?: string;
 }
 
 // ===== API Types =====
