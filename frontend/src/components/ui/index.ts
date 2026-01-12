@@ -3,3 +3,8 @@ export { default as InputDialog } from './InputDialog';
 export { default as KeyboardShortcutsModal } from './KeyboardShortcutsModal';
 export { ToastContainer, useToast } from './Toast';
 export type { ToastData, ToastType } from './Toast';
+export { default as ThemeSwitcher } from './ThemeSwitcher';
+export { default as ThemeProvider } from './ThemeProvider';
+export { default as FontSizeControl } from './FontSizeControl';
+export { default as SettingsPanel } from './SettingsPanel';
+export { default as Breadcrumbs } from './Breadcrumbs';

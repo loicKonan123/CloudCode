@@ -22,34 +22,46 @@ export function formatDateTime(date: string | Date) {
   });
 }
 
+// Values must match backend: CloudCode.Domain.Enums.ProgrammingLanguage
 export function getLanguageExtension(language: number): string {
   const extensions: Record<number, string> = {
-    0: '.cs',    // CSharp
-    1: '.py',    // Python
-    2: '.js',    // JavaScript
-    3: '.ts',    // TypeScript
-    4: '.java',  // Java
-    5: '.cpp',   // Cpp
-    6: '.go',    // Go
-    7: '.rs',    // Rust
-    8: '.rb',    // Ruby
-    9: '.php',   // Php
+    1: '.js',    // JavaScript = 1
+    2: '.py',    // Python = 2
+    3: '.cs',    // CSharp = 3
+    4: '.java',  // Java = 4
+    5: '.go',    // Go = 5
+    6: '.ts',    // TypeScript = 6
+    7: '.html',  // Html = 7
+    8: '.css',   // Css = 8
+    9: '.json',  // Json = 9
+    10: '.md',   // Markdown = 10
+    11: '.sql',  // Sql = 11
+    12: '.xml',  // Xml = 12
+    13: '.yaml', // Yaml = 13
+    14: '.sh',   // Bash = 14
+    15: '.rs',   // Rust = 15
   };
   return extensions[language] || '.txt';
 }
 
+// Values must match backend: CloudCode.Domain.Enums.ProgrammingLanguage
 export function getMonacoLanguage(language: number): string {
   const languages: Record<number, string> = {
-    0: 'csharp',
-    1: 'python',
-    2: 'javascript',
-    3: 'typescript',
-    4: 'java',
-    5: 'cpp',
-    6: 'go',
-    7: 'rust',
-    8: 'ruby',
-    9: 'php',
+    1: 'javascript',  // JavaScript = 1
+    2: 'python',      // Python = 2
+    3: 'csharp',      // CSharp = 3
+    4: 'java',        // Java = 4
+    5: 'go',          // Go = 5
+    6: 'typescript',  // TypeScript = 6
+    7: 'html',        // Html = 7
+    8: 'css',         // Css = 8
+    9: 'json',        // Json = 9
+    10: 'markdown',   // Markdown = 10
+    11: 'sql',        // Sql = 11
+    12: 'xml',        // Xml = 12
+    13: 'yaml',       // Yaml = 13
+    14: 'shell',      // Bash = 14
+    15: 'rust',       // Rust = 15
   };
   return languages[language] || 'plaintext';
 }

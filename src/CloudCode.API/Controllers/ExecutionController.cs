@@ -6,6 +6,7 @@ using CloudCode.Domain.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace CloudCode.Controllers;
 
@@ -54,6 +55,25 @@ public class ExecutionController : BaseApiController
 
         try
         {
+            // Pour Python, s'assurer que le venv existe
+            if (dto.Language == ProgrammingLanguage.Python)
+            {
+                var venvResult = await EnsurePythonVenvAsync(dto.ProjectId, timeoutSeconds);
+                if (!venvResult.Success)
+                {
+                    return Ok(new ExecutionResultDto
+                    {
+                        Id = Guid.NewGuid(),
+                        Output = "",
+                        ErrorOutput = $"Erreur lors de la création de l'environnement virtuel:\n{venvResult.Error}",
+                        ExitCode = -1,
+                        Status = ExecutionStatus.Failed,
+                        ExecutionTimeMs = stopwatch.Elapsed.TotalMilliseconds,
+                        ExecutedAt = DateTime.UtcNow
+                    });
+                }
+            }
+
             // Installer les dépendances avant l'exécution
             var dependencies = await _unitOfWork.Dependencies.GetByProjectIdAsync(dto.ProjectId);
             var dependencyList = dependencies.ToList();
@@ -76,7 +96,7 @@ public class ExecutionController : BaseApiController
                 }
             }
 
-            var result = await ExecuteCodeInternal(dto.Code, dto.Language, dto.Input, timeoutSeconds);
+            var result = await ExecuteCodeInternal(dto.Code, dto.Language, dto.Input, timeoutSeconds, dto.ProjectId);
             output = result.Output;
             errorOutput = result.ErrorOutput;
             exitCode = result.ExitCode;
@@ -163,18 +183,24 @@ public class ExecutionController : BaseApiController
         string code,
         ProgrammingLanguage language,
         string? input,
-        int timeoutSeconds)
+        int timeoutSeconds,
+        Guid? projectId = null)
     {
         // Déterminer la commande selon le langage
-        var (command, args, tempFileExt) = GetExecutionCommand(language);
+        var (command, args, tempFileExt) = GetExecutionCommand(language, projectId);
 
         if (string.IsNullOrEmpty(command))
         {
             return ("", $"Language {language} is not supported for execution", -1, ExecutionStatus.Failed);
         }
 
-        // Créer un fichier temporaire
-        var tempFile = Path.Combine(Path.GetTempPath(), $"cloudcode_{Guid.NewGuid()}{tempFileExt}");
+        // Créer un fichier temporaire dans le répertoire du projet si Python
+        var tempDir = language == ProgrammingLanguage.Python && projectId.HasValue
+            ? GetProjectWorkingDirectory(projectId.Value)
+            : Path.GetTempPath();
+        Directory.CreateDirectory(tempDir);
+
+        var tempFile = Path.Combine(tempDir, $"cloudcode_{Guid.NewGuid()}{tempFileExt}");
 
         try
         {
@@ -188,7 +214,8 @@ public class ExecutionController : BaseApiController
                 RedirectStandardError = true,
                 RedirectStandardInput = true,
                 UseShellExecute = false,
-                CreateNoWindow = true
+                CreateNoWindow = true,
+                WorkingDirectory = tempDir
             };
 
             using var process = new Process { StartInfo = psi };
@@ -241,8 +268,17 @@ public class ExecutionController : BaseApiController
         }
     }
 
-    private (string Command, string Args, string Extension) GetExecutionCommand(ProgrammingLanguage language)
+    private (string Command, string Args, string Extension) GetExecutionCommand(ProgrammingLanguage language, Guid? projectId = null)
     {
+        if (language == ProgrammingLanguage.Python && projectId.HasValue)
+        {
+            var pythonPath = GetVenvPythonPath(projectId.Value);
+            if (!string.IsNullOrEmpty(pythonPath) && System.IO.File.Exists(pythonPath))
+            {
+                return (pythonPath, "{file}", ".py");
+            }
+        }
+
         return language switch
         {
             ProgrammingLanguage.JavaScript => ("node", "{file}", ".js"),
@@ -257,8 +293,21 @@ public class ExecutionController : BaseApiController
         ProgrammingLanguage language,
         int timeoutSeconds)
     {
+        // Récupérer le projectId depuis les dépendances
+        var projectId = dependencies.FirstOrDefault()?.ProjectId;
+
+        // Pour Python, créer un venv si nécessaire
+        if (language == ProgrammingLanguage.Python && projectId.HasValue)
+        {
+            var venvResult = await EnsurePythonVenvAsync(projectId.Value, timeoutSeconds);
+            if (!venvResult.Success)
+            {
+                return venvResult;
+            }
+        }
+
         // Déterminer la commande d'installation selon le langage
-        var (installCommand, packageArgs) = GetInstallCommand(language);
+        var (installCommand, packageArgs) = GetInstallCommand(language, projectId);
 
         if (string.IsNullOrEmpty(installCommand))
         {
@@ -287,6 +336,12 @@ public class ExecutionController : BaseApiController
                 CreateNoWindow = true
             };
 
+            // Définir le répertoire de travail pour Python
+            if (language == ProgrammingLanguage.Python && projectId.HasValue)
+            {
+                psi.WorkingDirectory = GetProjectWorkingDirectory(projectId.Value);
+            }
+
             using var process = new Process { StartInfo = psi };
             var errorBuilder = new System.Text.StringBuilder();
 
@@ -298,8 +353,8 @@ public class ExecutionController : BaseApiController
             process.Start();
             process.BeginErrorReadLine();
 
-            // Timeout plus long pour l'installation (30s par défaut, ou 3x le timeout d'exécution)
-            var installTimeout = Math.Max(30, timeoutSeconds * 3);
+            // Timeout plus long pour l'installation (60s par défaut, ou 5x le timeout d'exécution)
+            var installTimeout = Math.Max(60, timeoutSeconds * 5);
             var completed = await Task.Run(() => process.WaitForExit(installTimeout * 1000));
 
             if (!completed)
@@ -321,16 +376,149 @@ public class ExecutionController : BaseApiController
         }
     }
 
-    private (string Command, string Args) GetInstallCommand(ProgrammingLanguage language)
+    private (string Command, string Args) GetInstallCommand(ProgrammingLanguage language, Guid? projectId = null)
     {
+        if (language == ProgrammingLanguage.Python && projectId.HasValue)
+        {
+            var pipPath = GetVenvPipPath(projectId.Value);
+            if (!string.IsNullOrEmpty(pipPath) && System.IO.File.Exists(pipPath))
+            {
+                return (pipPath, "install --quiet {packages}");
+            }
+        }
+
         return language switch
         {
-            ProgrammingLanguage.Python => ("pip", "install --quiet {packages}"),
+            ProgrammingLanguage.Python => ("pip", "install --quiet --user {packages}"),
             ProgrammingLanguage.JavaScript => ("npm", "install --silent {packages}"),
             ProgrammingLanguage.TypeScript => ("npm", "install --silent {packages}"),
             _ => ("", "")
         };
     }
+
+    #region Python Venv Methods
+
+    private string GetProjectWorkingDirectory(Guid projectId)
+    {
+        var baseDir = _configuration.GetValue<string>("CodeExecution:WorkingDirectory")
+            ?? Path.Combine(Path.GetTempPath(), "cloudcode_projects");
+        return Path.Combine(baseDir, projectId.ToString());
+    }
+
+    private string GetVenvPath(Guid projectId)
+    {
+        return Path.Combine(GetProjectWorkingDirectory(projectId), "venv");
+    }
+
+    private string GetVenvPythonPath(Guid projectId)
+    {
+        var venvPath = GetVenvPath(projectId);
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            return Path.Combine(venvPath, "Scripts", "python.exe");
+        }
+        return Path.Combine(venvPath, "bin", "python");
+    }
+
+    private string GetVenvPipPath(Guid projectId)
+    {
+        var venvPath = GetVenvPath(projectId);
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            return Path.Combine(venvPath, "Scripts", "pip.exe");
+        }
+        return Path.Combine(venvPath, "bin", "pip");
+    }
+
+    private async Task<(bool Success, string Error)> EnsurePythonVenvAsync(Guid projectId, int timeoutSeconds)
+    {
+        var venvPath = GetVenvPath(projectId);
+        var pythonPath = GetVenvPythonPath(projectId);
+
+        // Vérifier si le venv existe déjà
+        if (Directory.Exists(venvPath) && System.IO.File.Exists(pythonPath))
+        {
+            return (true, "");
+        }
+
+        // Créer le répertoire du projet
+        var projectDir = GetProjectWorkingDirectory(projectId);
+        Directory.CreateDirectory(projectDir);
+
+        try
+        {
+            // Créer le virtual environment
+            var psi = new ProcessStartInfo
+            {
+                FileName = "python",
+                Arguments = $"-m venv \"{venvPath}\"",
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                WorkingDirectory = projectDir
+            };
+
+            using var process = new Process { StartInfo = psi };
+            var errorBuilder = new System.Text.StringBuilder();
+
+            process.ErrorDataReceived += (s, e) =>
+            {
+                if (e.Data != null) errorBuilder.AppendLine(e.Data);
+            };
+
+            process.Start();
+            process.BeginErrorReadLine();
+
+            // Timeout de 60 secondes pour créer le venv
+            var completed = await Task.Run(() => process.WaitForExit(60000));
+
+            if (!completed)
+            {
+                process.Kill(true);
+                return (false, "Timeout lors de la création de l'environnement virtuel Python");
+            }
+
+            if (process.ExitCode != 0)
+            {
+                return (false, $"Erreur lors de la création du venv: {errorBuilder}");
+            }
+
+            // Vérifier que le venv a été créé correctement
+            if (!System.IO.File.Exists(pythonPath))
+            {
+                return (false, "L'environnement virtuel n'a pas été créé correctement");
+            }
+
+            // Mettre à jour pip dans le venv
+            var pipPath = GetVenvPipPath(projectId);
+            if (System.IO.File.Exists(pipPath))
+            {
+                var upgradePsi = new ProcessStartInfo
+                {
+                    FileName = pythonPath,
+                    Arguments = "-m pip install --upgrade pip --quiet",
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    WorkingDirectory = projectDir
+                };
+
+                using var upgradeProcess = new Process { StartInfo = upgradePsi };
+                upgradeProcess.Start();
+                await Task.Run(() => upgradeProcess.WaitForExit(30000));
+            }
+
+            return (true, "");
+        }
+        catch (Exception ex)
+        {
+            return (false, $"Erreur lors de la création du venv: {ex.Message}");
+        }
+    }
+
+    #endregion
 
     #endregion
 }

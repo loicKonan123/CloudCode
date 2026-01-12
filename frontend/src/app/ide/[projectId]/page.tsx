@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
-import { projectsApi, filesApi, executionApi } from '@/lib/api';
+import { projectsApi, filesApi, executionApi, formattingApi } from '@/lib/api';
 import { Project, CodeFile, ExecutionResult } from '@/types';
 import { getMonacoLanguageFromFilename, getProgrammingLanguageFromFilename, getFileIcon } from '@/lib/utils';
 import {
@@ -36,10 +36,16 @@ import {
   Pencil,
   Download,
   Keyboard,
+  Columns2,
+  PanelRightClose,
 } from 'lucide-react';
 import CollaboratorsModal from '@/components/collaboration/CollaboratorsModal';
 import PackageManager from '@/components/packages/PackageManager';
-import { ConfirmDialog, InputDialog, KeyboardShortcutsModal, ToastContainer, useToast } from '@/components/ui';
+import TerminalComponent from '@/components/terminal/Terminal';
+import { ConfirmDialog, InputDialog, KeyboardShortcutsModal, ToastContainer, useToast, ThemeSwitcher, FontSizeControl, SettingsPanel, Breadcrumbs } from '@/components/ui';
+import { useThemeStore } from '@/stores/themeStore';
+import { useEditorStore } from '@/stores/editorStore';
+import { TerminalSquare, Settings, Wand2 } from 'lucide-react';
 
 export default function IDEPage() {
   const params = useParams();
@@ -72,18 +78,42 @@ export default function IDEPage() {
   const [showCollaborators, setShowCollaborators] = useState(false);
   const [showPackages, setShowPackages] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [showTerminal, setShowTerminal] = useState(false);
+  const [isTerminalMaximized, setIsTerminalMaximized] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [monacoInitialized, setMonacoInitialized] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [isSplitView, setIsSplitView] = useState(false);
+  const [splitActiveTabId, setSplitActiveTabId] = useState<string | null>(null);
+  const [isFormatting, setIsFormatting] = useState(false);
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Derived state for active tab
   const activeTab = openTabs.find(tab => tab.file.id === activeTabId);
+  const splitActiveTab = openTabs.find(tab => tab.file.id === splitActiveTabId);
   const selectedFile = activeTab?.file || null;
   const code = activeTab?.content || '';
   const hasUnsavedChanges = activeTab?.hasUnsavedChanges || false;
 
   // Toast notifications
   const toast = useToast();
+
+  // Theme
+  const { theme } = useThemeStore();
+
+  // Editor settings
+  const {
+    fontSize,
+    showMinimap,
+    wordWrap,
+    showLineNumbers,
+    tabSize,
+    renderWhitespace,
+    cursorBlinking,
+    cursorStyle,
+    bracketPairColorization,
+    autoClosingBrackets,
+  } = useEditorStore();
 
   // Dialog states
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -276,13 +306,10 @@ export default function IDEPage() {
     });
   };
 
-  const handleCodeChange = useCallback(
-    (value: string | undefined) => {
-      if (!activeTabId) return;
-      const newCode = value || '';
-
+  const updateTabContent = useCallback(
+    (targetTabId: string, newCode: string) => {
       setOpenTabs(prev => prev.map(tab => {
-        if (tab.file.id === activeTabId) {
+        if (tab.file.id === targetTabId) {
           return {
             ...tab,
             content: newCode,
@@ -297,14 +324,41 @@ export default function IDEPage() {
         clearTimeout(autoSaveTimerRef.current);
       }
       autoSaveTimerRef.current = setTimeout(() => {
-        const tab = openTabs.find(t => t.file.id === activeTabId);
+        const tab = openTabs.find(t => t.file.id === targetTabId);
         if (tab && newCode !== tab.originalContent) {
-          handleSaveTab(activeTabId);
+          handleSaveTab(targetTabId);
         }
       }, 2000);
     },
-    [activeTabId, openTabs]
+    [openTabs]
   );
+
+  const handleCodeChange = useCallback(
+    (value: string | undefined) => {
+      if (!activeTabId) return;
+      updateTabContent(activeTabId, value || '');
+    },
+    [activeTabId, updateTabContent]
+  );
+
+  const handleSplitCodeChange = useCallback(
+    (value: string | undefined) => {
+      if (!splitActiveTabId) return;
+      updateTabContent(splitActiveTabId, value || '');
+    },
+    [splitActiveTabId, updateTabContent]
+  );
+
+  const toggleSplitView = useCallback(() => {
+    if (!isSplitView) {
+      // When enabling split view, set split to the current active tab or the second tab if available
+      const otherTab = openTabs.find(t => t.file.id !== activeTabId);
+      setSplitActiveTabId(otherTab?.file.id || activeTabId);
+    } else {
+      setSplitActiveTabId(null);
+    }
+    setIsSplitView(!isSplitView);
+  }, [isSplitView, openTabs, activeTabId]);
 
   const handleSaveTab = async (fileId: string) => {
     const tab = openTabs.find(t => t.file.id === fileId);
@@ -371,6 +425,33 @@ export default function IDEPage() {
       });
     } finally {
       setIsRunning(false);
+    }
+  };
+
+  const handleFormat = async () => {
+    if (!selectedFile || !activeTabId) return;
+
+    const fileLanguage = getProgrammingLanguageFromFilename(selectedFile.name);
+    if (fileLanguage === null) {
+      toast.error('Le formatage n\'est pas supporté pour ce type de fichier');
+      return;
+    }
+
+    try {
+      setIsFormatting(true);
+      const response = await formattingApi.format(code, fileLanguage, tabSize);
+
+      if (response.data.success) {
+        // Update the tab content with formatted code
+        updateTabContent(activeTabId, response.data.formattedCode);
+        toast.success('Code formaté');
+      } else {
+        toast.error(response.data.error || 'Erreur lors du formatage');
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Erreur lors du formatage');
+    } finally {
+      setIsFormatting(false);
     }
   };
 
@@ -505,6 +586,11 @@ export default function IDEPage() {
         e.preventDefault();
         handleRun();
       }
+      // Shift+Alt+F - Format code
+      if (e.shiftKey && e.altKey && e.key === 'F') {
+        e.preventDefault();
+        handleFormat();
+      }
       // Ctrl+Shift+? - Show shortcuts
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === '?' || e.key === '/')) {
         e.preventDefault();
@@ -529,11 +615,16 @@ export default function IDEPage() {
       if (e.key === 'Escape' && showOutput) {
         setShowOutput(false);
       }
+      // Ctrl+` - Toggle terminal
+      if ((e.ctrlKey || e.metaKey) && e.key === '`') {
+        e.preventDefault();
+        setShowTerminal(!showTerminal);
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedFile, code, activeTabId, showOutput]);
+  }, [selectedFile, code, activeTabId, showOutput, showTerminal]);
 
   // Cleanup auto-save timer and warn on page leave
   useEffect(() => {
@@ -654,13 +745,42 @@ export default function IDEPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Font Size Control */}
+          <FontSizeControl />
+
+          {/* Theme Switcher */}
+          <ThemeSwitcher />
+
           {/* Keyboard shortcuts */}
           <button
             onClick={() => setShowShortcuts(true)}
-            className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded transition"
+            className="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded transition"
             title="Raccourcis clavier (Ctrl+Shift+?)"
           >
             <Keyboard className="w-4 h-4" />
+          </button>
+
+          {/* Settings */}
+          <button
+            onClick={() => setShowSettings(true)}
+            className="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded transition"
+            title="Paramètres de l'éditeur"
+          >
+            <Settings className="w-4 h-4" />
+          </button>
+
+          {/* Split View Toggle */}
+          <button
+            onClick={toggleSplitView}
+            disabled={openTabs.length < 1}
+            className={`p-1.5 rounded transition ${
+              isSplitView
+                ? 'text-blue-400 bg-blue-600/20 hover:bg-blue-600/30'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
+            } disabled:opacity-50 disabled:cursor-not-allowed`}
+            title={isSplitView ? 'Fermer la vue divisée' : 'Diviser l\'éditeur'}
+          >
+            {isSplitView ? <PanelRightClose className="w-4 h-4" /> : <Columns2 className="w-4 h-4" />}
           </button>
 
           {/* Download project */}
@@ -721,6 +841,16 @@ export default function IDEPage() {
           </button>
 
           <button
+            onClick={handleFormat}
+            disabled={!selectedFile || isFormatting}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition disabled:opacity-50"
+            title="Formater le code (Shift+Alt+F)"
+          >
+            {isFormatting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+            Formater
+          </button>
+
+          <button
             onClick={handleSave}
             disabled={!selectedFile || isSaving}
             className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition disabled:opacity-50"
@@ -773,6 +903,19 @@ export default function IDEPage() {
             <span>Packages</span>
           </button>
 
+          {/* Terminal Button */}
+          <button
+            onClick={() => setShowTerminal(true)}
+            className={`mx-3 mt-2 flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition ${
+              showTerminal
+                ? 'bg-green-600/30 text-green-400 hover:bg-green-600/40'
+                : 'bg-gray-700/50 hover:bg-gray-700 text-gray-300 hover:text-white'
+            }`}
+          >
+            <TerminalSquare className="w-4 h-4" />
+            <span>Terminal</span>
+          </button>
+
           <div className="flex-1 overflow-y-auto p-2">
             {isLoading ? (
               <div className="flex items-center justify-center py-8">
@@ -787,11 +930,27 @@ export default function IDEPage() {
         </aside>
 
         {/* Editor Area */}
-        <main className="flex-1 flex flex-row overflow-hidden">
-          {/* Editor Content */}
-          <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <main className="flex-1 flex flex-col overflow-hidden">
+          {/* Top section: Editor + Output */}
+          <div className={`flex flex-row overflow-hidden ${showTerminal && !isTerminalMaximized ? 'flex-1' : 'flex-1'}`}>
+            {/* Editor Content */}
+            <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
             {openTabs.length > 0 ? (
               <>
+                {/* Breadcrumbs */}
+                {activeTab && (
+                  <Breadcrumbs
+                    filePath={activeTab.file.name}
+                    projectName={project?.name}
+                    onNavigate={(path) => {
+                      // Navigate to folder in file tree
+                      if (path === '/') {
+                        setExpandedFolders(new Set());
+                      }
+                    }}
+                  />
+                )}
+
                 {/* Tabs Bar */}
                 <div className="h-10 bg-gray-800 border-b border-gray-700 flex items-center justify-between">
                   <div className="flex items-center overflow-x-auto flex-1 scrollbar-hide">
@@ -837,18 +996,94 @@ export default function IDEPage() {
                   </div>
                 </div>
 
-                {/* Monaco Editor */}
-                <div className="flex-1">
-                  {activeTab && (
-                    <Editor
-                      height="100%"
-                      language={getMonacoLanguageFromFilename(activeTab.file.name)}
-                      value={activeTab.content}
-                      onChange={handleCodeChange}
-                      theme="vs-dark"
-                      beforeMount={handleEditorWillMount}
-                      options={enhancedEditorOptions}
-                    />
+                {/* Monaco Editor(s) */}
+                <div className={`flex-1 flex ${isSplitView ? 'flex-row' : 'flex-col'}`}>
+                  {/* Primary Editor */}
+                  <div className={`flex flex-col ${isSplitView ? 'flex-1 border-r border-gray-700' : 'flex-1'}`}>
+                    {isSplitView && (
+                      <div className="h-8 bg-gray-800 border-b border-gray-700 flex items-center px-2">
+                        <select
+                          value={activeTabId || ''}
+                          onChange={(e) => setActiveTabId(e.target.value)}
+                          className="text-xs bg-gray-700 text-gray-300 rounded px-2 py-1 border border-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        >
+                          {openTabs.map((tab) => (
+                            <option key={tab.file.id} value={tab.file.id}>
+                              {tab.file.name} {tab.hasUnsavedChanges ? '•' : ''}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      {activeTab && (
+                        <Editor
+                          height="100%"
+                          language={getMonacoLanguageFromFilename(activeTab.file.name)}
+                          value={activeTab.content}
+                          onChange={handleCodeChange}
+                          theme={theme.monacoTheme}
+                          beforeMount={handleEditorWillMount}
+                          options={{
+                            ...enhancedEditorOptions,
+                            fontSize,
+                            minimap: { enabled: showMinimap },
+                            wordWrap,
+                            lineNumbers: showLineNumbers ? 'on' : 'off',
+                            tabSize,
+                            renderWhitespace,
+                            cursorBlinking,
+                            cursorStyle,
+                            bracketPairColorization: { enabled: bracketPairColorization },
+                            autoClosingBrackets,
+                          }}
+                        />
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Split Editor (Secondary) */}
+                  {isSplitView && (
+                    <div className="flex-1 flex flex-col">
+                      <div className="h-8 bg-gray-800 border-b border-gray-700 flex items-center px-2">
+                        <select
+                          value={splitActiveTabId || ''}
+                          onChange={(e) => setSplitActiveTabId(e.target.value)}
+                          className="text-xs bg-gray-700 text-gray-300 rounded px-2 py-1 border border-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        >
+                          {openTabs.map((tab) => (
+                            <option key={tab.file.id} value={tab.file.id}>
+                              {tab.file.name} {tab.hasUnsavedChanges ? '•' : ''}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="flex-1">
+                        {splitActiveTab && (
+                          <Editor
+                            height="100%"
+                            language={getMonacoLanguageFromFilename(splitActiveTab.file.name)}
+                            value={splitActiveTab.content}
+                            onChange={handleSplitCodeChange}
+                            theme={theme.monacoTheme}
+                            beforeMount={handleEditorWillMount}
+                            options={{
+                              ...enhancedEditorOptions,
+                              fontSize,
+                              minimap: { enabled: showMinimap },
+                              wordWrap,
+                              lineNumbers: showLineNumbers ? 'on' : 'off',
+                              tabSize,
+                              renderWhitespace,
+                              cursorBlinking,
+                              cursorStyle,
+                              bracketPairColorization: { enabled: bracketPairColorization },
+                              autoClosingBrackets,
+                            }}
+                          />
+                        )}
+                      </div>
+                    </div>
                   )}
                 </div>
               </>
@@ -945,6 +1180,20 @@ export default function IDEPage() {
               </div>
             </div>
           )}
+          </div>
+
+          {/* Terminal Panel - Bottom */}
+          {showTerminal && (
+            <div className={`border-t border-gray-700 ${isTerminalMaximized ? 'flex-1' : 'h-64'}`}>
+              <TerminalComponent
+                projectId={projectId}
+                isVisible={showTerminal}
+                onClose={() => setShowTerminal(false)}
+                onToggleMaximize={() => setIsTerminalMaximized(!isTerminalMaximized)}
+                isMaximized={isTerminalMaximized}
+              />
+            </div>
+          )}
         </main>
       </div>
 
@@ -989,6 +1238,12 @@ export default function IDEPage() {
       <KeyboardShortcutsModal
         isOpen={showShortcuts}
         onClose={() => setShowShortcuts(false)}
+      />
+
+      {/* Settings Panel */}
+      <SettingsPanel
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
       />
 
       {/* Toast Notifications */}

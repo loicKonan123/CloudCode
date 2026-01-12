@@ -19,7 +19,7 @@ import {
   Pencil,
 } from 'lucide-react';
 import CreateProjectModal from '@/components/projects/CreateProjectModal';
-import { ConfirmDialog, InputDialog, ToastContainer, useToast } from '@/components/ui';
+import { ConfirmDialog, InputDialog, ToastContainer, useToast, ThemeSwitcher } from '@/components/ui';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -133,25 +133,26 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900">
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-primary)' }}>
       {/* Header */}
-      <header className="bg-gray-800 border-b border-gray-700">
+      <header className="border-b" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'var(--primary)' }}>
                 <Code2 className="w-5 h-5 text-white" />
               </div>
-              <span className="text-xl font-bold text-white">CloudCode</span>
+              <span className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>CloudCode</span>
             </div>
 
             <div className="flex items-center gap-4">
-              <span className="text-gray-300">
-                Bonjour, <span className="font-medium text-white">{user?.username}</span>
+              <span className="text-[var(--text-secondary)]">
+                Bonjour, <span className="font-medium text-[var(--text-primary)]">{user?.username}</span>
               </span>
+              <ThemeSwitcher />
               <button
                 onClick={handleLogout}
-                className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition"
+                className="p-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-lg transition"
               >
                 <LogOut className="w-5 h-5" />
               </button>
@@ -284,9 +285,14 @@ export default function DashboardPage() {
       {showCreateModal && (
         <CreateProjectModal
           onClose={() => setShowCreateModal(false)}
-          onCreated={() => {
+          onCreated={(projectId) => {
             setShowCreateModal(false);
-            loadProjects();
+            if (projectId) {
+              // Naviguer directement vers le projet cree
+              router.push(`/ide/${projectId}`);
+            } else {
+              loadProjects();
+            }
           }}
         />
       )}

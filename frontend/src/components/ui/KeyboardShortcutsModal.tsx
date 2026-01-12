@@ -32,6 +32,7 @@ const shortcutGroups: ShortcutGroup[] = [
   {
     title: 'Éditeur',
     shortcuts: [
+      { keys: ['Shift', 'Alt', 'F'], description: 'Formater le code' },
       { keys: ['Ctrl', 'Z'], description: 'Annuler' },
       { keys: ['Ctrl', 'Y'], description: 'Rétablir' },
       { keys: ['Ctrl', 'F'], description: 'Rechercher' },
@@ -51,6 +52,7 @@ const shortcutGroups: ShortcutGroup[] = [
   {
     title: 'Général',
     shortcuts: [
+      { keys: ['Ctrl', '`'], description: 'Ouvrir/fermer le terminal' },
       { keys: ['Ctrl', 'Shift', '?'], description: 'Afficher les raccourcis' },
       { keys: ['Esc'], description: 'Fermer le panneau de sortie' },
     ],

@@ -29,30 +29,41 @@ export interface RegisterDto {
 }
 
 // ===== Project Types =====
+// Must match backend CloudCode.Domain.Enums.ProgrammingLanguage
 export enum ProgrammingLanguage {
-  CSharp = 0,
-  Python = 1,
-  JavaScript = 2,
-  TypeScript = 3,
+  JavaScript = 1,
+  Python = 2,
+  CSharp = 3,
   Java = 4,
-  Cpp = 5,
-  Go = 6,
-  Rust = 7,
-  Ruby = 8,
-  Php = 9,
+  Go = 5,
+  TypeScript = 6,
+  Html = 7,
+  Css = 8,
+  Json = 9,
+  Markdown = 10,
+  Sql = 11,
+  Xml = 12,
+  Yaml = 13,
+  Bash = 14,
+  Rust = 15,
 }
 
 export const LanguageNames: Record<ProgrammingLanguage, string> = {
-  [ProgrammingLanguage.CSharp]: 'C#',
-  [ProgrammingLanguage.Python]: 'Python',
   [ProgrammingLanguage.JavaScript]: 'JavaScript',
-  [ProgrammingLanguage.TypeScript]: 'TypeScript',
+  [ProgrammingLanguage.Python]: 'Python',
+  [ProgrammingLanguage.CSharp]: 'C#',
   [ProgrammingLanguage.Java]: 'Java',
-  [ProgrammingLanguage.Cpp]: 'C++',
   [ProgrammingLanguage.Go]: 'Go',
+  [ProgrammingLanguage.TypeScript]: 'TypeScript',
+  [ProgrammingLanguage.Html]: 'HTML',
+  [ProgrammingLanguage.Css]: 'CSS',
+  [ProgrammingLanguage.Json]: 'JSON',
+  [ProgrammingLanguage.Markdown]: 'Markdown',
+  [ProgrammingLanguage.Sql]: 'SQL',
+  [ProgrammingLanguage.Xml]: 'XML',
+  [ProgrammingLanguage.Yaml]: 'YAML',
+  [ProgrammingLanguage.Bash]: 'Bash',
   [ProgrammingLanguage.Rust]: 'Rust',
-  [ProgrammingLanguage.Ruby]: 'Ruby',
-  [ProgrammingLanguage.Php]: 'PHP',
 };
 
 export interface Project {

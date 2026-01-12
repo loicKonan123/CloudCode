@@ -208,4 +208,23 @@ export const dependenciesApi = {
     api.delete(`/dependencies/project/${projectId}/${dependencyId}`),
 };
 
+// ===========================================
+// Formatting API
+// ===========================================
+export interface FormatCodeResult {
+  formattedCode: string;
+  success: boolean;
+  error?: string;
+}
+
+export const formattingApi = {
+  format: (code: string, language: number, tabSize: number = 2, useTabs: boolean = false) =>
+    api.post<FormatCodeResult>('/formatting/format', {
+      code,
+      language,
+      tabSize,
+      useTabs,
+    }),
+};
+
 export default api;
