@@ -1,3 +1,5 @@
+using CloudCode.Domain.Enums;
+using CloudCode.Domain.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using System.Collections.Concurrent;
@@ -16,11 +18,13 @@ public class TerminalHub : Hub
     private static readonly ConcurrentDictionary<string, TerminalSession> Sessions = new();
     private readonly IConfiguration _configuration;
     private readonly IHubContext<TerminalHub> _hubContext;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public TerminalHub(IConfiguration configuration, IHubContext<TerminalHub> hubContext)
+    public TerminalHub(IConfiguration configuration, IHubContext<TerminalHub> hubContext, IUnitOfWork unitOfWork)
     {
         _configuration = configuration;
         _hubContext = hubContext;
+        _unitOfWork = unitOfWork;
     }
 
     /// <summary>
@@ -44,6 +48,10 @@ public class TerminalHub : Hub
         var workDir = GetProjectWorkingDirectory(projectId);
         Directory.CreateDirectory(workDir);
 
+        // Recuperer les informations du projet
+        var project = await _unitOfWork.Projects.GetByIdAsync(projectId);
+        var projectLanguage = project?.Language ?? ProgrammingLanguage.JavaScript;
+
         // Determiner le shell a utiliser
         var shell = GetShellCommand();
 
@@ -59,8 +67,70 @@ public class TerminalHub : Hub
             Shell = shell
         });
 
-        // Envoyer un message de bienvenue
-        await Clients.Caller.SendAsync("TerminalOutput", $"Terminal connecte - {shell}\r\nRepertoire: {workDir}\r\n\r\n");
+        // Envoyer un message de bienvenue avec instructions selon le langage
+        var welcomeMessage = $"\x1b[36m=== CloudCode Terminal ===\x1b[0m\r\n";
+        welcomeMessage += $"Repertoire: {workDir}\r\n";
+        welcomeMessage += $"Shell: {shell}\r\n\r\n";
+
+        if (projectLanguage == ProgrammingLanguage.Python)
+        {
+            // Verifier si un venv existe
+            var venvPath = Path.Combine(workDir, "venv");
+            var venvExists = Directory.Exists(venvPath);
+
+            if (venvExists)
+            {
+                welcomeMessage += "\x1b[32m[Python] Environnement virtuel detecte.\x1b[0m\r\n";
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    welcomeMessage += "Activez-le avec: \x1b[33m.\\venv\\Scripts\\Activate\x1b[0m\r\n\r\n";
+                }
+                else
+                {
+                    welcomeMessage += "Activez-le avec: \x1b[33msource venv/bin/activate\x1b[0m\r\n\r\n";
+                }
+            }
+            else
+            {
+                welcomeMessage += "\x1b[33m[Python] Aucun environnement virtuel detecte.\x1b[0m\r\n";
+                welcomeMessage += "Creez-en un avec: \x1b[33mpython -m venv venv\x1b[0m\r\n";
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    welcomeMessage += "Puis activez-le: \x1b[33m.\\venv\\Scripts\\Activate\x1b[0m\r\n";
+                }
+                else
+                {
+                    welcomeMessage += "Puis activez-le: \x1b[33msource venv/bin/activate\x1b[0m\r\n";
+                }
+                welcomeMessage += "Installez des packages: \x1b[33mpip install numpy pandas\x1b[0m\r\n\r\n";
+            }
+        }
+        else if (projectLanguage == ProgrammingLanguage.JavaScript || projectLanguage == ProgrammingLanguage.TypeScript)
+        {
+            // Verifier si node_modules existe
+            var nodeModulesPath = Path.Combine(workDir, "node_modules");
+            var packageJsonPath = Path.Combine(workDir, "package.json");
+
+            if (File.Exists(packageJsonPath))
+            {
+                if (Directory.Exists(nodeModulesPath))
+                {
+                    welcomeMessage += "\x1b[32m[Node.js] Projet initialise avec des dependances.\x1b[0m\r\n\r\n";
+                }
+                else
+                {
+                    welcomeMessage += "\x1b[33m[Node.js] package.json detecte mais pas de node_modules.\x1b[0m\r\n";
+                    welcomeMessage += "Installez les dependances: \x1b[33mnpm install\x1b[0m\r\n\r\n";
+                }
+            }
+            else
+            {
+                welcomeMessage += "\x1b[33m[Node.js] Initialisez le projet avec: \x1b[33mnpm init -y\x1b[0m\r\n";
+                welcomeMessage += "Installez des packages: \x1b[33mnpm install express lodash\x1b[0m\r\n\r\n";
+            }
+        }
+
+        await Clients.Caller.SendAsync("TerminalOutput", welcomeMessage);
     }
 
     /// <summary>
