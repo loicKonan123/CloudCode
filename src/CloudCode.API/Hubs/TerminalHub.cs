@@ -2,34 +2,35 @@ using CloudCode.Domain.Enums;
 using CloudCode.Domain.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Win32.SafeHandles;
 using System.Collections.Concurrent;
-using System.Diagnostics;
+using System.ComponentModel;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace CloudCode.Hubs;
 
-/// <summary>
-/// Hub SignalR pour le terminal interactif.
-/// Permet d'executer des commandes shell en temps reel.
-/// </summary>
 [Authorize]
 public class TerminalHub : Hub
 {
-    private static readonly ConcurrentDictionary<string, TerminalSession> Sessions = new();
+    private static readonly ConcurrentDictionary<string, ConPtyTerminal> Sessions = new();
     private readonly IConfiguration _configuration;
     private readonly IHubContext<TerminalHub> _hubContext;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ILogger<TerminalHub> _logger;
 
-    public TerminalHub(IConfiguration configuration, IHubContext<TerminalHub> hubContext, IUnitOfWork unitOfWork)
+    public TerminalHub(
+        IConfiguration configuration,
+        IHubContext<TerminalHub> hubContext,
+        IUnitOfWork unitOfWork,
+        ILogger<TerminalHub> logger)
     {
         _configuration = configuration;
         _hubContext = hubContext;
         _unitOfWork = unitOfWork;
+        _logger = logger;
     }
 
-    /// <summary>
-    /// Creer une nouvelle session terminal pour un projet.
-    /// </summary>
     public async Task CreateSession(Guid projectId)
     {
         var userId = GetUserId();
@@ -38,104 +39,41 @@ public class TerminalHub : Hub
         var sessionId = $"{userId}_{projectId}";
         var connectionId = Context.ConnectionId;
 
-        // Fermer la session existante si elle existe
         if (Sessions.TryRemove(sessionId, out var existingSession))
         {
             existingSession.Dispose();
         }
 
-        // Creer le repertoire de travail du projet
         var workDir = GetProjectWorkingDirectory(projectId);
         Directory.CreateDirectory(workDir);
 
-        // Recuperer les informations du projet
         var project = await _unitOfWork.Projects.GetByIdAsync(projectId);
         var projectLanguage = project?.Language ?? ProgrammingLanguage.JavaScript;
 
-        // Determiner le shell a utiliser
-        var shell = GetShellCommand();
+        var terminal = new ConPtyTerminal(connectionId, _hubContext, _logger);
 
-        var session = new TerminalSession(sessionId, shell, workDir, connectionId, _hubContext);
-
-        Sessions[sessionId] = session;
-        session.Start();
-
-        await Clients.Caller.SendAsync("TerminalReady", new
+        try
         {
-            SessionId = sessionId,
-            WorkingDirectory = workDir,
-            Shell = shell
-        });
+            terminal.Start(workDir, 120, 30);
+            Sessions[sessionId] = terminal;
 
-        // Envoyer un message de bienvenue avec instructions selon le langage
-        var welcomeMessage = $"\x1b[36m=== CloudCode Terminal ===\x1b[0m\r\n";
-        welcomeMessage += $"Repertoire: {workDir}\r\n";
-        welcomeMessage += $"Shell: {shell}\r\n\r\n";
-
-        if (projectLanguage == ProgrammingLanguage.Python)
-        {
-            // Verifier si un venv existe
-            var venvPath = Path.Combine(workDir, "venv");
-            var venvExists = Directory.Exists(venvPath);
-
-            if (venvExists)
+            await Clients.Caller.SendAsync("TerminalReady", new
             {
-                welcomeMessage += "\x1b[32m[Python] Environnement virtuel detecte.\x1b[0m\r\n";
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                {
-                    welcomeMessage += "Activez-le avec: \x1b[33m.\\venv\\Scripts\\Activate\x1b[0m\r\n\r\n";
-                }
-                else
-                {
-                    welcomeMessage += "Activez-le avec: \x1b[33msource venv/bin/activate\x1b[0m\r\n\r\n";
-                }
-            }
-            else
-            {
-                welcomeMessage += "\x1b[33m[Python] Aucun environnement virtuel detecte.\x1b[0m\r\n";
-                welcomeMessage += "Creez-en un avec: \x1b[33mpython -m venv venv\x1b[0m\r\n";
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                {
-                    welcomeMessage += "Puis activez-le: \x1b[33m.\\venv\\Scripts\\Activate\x1b[0m\r\n";
-                }
-                else
-                {
-                    welcomeMessage += "Puis activez-le: \x1b[33msource venv/bin/activate\x1b[0m\r\n";
-                }
-                welcomeMessage += "Installez des packages: \x1b[33mpip install numpy pandas\x1b[0m\r\n\r\n";
-            }
+                SessionId = sessionId,
+                WorkingDirectory = workDir,
+                Shell = "powershell.exe"
+            });
+
+            var welcome = BuildWelcomeMessage(workDir, projectLanguage);
+            await Clients.Caller.SendAsync("TerminalOutput", welcome);
         }
-        else if (projectLanguage == ProgrammingLanguage.JavaScript || projectLanguage == ProgrammingLanguage.TypeScript)
+        catch (Exception ex)
         {
-            // Verifier si node_modules existe
-            var nodeModulesPath = Path.Combine(workDir, "node_modules");
-            var packageJsonPath = Path.Combine(workDir, "package.json");
-
-            if (File.Exists(packageJsonPath))
-            {
-                if (Directory.Exists(nodeModulesPath))
-                {
-                    welcomeMessage += "\x1b[32m[Node.js] Projet initialise avec des dependances.\x1b[0m\r\n\r\n";
-                }
-                else
-                {
-                    welcomeMessage += "\x1b[33m[Node.js] package.json detecte mais pas de node_modules.\x1b[0m\r\n";
-                    welcomeMessage += "Installez les dependances: \x1b[33mnpm install\x1b[0m\r\n\r\n";
-                }
-            }
-            else
-            {
-                welcomeMessage += "\x1b[33m[Node.js] Initialisez le projet avec: \x1b[33mnpm init -y\x1b[0m\r\n";
-                welcomeMessage += "Installez des packages: \x1b[33mnpm install express lodash\x1b[0m\r\n\r\n";
-            }
+            _logger.LogError(ex, "Erreur creation terminal");
+            await Clients.Caller.SendAsync("TerminalError", $"Erreur: {ex.Message}");
         }
-
-        await Clients.Caller.SendAsync("TerminalOutput", welcomeMessage);
     }
 
-    /// <summary>
-    /// Envoyer une commande au terminal.
-    /// </summary>
     public async Task SendInput(Guid projectId, string input)
     {
         var userId = GetUserId();
@@ -143,19 +81,16 @@ public class TerminalHub : Hub
 
         var sessionId = $"{userId}_{projectId}";
 
-        if (Sessions.TryGetValue(sessionId, out var session))
+        if (Sessions.TryGetValue(sessionId, out var terminal))
         {
-            await session.WriteInput(input);
+            terminal.Write(input);
         }
         else
         {
-            await Clients.Caller.SendAsync("TerminalError", "Session non trouvee. Veuillez reconnecter le terminal.");
+            await Clients.Caller.SendAsync("TerminalError", "Session non trouvee.");
         }
     }
 
-    /// <summary>
-    /// Redimensionner le terminal.
-    /// </summary>
     public Task ResizeTerminal(Guid projectId, int cols, int rows)
     {
         var userId = GetUserId();
@@ -163,17 +98,14 @@ public class TerminalHub : Hub
 
         var sessionId = $"{userId}_{projectId}";
 
-        if (Sessions.TryGetValue(sessionId, out var session))
+        if (Sessions.TryGetValue(sessionId, out var terminal))
         {
-            session.Resize(cols, rows);
+            terminal.Resize(cols, rows);
         }
 
         return Task.CompletedTask;
     }
 
-    /// <summary>
-    /// Fermer la session terminal.
-    /// </summary>
     public async Task CloseSession(Guid projectId)
     {
         var userId = GetUserId();
@@ -181,9 +113,9 @@ public class TerminalHub : Hub
 
         var sessionId = $"{userId}_{projectId}";
 
-        if (Sessions.TryRemove(sessionId, out var session))
+        if (Sessions.TryRemove(sessionId, out var terminal))
         {
-            session.Dispose();
+            terminal.Dispose();
             await Clients.Caller.SendAsync("TerminalClosed");
         }
     }
@@ -193,13 +125,12 @@ public class TerminalHub : Hub
         var userId = GetUserId();
         if (!string.IsNullOrEmpty(userId))
         {
-            // Fermer toutes les sessions de l'utilisateur
             var userSessions = Sessions.Keys.Where(k => k.StartsWith(userId)).ToList();
             foreach (var sessionId in userSessions)
             {
-                if (Sessions.TryRemove(sessionId, out var session))
+                if (Sessions.TryRemove(sessionId, out var terminal))
                 {
-                    session.Dispose();
+                    terminal.Dispose();
                 }
             }
         }
@@ -207,12 +138,7 @@ public class TerminalHub : Hub
         return base.OnDisconnectedAsync(exception);
     }
 
-    #region Private Methods
-
-    private string? GetUserId()
-    {
-        return Context.User?.FindFirst("userId")?.Value;
-    }
+    private string? GetUserId() => Context.User?.FindFirst("userId")?.Value;
 
     private string GetProjectWorkingDirectory(Guid projectId)
     {
@@ -221,217 +147,199 @@ public class TerminalHub : Hub
         return Path.Combine(baseDir, projectId.ToString());
     }
 
-    private string GetShellCommand()
+    private string BuildWelcomeMessage(string workDir, ProgrammingLanguage lang)
     {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            return "powershell.exe";
-        }
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-        {
-            return "/bin/zsh";
-        }
-        else
-        {
-            return "/bin/bash";
-        }
-    }
+        var sb = new StringBuilder();
+        sb.Append("\x1b[36m=== CloudCode Terminal ===\x1b[0m\r\n");
+        sb.Append($"Repertoire: {workDir}\r\n");
+        sb.Append("\x1b[90mCtrl+C: Interrompre | Ctrl+L: Effacer | Tab: Completion | Fleches: Historique\x1b[0m\r\n\r\n");
 
-    #endregion
+        if (lang == ProgrammingLanguage.Python)
+        {
+            var venvExists = Directory.Exists(Path.Combine(workDir, "venv"));
+            if (venvExists)
+                sb.Append("\x1b[32m[Python] venv detecte.\x1b[0m Activez: \x1b[33m.\\venv\\Scripts\\Activate\x1b[0m\r\n\r\n");
+            else
+                sb.Append("\x1b[33m[Python]\x1b[0m Creez un venv: \x1b[33mpython -m venv venv\x1b[0m\r\n\r\n");
+        }
+        else if (lang == ProgrammingLanguage.JavaScript || lang == ProgrammingLanguage.TypeScript)
+        {
+            if (!File.Exists(Path.Combine(workDir, "package.json")))
+                sb.Append("\x1b[33m[Node.js]\x1b[0m Initialisez: \x1b[33mnpm init -y\x1b[0m\r\n\r\n");
+            else if (!Directory.Exists(Path.Combine(workDir, "node_modules")))
+                sb.Append("\x1b[33m[Node.js]\x1b[0m Installez: \x1b[33mnpm install\x1b[0m\r\n\r\n");
+        }
+
+        return sb.ToString();
+    }
 }
 
-/// <summary>
-/// Session de terminal interactive.
-/// </summary>
-public class TerminalSession : IDisposable
+public class ConPtyTerminal : IDisposable
 {
-    private readonly string _sessionId;
     private readonly string _connectionId;
     private readonly IHubContext<TerminalHub> _hubContext;
-    private readonly Process _process;
-    private bool _disposed;
-    private readonly System.Text.StringBuilder _inputBuffer = new();
-    private readonly object _bufferLock = new();
+    private readonly ILogger _logger;
 
-    public TerminalSession(string sessionId, string shell, string workingDirectory, string connectionId, IHubContext<TerminalHub> hubContext)
+    private SafeFileHandle? _inputWriteHandle;
+    private SafeFileHandle? _outputReadHandle;
+    private FileStream? _inputStream;
+    private FileStream? _outputStream;
+    private IntPtr _ptyHandle;
+    private IntPtr _processHandle;
+    private Thread? _readThread;
+    private volatile bool _disposed;
+
+    public ConPtyTerminal(string connectionId, IHubContext<TerminalHub> hubContext, ILogger logger)
     {
-        _sessionId = sessionId;
         _connectionId = connectionId;
         _hubContext = hubContext;
+        _logger = logger;
+    }
 
-        var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+    public void Start(string workingDirectory, int cols, int rows)
+    {
+        // Creer les pipes
+        if (!CreatePipe(out var inputReadHandle, out _inputWriteHandle, IntPtr.Zero, 0))
+            throw new Win32Exception(Marshal.GetLastWin32Error(), "CreatePipe input failed");
 
-        _process = new Process
+        if (!CreatePipe(out _outputReadHandle, out var outputWriteHandle, IntPtr.Zero, 0))
+            throw new Win32Exception(Marshal.GetLastWin32Error(), "CreatePipe output failed");
+
+        // Creer le pseudo console
+        var size = new COORD { X = (short)cols, Y = (short)rows };
+        int hr = CreatePseudoConsole(size, inputReadHandle, outputWriteHandle, 0, out _ptyHandle);
+
+        if (hr != 0)
+            throw new Win32Exception(hr, $"CreatePseudoConsole failed: {hr}");
+
+        // Fermer les cotes non utilises des pipes
+        inputReadHandle.Dispose();
+        outputWriteHandle.Dispose();
+
+        // Creer les streams (garder ouverts!)
+        _inputStream = new FileStream(_inputWriteHandle, FileAccess.Write, 256, false);
+        _outputStream = new FileStream(_outputReadHandle, FileAccess.Read, 256, false);
+
+        // Demarrer PowerShell
+        StartProcess(workingDirectory);
+
+        // Demarrer la lecture en arriere-plan
+        _readThread = new Thread(ReadOutputLoop) { IsBackground = true, Name = "PTY-Reader" };
+        _readThread.Start();
+
+        _logger.LogInformation("ConPTY started for connection {ConnectionId}", _connectionId);
+    }
+
+    private void StartProcess(string workingDirectory)
+    {
+        var startupInfo = new STARTUPINFOEX();
+        startupInfo.StartupInfo.cb = Marshal.SizeOf<STARTUPINFOEX>();
+
+        // Allouer l'attribut list
+        IntPtr attrListSize = IntPtr.Zero;
+        InitializeProcThreadAttributeList(IntPtr.Zero, 1, 0, ref attrListSize);
+
+        startupInfo.lpAttributeList = Marshal.AllocHGlobal(attrListSize);
+
+        try
         {
-            StartInfo = new ProcessStartInfo
+            if (!InitializeProcThreadAttributeList(startupInfo.lpAttributeList, 1, 0, ref attrListSize))
+                throw new Win32Exception(Marshal.GetLastWin32Error());
+
+            if (!UpdateProcThreadAttribute(
+                startupInfo.lpAttributeList,
+                0,
+                (IntPtr)PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE,
+                _ptyHandle,
+                (IntPtr)IntPtr.Size,
+                IntPtr.Zero,
+                IntPtr.Zero))
             {
-                FileName = shell,
-                WorkingDirectory = workingDirectory,
-                RedirectStandardInput = true,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                Environment =
-                {
-                    ["TERM"] = "xterm-256color",
-                    ["COLORTERM"] = "truecolor"
-                }
-            },
-            EnableRaisingEvents = true
-        };
+                throw new Win32Exception(Marshal.GetLastWin32Error());
+            }
 
-        // Pour PowerShell, configurer le prompt
-        if (isWindows && shell.Contains("powershell", StringComparison.OrdinalIgnoreCase))
+            string command = "powershell.exe -NoLogo";
+
+            if (!CreateProcess(
+                null,
+                command,
+                IntPtr.Zero,
+                IntPtr.Zero,
+                false,
+                EXTENDED_STARTUPINFO_PRESENT,
+                IntPtr.Zero,
+                workingDirectory,
+                ref startupInfo,
+                out var processInfo))
+            {
+                throw new Win32Exception(Marshal.GetLastWin32Error());
+            }
+
+            _processHandle = processInfo.hProcess;
+            CloseHandle(processInfo.hThread);
+        }
+        finally
         {
-            _process.StartInfo.Arguments = "-NoLogo -NoProfile";
+            DeleteProcThreadAttributeList(startupInfo.lpAttributeList);
+            Marshal.FreeHGlobal(startupInfo.lpAttributeList);
         }
     }
 
-    public void Start()
+    private void ReadOutputLoop()
     {
-        _process.OutputDataReceived += (sender, e) =>
-        {
-            if (e.Data != null && !_disposed)
-            {
-                _ = SendOutputSafe(e.Data + "\r\n");
-            }
-        };
+        var buffer = new byte[4096];
 
-        _process.ErrorDataReceived += (sender, e) =>
+        try
         {
-            if (e.Data != null && !_disposed)
+            while (!_disposed && _outputStream != null)
             {
-                _ = SendErrorSafe(e.Data + "\r\n");
-            }
-        };
+                int bytesRead = _outputStream.Read(buffer, 0, buffer.Length);
+                if (bytesRead == 0) break;
 
-        _process.Exited += (sender, e) =>
+                var output = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+                SendOutputAsync(output).Wait();
+            }
+        }
+        catch (Exception ex)
         {
             if (!_disposed)
             {
-                _ = SendExitSafe(_process.ExitCode);
+                _logger.LogError(ex, "Error reading PTY output");
             }
-        };
-
-        _process.Start();
-        _process.BeginOutputReadLine();
-        _process.BeginErrorReadLine();
+        }
     }
 
-    private async Task SendOutputSafe(string output)
+    private async Task SendOutputAsync(string output)
     {
         try
         {
             await _hubContext.Clients.Client(_connectionId).SendAsync("TerminalOutput", output);
         }
-        catch
-        {
-            // Connection might be closed, ignore
-        }
+        catch { }
     }
 
-    private async Task SendErrorSafe(string error)
+    public void Write(string input)
     {
-        try
-        {
-            await _hubContext.Clients.Client(_connectionId).SendAsync("TerminalError", error);
-        }
-        catch
-        {
-            // Connection might be closed, ignore
-        }
-    }
-
-    private async Task SendExitSafe(int exitCode)
-    {
-        try
-        {
-            await _hubContext.Clients.Client(_connectionId).SendAsync("TerminalExit", exitCode);
-        }
-        catch
-        {
-            // Connection might be closed, ignore
-        }
-    }
-
-    public async Task WriteInput(string input)
-    {
-        if (_disposed || _process.HasExited) return;
+        if (_disposed || _inputStream == null) return;
 
         try
         {
-            foreach (char c in input)
-            {
-                // Handle Enter key (carriage return or newline)
-                if (c == '\r' || c == '\n')
-                {
-                    string command;
-                    lock (_bufferLock)
-                    {
-                        command = _inputBuffer.ToString();
-                        _inputBuffer.Clear();
-                    }
-
-                    // Echo newline to terminal
-                    _ = SendOutputSafe("\r\n");
-
-                    // Send command to process
-                    await _process.StandardInput.WriteLineAsync(command);
-                    await _process.StandardInput.FlushAsync();
-                }
-                // Handle Backspace
-                else if (c == '\x7f' || c == '\b')
-                {
-                    lock (_bufferLock)
-                    {
-                        if (_inputBuffer.Length > 0)
-                        {
-                            _inputBuffer.Length--;
-                            // Echo backspace: move back, space, move back
-                            _ = SendOutputSafe("\b \b");
-                        }
-                    }
-                }
-                // Handle Ctrl+C
-                else if (c == '\x03')
-                {
-                    lock (_bufferLock)
-                    {
-                        _inputBuffer.Clear();
-                    }
-                    _ = SendOutputSafe("^C\r\n");
-                    // Note: Proper Ctrl+C handling would require ConPTY
-                }
-                // Handle Ctrl+L (clear screen)
-                else if (c == '\x0c')
-                {
-                    _ = SendOutputSafe("\x1b[2J\x1b[H");
-                }
-                // Regular printable characters
-                else if (c >= 32 && c < 127)
-                {
-                    lock (_bufferLock)
-                    {
-                        _inputBuffer.Append(c);
-                    }
-                    // Echo character to terminal
-                    _ = SendOutputSafe(c.ToString());
-                }
-                // Escape sequences (arrow keys, etc.) - ignore for now
-                // Would need proper PTY for full support
-            }
+            var bytes = Encoding.UTF8.GetBytes(input);
+            _inputStream.Write(bytes, 0, bytes.Length);
+            _inputStream.Flush();
         }
-        catch
+        catch (Exception ex)
         {
-            // Process might have exited
+            _logger.LogError(ex, "Error writing to PTY");
         }
     }
 
     public void Resize(int cols, int rows)
     {
-        // Note: Le redimensionnement PTY n'est pas supporte nativement dans .NET
-        // Cela necessiterait une bibliotheque PTY comme Pty.Net
+        if (_disposed || _ptyHandle == IntPtr.Zero) return;
+
+        var size = new COORD { X = (short)cols, Y = (short)rows };
+        ResizePseudoConsole(_ptyHandle, size);
     }
 
     public void Dispose()
@@ -441,12 +349,93 @@ public class TerminalSession : IDisposable
 
         try
         {
-            if (!_process.HasExited)
+            // Fermer le PTY d'abord
+            if (_ptyHandle != IntPtr.Zero)
             {
-                _process.Kill(true);
+                ClosePseudoConsole(_ptyHandle);
+                _ptyHandle = IntPtr.Zero;
             }
-            _process.Dispose();
+
+            // Terminer le processus
+            if (_processHandle != IntPtr.Zero)
+            {
+                TerminateProcess(_processHandle, 0);
+                CloseHandle(_processHandle);
+                _processHandle = IntPtr.Zero;
+            }
+
+            // Fermer les streams
+            _inputStream?.Dispose();
+            _outputStream?.Dispose();
+            _inputWriteHandle?.Dispose();
+            _outputReadHandle?.Dispose();
         }
         catch { }
+
+        GC.SuppressFinalize(this);
     }
+
+    #region Native Methods
+
+    private const uint EXTENDED_STARTUPINFO_PRESENT = 0x00080000;
+    private const int PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE = 0x00020016;
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct COORD { public short X, Y; }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct PROCESS_INFORMATION
+    {
+        public IntPtr hProcess, hThread;
+        public int dwProcessId, dwThreadId;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct STARTUPINFO
+    {
+        public int cb;
+        public IntPtr lpReserved, lpDesktop, lpTitle;
+        public int dwX, dwY, dwXSize, dwYSize, dwXCountChars, dwYCountChars, dwFillAttribute, dwFlags;
+        public short wShowWindow, cbReserved2;
+        public IntPtr lpReserved2, hStdInput, hStdOutput, hStdError;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct STARTUPINFOEX
+    {
+        public STARTUPINFO StartupInfo;
+        public IntPtr lpAttributeList;
+    }
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern int CreatePseudoConsole(COORD size, SafeFileHandle hInput, SafeFileHandle hOutput, uint dwFlags, out IntPtr phPC);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern int ResizePseudoConsole(IntPtr hPC, COORD size);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern void ClosePseudoConsole(IntPtr hPC);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool CreatePipe(out SafeFileHandle hReadPipe, out SafeFileHandle hWritePipe, IntPtr lpPipeAttributes, uint nSize);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool InitializeProcThreadAttributeList(IntPtr lpAttributeList, int dwAttributeCount, int dwFlags, ref IntPtr lpSize);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool UpdateProcThreadAttribute(IntPtr lpAttributeList, uint dwFlags, IntPtr Attribute, IntPtr lpValue, IntPtr cbSize, IntPtr lpPreviousValue, IntPtr lpReturnSize);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern void DeleteProcThreadAttributeList(IntPtr lpAttributeList);
+
+    [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+    private static extern bool CreateProcess(string? lpApplicationName, string lpCommandLine, IntPtr lpProcessAttributes, IntPtr lpThreadAttributes, bool bInheritHandles, uint dwCreationFlags, IntPtr lpEnvironment, string lpCurrentDirectory, ref STARTUPINFOEX lpStartupInfo, out PROCESS_INFORMATION lpProcessInformation);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool CloseHandle(IntPtr hObject);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool TerminateProcess(IntPtr hProcess, uint uExitCode);
+
+    #endregion
 }

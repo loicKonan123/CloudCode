@@ -5,7 +5,7 @@ import { Terminal as XTerm } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { HubConnection, HubConnectionBuilder, LogLevel } from '@microsoft/signalr';
-import { TerminalSquare, X, RefreshCw, Maximize2, Minimize2 } from 'lucide-react';
+import { TerminalSquare, X, RefreshCw, Maximize2, Minimize2, Trash2 } from 'lucide-react';
 import '@xterm/xterm/css/xterm.css';
 
 interface TerminalProps {
@@ -28,6 +28,7 @@ export default function Terminal({
   const fitAddonRef = useRef<FitAddon | null>(null);
   const connectionRef = useRef<HubConnection | null>(null);
   const onDataDisposableRef = useRef<{ dispose: () => void } | null>(null);
+  const onResizeDisposableRef = useRef<{ dispose: () => void } | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [connectionFailed, setConnectionFailed] = useState(false);
@@ -37,10 +38,10 @@ export default function Terminal({
   const getThemeColors = useCallback(() => {
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     return {
-      background: isDark ? '#1a1b26' : '#ffffff',
+      background: isDark ? '#1a1b26' : '#fafafa',
       foreground: isDark ? '#c0caf5' : '#1a1b26',
       cursor: isDark ? '#c0caf5' : '#1a1b26',
-      cursorAccent: isDark ? '#1a1b26' : '#ffffff',
+      cursorAccent: isDark ? '#1a1b26' : '#fafafa',
       selectionBackground: isDark ? 'rgba(122, 162, 247, 0.3)' : 'rgba(26, 27, 38, 0.2)',
       black: isDark ? '#15161e' : '#1a1b26',
       red: '#f7768e',
@@ -61,16 +62,23 @@ export default function Terminal({
     };
   }, []);
 
+  const sendResize = useCallback((cols: number, rows: number) => {
+    if (connectionRef.current?.state === 'Connected') {
+      connectionRef.current.invoke('ResizeTerminal', projectId, cols, rows).catch(() => {});
+    }
+  }, [projectId]);
+
   const initTerminal = useCallback(() => {
     if (!terminalRef.current || xtermRef.current) return;
 
     const term = new XTerm({
       cursorBlink: true,
+      cursorStyle: 'bar',
       fontSize: 14,
       fontFamily: '"JetBrains Mono", "Fira Code", "Cascadia Code", Consolas, monospace',
       theme: getThemeColors(),
       allowProposedApi: true,
-      scrollback: 1000,
+      scrollback: 5000,
       convertEol: true,
     });
 
@@ -81,14 +89,24 @@ export default function Terminal({
     term.loadAddon(webLinksAddon);
 
     term.open(terminalRef.current);
-    fitAddon.fit();
+
+    // Fit after a small delay to ensure container is ready
+    setTimeout(() => {
+      fitAddon.fit();
+      sendResize(term.cols, term.rows);
+    }, 50);
 
     xtermRef.current = term;
     fitAddonRef.current = fitAddon;
 
-    // Gerer le redimensionnement
+    // Handle resize events from xterm
+    onResizeDisposableRef.current = term.onResize(({ cols, rows }) => {
+      sendResize(cols, rows);
+    });
+
+    // Handle container resize
     const resizeObserver = new ResizeObserver(() => {
-      if (fitAddonRef.current) {
+      if (fitAddonRef.current && xtermRef.current) {
         try {
           fitAddonRef.current.fit();
         } catch {}
@@ -99,15 +117,13 @@ export default function Terminal({
     return () => {
       resizeObserver.disconnect();
     };
-  }, [getThemeColors]);
+  }, [getThemeColors, sendResize]);
 
   const connectToHub = useCallback(async (isManualRetry = false) => {
     if (connectionRef.current?.state === 'Connected' || isConnecting) return;
 
-    // Si connexion echouee et pas une tentative manuelle, ne pas reessayer
     if (connectionFailed && !isManualRetry) return;
 
-    // Verifier le nombre de tentatives
     if (!isManualRetry && retryCountRef.current >= maxRetries) {
       setConnectionFailed(true);
       xtermRef.current?.writeln('\r\n\x1b[31mNombre maximum de tentatives atteint. Cliquez sur le bouton rafraichir pour reessayer.\x1b[0m');
@@ -136,7 +152,7 @@ export default function Terminal({
         .configureLogging(LogLevel.Warning)
         .build();
 
-      // Gerer les evenements du terminal
+      // Handle terminal events
       connection.on('TerminalOutput', (output: string) => {
         xtermRef.current?.write(output);
       });
@@ -152,6 +168,10 @@ export default function Terminal({
 
       connection.on('TerminalReady', (info: { sessionId: string; workingDirectory: string; shell: string }) => {
         console.log('Terminal ready:', info);
+        // Send initial size
+        if (xtermRef.current) {
+          sendResize(xtermRef.current.cols, xtermRef.current.rows);
+        }
       });
 
       connection.on('TerminalClosed', () => {
@@ -176,7 +196,7 @@ export default function Terminal({
       await connection.start();
       connectionRef.current = connection;
 
-      // Creer la session terminal
+      // Create terminal session
       await connection.invoke('CreateSession', projectId);
 
       // Dispose previous onData handler if exists
@@ -185,11 +205,10 @@ export default function Terminal({
         onDataDisposableRef.current = null;
       }
 
-      // Gerer l'input utilisateur
+      // Handle user input - send directly to PTY
       if (xtermRef.current) {
         onDataDisposableRef.current = xtermRef.current.onData((data) => {
           if (connection.state === 'Connected') {
-            // Envoyer chaque caractere au terminal
             connection.invoke('SendInput', projectId, data);
           }
         });
@@ -212,10 +231,9 @@ export default function Terminal({
     } finally {
       setIsConnecting(false);
     }
-  }, [projectId, isConnecting, connectionFailed]);
+  }, [projectId, isConnecting, connectionFailed, sendResize]);
 
   const disconnectFromHub = useCallback(async () => {
-    // Dispose onData handler
     if (onDataDisposableRef.current) {
       onDataDisposableRef.current.dispose();
       onDataDisposableRef.current = null;
@@ -234,10 +252,15 @@ export default function Terminal({
   const handleReconnect = useCallback(async () => {
     xtermRef.current?.clear();
     await disconnectFromHub();
-    await connectToHub(true); // true = manual retry
+    await connectToHub(true);
   }, [disconnectFromHub, connectToHub]);
 
-  // Initialiser le terminal quand visible
+  const handleClearTerminal = useCallback(() => {
+    xtermRef.current?.clear();
+    xtermRef.current?.write('\x1b[H'); // Move cursor to home
+  }, []);
+
+  // Initialize terminal when visible
   useEffect(() => {
     if (isVisible) {
       const cleanup = initTerminal();
@@ -247,20 +270,23 @@ export default function Terminal({
     }
   }, [isVisible, initTerminal]);
 
-  // Connecter au hub apres initialisation (une seule fois)
+  // Connect to hub after initialization
   useEffect(() => {
     if (isVisible && xtermRef.current && !isConnected && !isConnecting && !connectionFailed) {
       connectToHub();
     }
   }, [isVisible, isConnected, isConnecting, connectionFailed, connectToHub]);
 
-  // Nettoyer a la fermeture
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
-      // Dispose onData handler
       if (onDataDisposableRef.current) {
         onDataDisposableRef.current.dispose();
         onDataDisposableRef.current = null;
+      }
+      if (onResizeDisposableRef.current) {
+        onResizeDisposableRef.current.dispose();
+        onResizeDisposableRef.current = null;
       }
       disconnectFromHub();
       xtermRef.current?.dispose();
@@ -268,16 +294,16 @@ export default function Terminal({
     };
   }, [disconnectFromHub]);
 
-  // Refitter quand la taille change
+  // Refit when size changes
   useEffect(() => {
-    if (isVisible && fitAddonRef.current) {
+    if (isVisible && fitAddonRef.current && xtermRef.current) {
       setTimeout(() => {
         fitAddonRef.current?.fit();
       }, 100);
     }
   }, [isVisible, isMaximized]);
 
-  // Observer les changements de theme
+  // Observe theme changes
   useEffect(() => {
     const observer = new MutationObserver(() => {
       if (xtermRef.current) {
@@ -292,6 +318,11 @@ export default function Terminal({
 
     return () => observer.disconnect();
   }, [getThemeColors]);
+
+  // Focus terminal on click
+  const handleContainerClick = useCallback(() => {
+    xtermRef.current?.focus();
+  }, []);
 
   if (!isVisible) return null;
 
@@ -313,6 +344,13 @@ export default function Terminal({
           )}
         </div>
         <div className="flex items-center gap-1">
+          <button
+            onClick={handleClearTerminal}
+            className="p-1.5 rounded hover:bg-[var(--bg-hover)] transition-colors"
+            title="Effacer le terminal (Ctrl+L)"
+          >
+            <Trash2 className="w-4 h-4 text-[var(--text-muted)]" />
+          </button>
           <button
             onClick={handleReconnect}
             className="p-1.5 rounded hover:bg-[var(--bg-hover)] transition-colors"
@@ -346,7 +384,8 @@ export default function Terminal({
       {/* Terminal container */}
       <div
         ref={terminalRef}
-        className="flex-1 p-2 overflow-hidden"
+        onClick={handleContainerClick}
+        className="flex-1 p-2 overflow-hidden cursor-text"
         style={{ minHeight: '200px' }}
       />
     </div>
