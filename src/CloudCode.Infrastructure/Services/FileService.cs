@@ -4,6 +4,7 @@ using CloudCode.Application.Interfaces;
 using CloudCode.Domain.Entities;
 using CloudCode.Domain.Exceptions;
 using CloudCode.Domain.Interfaces;
+using Microsoft.Extensions.Configuration;
 
 namespace CloudCode.Infrastructure.Services;
 
@@ -14,11 +15,13 @@ public class FileService : IFileService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IProjectService _projectService;
+    private readonly IConfiguration _configuration;
 
-    public FileService(IUnitOfWork unitOfWork, IProjectService projectService)
+    public FileService(IUnitOfWork unitOfWork, IProjectService projectService, IConfiguration configuration)
     {
         _unitOfWork = unitOfWork;
         _projectService = projectService;
+        _configuration = configuration;
     }
 
     public async Task<FileResponseDto> CreateAsync(Guid projectId, Guid userId, CreateFileDto dto, CancellationToken cancellationToken = default)
@@ -306,6 +309,7 @@ public class FileService : IFileService
         using var memoryStream = new MemoryStream();
         using (var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
         {
+            // Add source files from database
             foreach (var file in files.Where(f => !f.IsFolder))
             {
                 var entry = archive.CreateEntry(file.Path);
@@ -313,9 +317,88 @@ public class FileService : IFileService
                 using var writer = new StreamWriter(entryStream);
                 await writer.WriteAsync(file.Content);
             }
+
+            // Add venv/node_modules from file system if they exist
+            var workDir = GetProjectWorkingDirectory(projectId);
+            if (Directory.Exists(workDir))
+            {
+                // Add venv folder for Python projects
+                var venvPath = Path.Combine(workDir, "venv");
+                if (Directory.Exists(venvPath))
+                {
+                    AddDirectoryToZip(archive, venvPath, "venv");
+                }
+
+                // Add node_modules folder for Node.js projects
+                var nodeModulesPath = Path.Combine(workDir, "node_modules");
+                if (Directory.Exists(nodeModulesPath))
+                {
+                    AddDirectoryToZip(archive, nodeModulesPath, "node_modules");
+                }
+
+                // Add package.json if exists
+                var packageJsonPath = Path.Combine(workDir, "package.json");
+                if (File.Exists(packageJsonPath))
+                {
+                    var entry = archive.CreateEntry("package.json");
+                    using var entryStream = entry.Open();
+                    using var fileStream = File.OpenRead(packageJsonPath);
+                    await fileStream.CopyToAsync(entryStream, cancellationToken);
+                }
+
+                // Add package-lock.json if exists
+                var packageLockPath = Path.Combine(workDir, "package-lock.json");
+                if (File.Exists(packageLockPath))
+                {
+                    var entry = archive.CreateEntry("package-lock.json");
+                    using var entryStream = entry.Open();
+                    using var fileStream = File.OpenRead(packageLockPath);
+                    await fileStream.CopyToAsync(entryStream, cancellationToken);
+                }
+
+                // Add requirements.txt if exists
+                var requirementsPath = Path.Combine(workDir, "requirements.txt");
+                if (File.Exists(requirementsPath))
+                {
+                    var entry = archive.CreateEntry("requirements.txt");
+                    using var entryStream = entry.Open();
+                    using var fileStream = File.OpenRead(requirementsPath);
+                    await fileStream.CopyToAsync(entryStream, cancellationToken);
+                }
+            }
         }
 
         return memoryStream.ToArray();
+    }
+
+    private void AddDirectoryToZip(ZipArchive archive, string sourceDir, string entryPrefix)
+    {
+        foreach (var filePath in Directory.GetFiles(sourceDir, "*", SearchOption.AllDirectories))
+        {
+            var relativePath = Path.GetRelativePath(sourceDir, filePath);
+            var entryName = Path.Combine(entryPrefix, relativePath).Replace('\\', '/');
+
+            try
+            {
+                var entry = archive.CreateEntry(entryName);
+                using var entryStream = entry.Open();
+                using var fileStream = File.OpenRead(filePath);
+                fileStream.CopyTo(entryStream);
+            }
+            catch
+            {
+                // Skip files that can't be read (locked, permissions, etc.)
+            }
+        }
+    }
+
+    private string GetProjectWorkingDirectory(Guid projectId)
+    {
+        var configuredDir = _configuration.GetValue<string>("Terminal:WorkingDirectory");
+        var baseDir = !string.IsNullOrEmpty(configuredDir)
+            ? configuredDir
+            : Path.Combine(Path.GetTempPath(), "cloudcode_projects");
+        return Path.Combine(baseDir, projectId.ToString());
     }
 
     private async Task UpdateChildrenPaths(Guid projectId, string oldPath, string newPath, CancellationToken cancellationToken)
