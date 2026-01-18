@@ -32,7 +32,6 @@ const shortcutGroups: ShortcutGroup[] = [
   {
     title: 'Éditeur',
     shortcuts: [
-      { keys: ['Shift', 'Alt', 'F'], description: 'Formater le code' },
       { keys: ['Ctrl', 'Z'], description: 'Annuler' },
       { keys: ['Ctrl', 'Y'], description: 'Rétablir' },
       { keys: ['Ctrl', 'F'], description: 'Rechercher' },

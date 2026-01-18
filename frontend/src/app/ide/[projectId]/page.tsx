@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
-import { projectsApi, filesApi, executionApi, formattingApi } from '@/lib/api';
+import { projectsApi, filesApi, executionApi } from '@/lib/api';
 import { Project, CodeFile, ExecutionResult } from '@/types';
 import { getMonacoLanguageFromFilename, getProgrammingLanguageFromFilename, getFileIcon } from '@/lib/utils';
 import {
@@ -45,7 +45,7 @@ import TerminalComponent from '@/components/terminal/Terminal';
 import { ConfirmDialog, InputDialog, KeyboardShortcutsModal, ToastContainer, useToast, ThemeSwitcher, FontSizeControl, SettingsPanel, Breadcrumbs } from '@/components/ui';
 import { useThemeStore } from '@/stores/themeStore';
 import { useEditorStore } from '@/stores/editorStore';
-import { TerminalSquare, Settings, Wand2 } from 'lucide-react';
+import { TerminalSquare, Settings } from 'lucide-react';
 
 export default function IDEPage() {
   const params = useParams();
@@ -85,8 +85,7 @@ export default function IDEPage() {
   const [showSettings, setShowSettings] = useState(false);
   const [isSplitView, setIsSplitView] = useState(false);
   const [splitActiveTabId, setSplitActiveTabId] = useState<string | null>(null);
-  const [isFormatting, setIsFormatting] = useState(false);
-  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+    const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Derived state for active tab
   const activeTab = openTabs.find(tab => tab.file.id === activeTabId);
@@ -428,33 +427,6 @@ export default function IDEPage() {
     }
   };
 
-  const handleFormat = async () => {
-    if (!selectedFile || !activeTabId) return;
-
-    const fileLanguage = getProgrammingLanguageFromFilename(selectedFile.name);
-    if (fileLanguage === null) {
-      toast.error('Le formatage n\'est pas supporté pour ce type de fichier');
-      return;
-    }
-
-    try {
-      setIsFormatting(true);
-      const response = await formattingApi.format(code, fileLanguage, tabSize);
-
-      if (response.data.success) {
-        // Update the tab content with formatted code
-        updateTabContent(activeTabId, response.data.formattedCode);
-        toast.success('Code formaté');
-      } else {
-        toast.error(response.data.error || 'Erreur lors du formatage');
-      }
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Erreur lors du formatage');
-    } finally {
-      setIsFormatting(false);
-    }
-  };
-
   const handleCreateFile = (isFolder: boolean) => {
     setInputDialog({
       isOpen: true,
@@ -585,11 +557,6 @@ export default function IDEPage() {
       if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
         e.preventDefault();
         handleRun();
-      }
-      // Shift+Alt+F - Format code
-      if (e.shiftKey && e.altKey && e.key === 'F') {
-        e.preventDefault();
-        handleFormat();
       }
       // Ctrl+Shift+? - Show shortcuts
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === '?' || e.key === '/')) {
@@ -838,16 +805,6 @@ export default function IDEPage() {
                 <span className="text-sm">{connectedUsers.length + 1}</span>
               </>
             )}
-          </button>
-
-          <button
-            onClick={handleFormat}
-            disabled={!selectedFile || isFormatting}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition disabled:opacity-50"
-            title="Formater le code (Shift+Alt+F)"
-          >
-            {isFormatting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
-            Formater
           </button>
 
           <button
