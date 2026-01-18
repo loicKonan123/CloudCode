@@ -60,3 +60,6 @@ appsettings.*.json
 # Claude
 .claude/
 nul
+
+# Project working directories (runtime data)
+src/CloudCode.API/[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]-*/
