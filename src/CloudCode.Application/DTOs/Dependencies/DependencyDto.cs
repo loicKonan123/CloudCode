@@ -34,3 +34,58 @@ public class ProjectDependenciesDto
     public DependencyType DefaultType { get; set; }
     public List<DependencyResponseDto> Dependencies { get; set; } = new();
 }
+
+/// <summary>
+/// DTO pour le résultat d'une installation de dépendances.
+/// </summary>
+public class InstallResultDto
+{
+    public bool Success { get; set; }
+    public string Output { get; set; } = string.Empty;
+    public string? Error { get; set; }
+    public int InstalledCount { get; set; }
+    public int FailedCount { get; set; }
+    public List<DependencyInstallStatus> Dependencies { get; set; } = new();
+}
+
+/// <summary>
+/// Statut d'installation d'une dépendance individuelle.
+/// </summary>
+public class DependencyInstallStatus
+{
+    public string Name { get; set; } = string.Empty;
+    public string? Version { get; set; }
+    public bool Installed { get; set; }
+    public string? Error { get; set; }
+}
+
+/// <summary>
+/// Statut de l'environnement serveur.
+/// </summary>
+public class EnvironmentStatusDto
+{
+    public bool PythonAvailable { get; set; }
+    public string? PythonVersion { get; set; }
+    public bool NodeAvailable { get; set; }
+    public string? NodeVersion { get; set; }
+    public bool NpmAvailable { get; set; }
+    public string? NpmVersion { get; set; }
+    public string WorkingDirectory { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Informations sur l'environnement d'un projet.
+/// </summary>
+public class ProjectEnvironmentDto
+{
+    public Guid ProjectId { get; set; }
+    public string WorkingDirectory { get; set; } = string.Empty;
+    public bool HasVenv { get; set; }
+    public string? VenvPath { get; set; }
+    public bool HasNodeModules { get; set; }
+    public string? NodeModulesPath { get; set; }
+    public bool HasPackageJson { get; set; }
+    public List<string> InstalledPackages { get; set; } = new();
+    public long TotalSizeBytes { get; set; }
+    public int FileCount { get; set; }
+}

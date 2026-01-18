@@ -58,4 +58,71 @@ public class DependenciesController : BaseApiController
         await _dependencyService.RemoveAsync(projectId, dependencyId, userId);
         return NoContent();
     }
+
+    /// <summary>
+    /// Installer toutes les dépendances d'un projet.
+    /// Crée automatiquement un venv pour Python ou package.json pour Node.js.
+    /// </summary>
+    [HttpPost("project/{projectId:guid}/install")]
+    [ProducesResponseType(typeof(InstallResultDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<InstallResultDto>> InstallDependencies(Guid projectId, CancellationToken cancellationToken)
+    {
+        var userId = GetRequiredUserId();
+        var result = await _dependencyService.InstallDependenciesAsync(projectId, userId, cancellationToken);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Créer un environnement virtuel Python pour un projet.
+    /// </summary>
+    [HttpPost("project/{projectId:guid}/venv")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult> CreatePythonVenv(Guid projectId, CancellationToken cancellationToken)
+    {
+        var userId = GetRequiredUserId();
+        await _dependencyService.CreatePythonVenvAsync(projectId, userId, cancellationToken);
+        return Ok(new { message = "Environnement virtuel Python créé avec succès." });
+    }
+
+    /// <summary>
+    /// Initialiser un projet Node.js (créer package.json).
+    /// </summary>
+    [HttpPost("project/{projectId:guid}/init")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult> InitNodeProject(Guid projectId, CancellationToken cancellationToken)
+    {
+        var userId = GetRequiredUserId();
+        await _dependencyService.InitNodeProjectAsync(projectId, userId, cancellationToken);
+        return Ok(new { message = "Projet Node.js initialisé avec succès." });
+    }
+
+    /// <summary>
+    /// Vérifier l'environnement serveur (Python, Node.js, npm disponibles).
+    /// </summary>
+    [HttpGet("environment")]
+    [ProducesResponseType(typeof(EnvironmentStatusDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<EnvironmentStatusDto>> CheckEnvironment(CancellationToken cancellationToken)
+    {
+        var status = await _dependencyService.CheckEnvironmentAsync(cancellationToken);
+        return Ok(status);
+    }
+
+    /// <summary>
+    /// Obtenir les informations sur l'environnement d'un projet (venv, node_modules).
+    /// </summary>
+    [HttpGet("project/{projectId:guid}/environment")]
+    [ProducesResponseType(typeof(ProjectEnvironmentDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ProjectEnvironmentDto>> GetProjectEnvironment(Guid projectId, CancellationToken cancellationToken)
+    {
+        var userId = GetRequiredUserId();
+        var envInfo = await _dependencyService.GetProjectEnvironmentAsync(projectId, userId, cancellationToken);
+        return Ok(envInfo);
+    }
 }

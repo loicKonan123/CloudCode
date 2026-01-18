@@ -207,6 +207,21 @@ export const dependenciesApi = {
 
   remove: (projectId: string, dependencyId: string) =>
     api.delete(`/dependencies/project/${projectId}/${dependencyId}`),
+
+  install: (projectId: string) =>
+    api.post<import('@/types').InstallResultDto>(`/dependencies/project/${projectId}/install`),
+
+  createVenv: (projectId: string) =>
+    api.post<{ message: string }>(`/dependencies/project/${projectId}/venv`),
+
+  initNode: (projectId: string) =>
+    api.post<{ message: string }>(`/dependencies/project/${projectId}/init`),
+
+  checkEnvironment: () =>
+    api.get<import('@/types').EnvironmentStatusDto>('/dependencies/environment'),
+
+  getProjectEnvironment: (projectId: string) =>
+    api.get<import('@/types').ProjectEnvironmentDto>(`/dependencies/project/${projectId}/environment`),
 };
 
 // ===========================================

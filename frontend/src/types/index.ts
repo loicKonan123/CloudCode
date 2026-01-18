@@ -198,6 +198,45 @@ export interface AddDependencyDto {
   version?: string;
 }
 
+export interface DependencyInstallStatus {
+  name: string;
+  version?: string;
+  installed: boolean;
+  error?: string;
+}
+
+export interface InstallResultDto {
+  success: boolean;
+  output: string;
+  error?: string;
+  installedCount: number;
+  failedCount: number;
+  dependencies: DependencyInstallStatus[];
+}
+
+export interface EnvironmentStatusDto {
+  pythonAvailable: boolean;
+  pythonVersion?: string;
+  nodeAvailable: boolean;
+  nodeVersion?: string;
+  npmAvailable: boolean;
+  npmVersion?: string;
+  workingDirectory: string;
+}
+
+export interface ProjectEnvironmentDto {
+  projectId: string;
+  workingDirectory: string;
+  hasVenv: boolean;
+  venvPath?: string;
+  hasNodeModules: boolean;
+  nodeModulesPath?: string;
+  hasPackageJson: boolean;
+  installedPackages: string[];
+  totalSizeBytes: number;
+  fileCount: number;
+}
+
 // ===== API Types =====
 export interface ApiError {
   code: string;
