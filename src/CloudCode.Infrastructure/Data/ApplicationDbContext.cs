@@ -20,6 +20,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<ExecutionResult> ExecutionResults => Set<ExecutionResult>();
     public DbSet<ProjectDependency> ProjectDependencies => Set<ProjectDependency>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<EnvironmentVariable> EnvironmentVariables => Set<EnvironmentVariable>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

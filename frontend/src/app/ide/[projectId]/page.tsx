@@ -4,7 +4,8 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
 import { projectsApi, filesApi, executionApi } from '@/lib/api';
-import { Project, CodeFile, ExecutionResult } from '@/types';
+import { Project, CodeFile, ExecutionResult, ProgrammingLanguage } from '@/types';
+import * as signalR from '@microsoft/signalr';
 import { getMonacoLanguageFromFilename, getProgrammingLanguageFromFilename, getFileIcon } from '@/lib/utils';
 import {
   signalRMethods,
@@ -38,14 +39,17 @@ import {
   Keyboard,
   Columns2,
   PanelRightClose,
+  Eye,
 } from 'lucide-react';
 import CollaboratorsModal from '@/components/collaboration/CollaboratorsModal';
 import PackageManager from '@/components/packages/PackageManager';
-import TerminalComponent from '@/components/terminal/Terminal';
+import MultiTerminal from '@/components/terminal/MultiTerminal';
+import PreviewPanel from '@/components/preview/PreviewPanel';
+import EnvManager from '@/components/environment/EnvManager';
 import { ConfirmDialog, InputDialog, KeyboardShortcutsModal, ToastContainer, useToast, ThemeSwitcher, FontSizeControl, SettingsPanel, Breadcrumbs } from '@/components/ui';
 import { useThemeStore } from '@/stores/themeStore';
 import { useEditorStore } from '@/stores/editorStore';
-import { TerminalSquare, Settings } from 'lucide-react';
+import { TerminalSquare, Settings, Key } from 'lucide-react';
 
 export default function IDEPage() {
   const params = useParams();
@@ -77,6 +81,7 @@ export default function IDEPage() {
   const [connectedUsers, setConnectedUsers] = useState<ConnectedUser[]>([]);
   const [showCollaborators, setShowCollaborators] = useState(false);
   const [showPackages, setShowPackages] = useState(false);
+  const [showEnvManager, setShowEnvManager] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showTerminal, setShowTerminal] = useState(false);
   const [isTerminalMaximized, setIsTerminalMaximized] = useState(false);
@@ -85,7 +90,9 @@ export default function IDEPage() {
   const [showSettings, setShowSettings] = useState(false);
   const [isSplitView, setIsSplitView] = useState(false);
   const [splitActiveTabId, setSplitActiveTabId] = useState<string | null>(null);
-    const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
+
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Derived state for active tab
   const activeTab = openTabs.find(tab => tab.file.id === activeTabId);
@@ -587,11 +594,16 @@ export default function IDEPage() {
         e.preventDefault();
         setShowTerminal(!showTerminal);
       }
+      // Ctrl+Shift+P - Toggle preview
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'P') {
+        e.preventDefault();
+        setShowPreview(!showPreview);
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedFile, code, activeTabId, showOutput, showTerminal]);
+  }, [selectedFile, code, activeTabId, showOutput, showTerminal, showPreview]);
 
   // Cleanup auto-save timer and warn on page leave
   useEffect(() => {
@@ -750,6 +762,19 @@ export default function IDEPage() {
             {isSplitView ? <PanelRightClose className="w-4 h-4" /> : <Columns2 className="w-4 h-4" />}
           </button>
 
+          {/* Preview Toggle */}
+          <button
+            onClick={() => setShowPreview(!showPreview)}
+            className={`p-1.5 rounded transition ${
+              showPreview
+                ? 'text-green-400 bg-green-600/20 hover:bg-green-600/30'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
+            }`}
+            title={showPreview ? 'Fermer le preview (Ctrl+Shift+P)' : 'Ouvrir le preview (Ctrl+Shift+P)'}
+          >
+            <Eye className="w-4 h-4" />
+          </button>
+
           {/* Download project */}
           <button
             onClick={handleDownloadProject}
@@ -858,6 +883,15 @@ export default function IDEPage() {
           >
             <Package className="w-4 h-4" />
             <span>Packages</span>
+          </button>
+
+          {/* Environment Variables Button */}
+          <button
+            onClick={() => setShowEnvManager(true)}
+            className="mx-3 mt-2 flex items-center gap-2 px-3 py-2 text-sm bg-gray-700/50 hover:bg-gray-700 text-gray-300 hover:text-white rounded-lg transition"
+          >
+            <Key className="w-4 h-4" />
+            <span>Variables .env</span>
           </button>
 
           {/* Terminal Button */}
@@ -1054,8 +1088,17 @@ export default function IDEPage() {
             )}
           </div>
 
+          {/* Preview Panel - Right Side */}
+          {showPreview && (
+            <PreviewPanel
+              projectId={projectId}
+              isVisible={showPreview}
+              onClose={() => setShowPreview(false)}
+            />
+          )}
+
           {/* Output Panel - Right Side */}
-          {showOutput && (
+          {showOutput && !showPreview && (
             <div className="w-96 bg-gray-850 border-l border-gray-700 flex flex-col flex-shrink-0">
               <div className="h-10 bg-gray-800 border-b border-gray-700 flex items-center justify-between px-3">
                 <div className="flex items-center gap-2">
@@ -1139,18 +1182,16 @@ export default function IDEPage() {
           )}
           </div>
 
-          {/* Terminal Panel - Bottom */}
-          {showTerminal && (
-            <div className={`border-t border-gray-700 ${isTerminalMaximized ? 'flex-1' : 'h-64'}`}>
-              <TerminalComponent
-                projectId={projectId}
-                isVisible={showTerminal}
-                onClose={() => setShowTerminal(false)}
-                onToggleMaximize={() => setIsTerminalMaximized(!isTerminalMaximized)}
-                isMaximized={isTerminalMaximized}
-              />
-            </div>
-          )}
+          {/* Terminal Panel - Bottom - Multi-terminal support */}
+          <div className={`border-t border-gray-700 ${isTerminalMaximized ? 'flex-1' : 'h-64'} ${showTerminal ? '' : 'hidden'}`}>
+            <MultiTerminal
+              projectId={projectId}
+              isVisible={showTerminal}
+              onClose={() => setShowTerminal(false)}
+              onToggleMaximize={() => setIsTerminalMaximized(!isTerminalMaximized)}
+              isMaximized={isTerminalMaximized}
+            />
+          </div>
         </main>
       </div>
 
@@ -1168,6 +1209,13 @@ export default function IDEPage() {
         projectId={projectId}
         isOpen={showPackages}
         onClose={() => setShowPackages(false)}
+      />
+
+      {/* Environment Variables Manager Modal */}
+      <EnvManager
+        projectId={projectId}
+        isOpen={showEnvManager}
+        onClose={() => setShowEnvManager(false)}
       />
 
       {/* Confirm Dialog */}

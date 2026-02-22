@@ -237,6 +237,28 @@ export interface ProjectEnvironmentDto {
   fileCount: number;
 }
 
+// ===== Environment Variables Types =====
+export interface EnvironmentVariable {
+  id: string;
+  key: string;
+  value: string;
+  isSecret: boolean;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface CreateEnvironmentVariableDto {
+  key: string;
+  value: string;
+  isSecret: boolean;
+}
+
+export interface UpdateEnvironmentVariableDto {
+  key?: string;
+  value?: string;
+  isSecret?: boolean;
+}
+
 // ===== API Types =====
 export interface ApiError {
   code: string;

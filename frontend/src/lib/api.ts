@@ -224,4 +224,30 @@ export const dependenciesApi = {
     api.get<import('@/types').ProjectEnvironmentDto>(`/dependencies/project/${projectId}/environment`),
 };
 
+// ===========================================
+// Environment Variables API
+// ===========================================
+export const environmentApi = {
+  getAll: (projectId: string) =>
+    api.get<import('@/types').EnvironmentVariable[]>(`/environment/project/${projectId}`),
+
+  getById: (id: string) =>
+    api.get<import('@/types').EnvironmentVariable>(`/environment/${id}`),
+
+  create: (projectId: string, data: import('@/types').CreateEnvironmentVariableDto) =>
+    api.post<import('@/types').EnvironmentVariable>(`/environment/project/${projectId}`, data),
+
+  update: (id: string, data: import('@/types').UpdateEnvironmentVariableDto) =>
+    api.put<import('@/types').EnvironmentVariable>(`/environment/${id}`, data),
+
+  delete: (id: string) =>
+    api.delete(`/environment/${id}`),
+
+  getEnvFileContent: (projectId: string) =>
+    api.get<{ content: string }>(`/environment/project/${projectId}/file`),
+
+  syncEnvFile: (projectId: string) =>
+    api.post<{ message: string }>(`/environment/project/${projectId}/sync`),
+};
+
 export default api;

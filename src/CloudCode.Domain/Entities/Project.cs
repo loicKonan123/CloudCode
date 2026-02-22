@@ -21,4 +21,5 @@ public class Project : BaseEntity
     public virtual ICollection<Collaboration> Collaborators { get; set; } = new List<Collaboration>();
     public virtual ICollection<ExecutionResult> ExecutionResults { get; set; } = new List<ExecutionResult>();
     public virtual ICollection<ProjectDependency> Dependencies { get; set; } = new List<ProjectDependency>();
+    public virtual ICollection<EnvironmentVariable> EnvironmentVariables { get; set; } = new List<EnvironmentVariable>();
 }

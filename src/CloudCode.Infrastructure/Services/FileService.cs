@@ -144,6 +144,26 @@ public class FileService : IFileService
         _unitOfWork.Files.Update(file);
         await _unitOfWork.SaveChangesAsync();
 
+        // Synchroniser le fichier vers le répertoire de travail
+        try
+        {
+            var workDir = GetProjectWorkingDirectory(file.ProjectId);
+            if (Directory.Exists(workDir))
+            {
+                var filePath = Path.Combine(workDir, file.Path.Replace('/', Path.DirectorySeparatorChar));
+                var parentDir = Path.GetDirectoryName(filePath);
+                if (!string.IsNullOrEmpty(parentDir))
+                {
+                    Directory.CreateDirectory(parentDir);
+                }
+                await File.WriteAllTextAsync(filePath, dto.Content ?? "", cancellationToken);
+            }
+        }
+        catch
+        {
+            // Ignorer les erreurs de synchronisation
+        }
+
         return MapToResponseDto(file);
     }
 
@@ -399,6 +419,43 @@ public class FileService : IFileService
             ? configuredDir
             : Path.Combine(Path.GetTempPath(), "cloudcode_projects");
         return Path.Combine(baseDir, projectId.ToString());
+    }
+
+    public async Task SyncToWorkingDirectoryAsync(Guid projectId, Guid userId, CancellationToken cancellationToken = default)
+    {
+        if (!await _projectService.UserHasAccessAsync(projectId, userId, cancellationToken))
+        {
+            throw new UnauthorizedException("ACCESS_DENIED", "Vous n'avez pas accès à ce projet.");
+        }
+
+        var files = await _unitOfWork.Files.GetByProjectIdAsync(projectId, cancellationToken);
+        var workDir = GetProjectWorkingDirectory(projectId);
+
+        // Créer le répertoire de travail
+        Directory.CreateDirectory(workDir);
+
+        // Créer d'abord les dossiers (triés par profondeur)
+        foreach (var folder in files.Where(f => f.IsFolder).OrderBy(f => f.Path.Count(c => c == '/')))
+        {
+            var folderPath = Path.Combine(workDir, folder.Path.Replace('/', Path.DirectorySeparatorChar));
+            Directory.CreateDirectory(folderPath);
+        }
+
+        // Puis créer les fichiers
+        foreach (var file in files.Where(f => !f.IsFolder))
+        {
+            var filePath = Path.Combine(workDir, file.Path.Replace('/', Path.DirectorySeparatorChar));
+
+            // S'assurer que le répertoire parent existe
+            var parentDir = Path.GetDirectoryName(filePath);
+            if (!string.IsNullOrEmpty(parentDir))
+            {
+                Directory.CreateDirectory(parentDir);
+            }
+
+            // Écrire le contenu du fichier
+            await File.WriteAllTextAsync(filePath, file.Content ?? "", cancellationToken);
+        }
     }
 
     private async Task UpdateChildrenPaths(Guid projectId, string oldPath, string newPath, CancellationToken cancellationToken)

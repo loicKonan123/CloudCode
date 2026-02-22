@@ -17,4 +17,9 @@ public interface IFileService
     Task<FileResponseDto> CopyAsync(Guid fileId, Guid userId, Guid? targetParentId = null, CancellationToken cancellationToken = default);
     Task DeleteAsync(Guid fileId, Guid userId, CancellationToken cancellationToken = default);
     Task<byte[]> DownloadProjectAsZipAsync(Guid projectId, Guid userId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Synchronise les fichiers du projet vers le répertoire de travail.
+    /// </summary>
+    Task SyncToWorkingDirectoryAsync(Guid projectId, Guid userId, CancellationToken cancellationToken = default);
 }

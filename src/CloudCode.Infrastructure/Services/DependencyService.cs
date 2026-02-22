@@ -478,10 +478,28 @@ public class DependencyService : IDependencyService
     {
         try
         {
+            var fileName = command;
+            var args = arguments;
+
+            // Sur Windows, les fichiers .cmd/.bat et npm doivent être exécutés via cmd.exe
+            if (OperatingSystem.IsWindows())
+            {
+                var cmdName = Path.GetFileName(command).ToLowerInvariant();
+                var needsCmd = command.EndsWith(".cmd", StringComparison.OrdinalIgnoreCase) ||
+                               command.EndsWith(".bat", StringComparison.OrdinalIgnoreCase) ||
+                               cmdName == "npm" || cmdName == "npx" || cmdName == "yarn";
+
+                if (needsCmd)
+                {
+                    fileName = "cmd.exe";
+                    args = $"/c \"{command}\" {arguments}";
+                }
+            }
+
             var psi = new ProcessStartInfo
             {
-                FileName = command,
-                Arguments = arguments,
+                FileName = fileName,
+                Arguments = args,
                 WorkingDirectory = workingDirectory,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
@@ -542,12 +560,37 @@ public class DependencyService : IDependencyService
 
     private string GetNodePath()
     {
-        return _configuration.GetValue<string>("Terminal:NodePath") ?? "node";
+        var configured = _configuration.GetValue<string>("Terminal:NodePath");
+        if (!string.IsNullOrEmpty(configured))
+            return configured;
+
+        // Sur Windows, utiliser le chemin complet
+        if (OperatingSystem.IsWindows())
+        {
+            var programFilesNode = @"C:\Program Files\nodejs\node.exe";
+            if (File.Exists(programFilesNode))
+                return programFilesNode;
+        }
+
+        return "node";
     }
 
     private string GetNpmPath()
     {
-        return _configuration.GetValue<string>("Terminal:NpmPath") ?? "npm";
+        var configured = _configuration.GetValue<string>("Terminal:NpmPath");
+        if (!string.IsNullOrEmpty(configured))
+            return configured;
+
+        // Sur Windows, utiliser npm.cmd pour éviter les problèmes de PATH
+        if (OperatingSystem.IsWindows())
+        {
+            // Chercher npm.cmd dans Program Files
+            var programFilesNpm = @"C:\Program Files\nodejs\npm.cmd";
+            if (File.Exists(programFilesNpm))
+                return programFilesNpm;
+        }
+
+        return "npm";
     }
 
     private static DependencyType GetDependencyTypeForLanguage(ProgrammingLanguage language)

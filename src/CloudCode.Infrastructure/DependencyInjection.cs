@@ -42,9 +42,10 @@ public static class DependencyInjection
         services.AddScoped<IFileService, FileService>();
         services.AddScoped<ICollaborationService, CollaborationService>();
         services.AddScoped<IDependencyService, DependencyService>();
+        services.AddScoped<IEnvironmentService, EnvironmentService>();
         services.AddHttpClient<IAIService, AIService>();
         services.AddSingleton<PasswordHasher>();
-
+        services.AddSingleton<IPortDetectionService, PortDetectionService>();
         // JWT Authentication
         var jwtSecretKey = configuration["Jwt:SecretKey"]
             ?? throw new InvalidOperationException("JWT SecretKey not configured");

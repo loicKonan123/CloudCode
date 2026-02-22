@@ -10,19 +10,25 @@ import '@xterm/xterm/css/xterm.css';
 
 interface TerminalProps {
   projectId: string;
+  terminalId?: string;
   isVisible: boolean;
   onClose: () => void;
   onToggleMaximize?: () => void;
   isMaximized?: boolean;
+  showHeader?: boolean;
 }
 
 export default function Terminal({
   projectId,
+  terminalId,
   isVisible,
   onClose,
   onToggleMaximize,
-  isMaximized = false
+  isMaximized = false,
+  showHeader = true,
 }: TerminalProps) {
+  // Générer un terminalId par défaut si non fourni
+  const effectiveTerminalId = useRef(terminalId || Math.random().toString(36).substring(2, 10));
   const terminalRef = useRef<HTMLDivElement>(null);
   const xtermRef = useRef<XTerm | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
@@ -34,6 +40,8 @@ export default function Terminal({
   const [connectionFailed, setConnectionFailed] = useState(false);
   const retryCountRef = useRef(0);
   const maxRetries = 3;
+  const isConnectingRef = useRef(false);
+  const mountedRef = useRef(true);
 
   const getThemeColors = useCallback(() => {
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
@@ -64,7 +72,7 @@ export default function Terminal({
 
   const sendResize = useCallback((cols: number, rows: number) => {
     if (connectionRef.current?.state === 'Connected') {
-      connectionRef.current.invoke('ResizeTerminal', projectId, cols, rows).catch(() => {});
+      connectionRef.current.invoke('ResizeTerminal', projectId, effectiveTerminalId.current, cols, rows).catch(() => {});
     }
   }, [projectId]);
 
@@ -120,7 +128,9 @@ export default function Terminal({
   }, [getThemeColors, sendResize]);
 
   const connectToHub = useCallback(async (isManualRetry = false) => {
-    if (connectionRef.current?.state === 'Connected' || isConnecting) return;
+    // Double-check with ref to prevent race conditions
+    if (isConnectingRef.current) return;
+    if (connectionRef.current?.state === 'Connected') return;
 
     if (connectionFailed && !isManualRetry) return;
 
@@ -137,7 +147,10 @@ export default function Terminal({
       return;
     }
 
+    // Set connecting state synchronously with ref
+    isConnectingRef.current = true;
     setIsConnecting(true);
+
     if (isManualRetry) {
       retryCountRef.current = 0;
       setConnectionFailed(false);
@@ -185,7 +198,7 @@ export default function Terminal({
 
       connection.onreconnected(() => {
         xtermRef.current?.writeln('\r\n\x1b[32mReconnecte!\x1b[0m\r\n');
-        connection.invoke('CreateSession', projectId);
+        connection.invoke('CreateSession', projectId, effectiveTerminalId.current);
       });
 
       connection.onclose(() => {
@@ -197,7 +210,7 @@ export default function Terminal({
       connectionRef.current = connection;
 
       // Create terminal session
-      await connection.invoke('CreateSession', projectId);
+      await connection.invoke('CreateSession', projectId, effectiveTerminalId.current);
 
       // Dispose previous onData handler if exists
       if (onDataDisposableRef.current) {
@@ -209,7 +222,7 @@ export default function Terminal({
       if (xtermRef.current) {
         onDataDisposableRef.current = xtermRef.current.onData((data) => {
           if (connection.state === 'Connected') {
-            connection.invoke('SendInput', projectId, data);
+            connection.invoke('SendInput', projectId, effectiveTerminalId.current, data);
           }
         });
       }
@@ -229,9 +242,12 @@ export default function Terminal({
         xtermRef.current?.writeln(`\r\n\x1b[31mErreur de connexion (tentative ${retryCountRef.current}/${maxRetries})\x1b[0m`);
       }
     } finally {
-      setIsConnecting(false);
+      isConnectingRef.current = false;
+      if (mountedRef.current) {
+        setIsConnecting(false);
+      }
     }
-  }, [projectId, isConnecting, connectionFailed, sendResize]);
+  }, [projectId, connectionFailed, sendResize]);
 
   const disconnectFromHub = useCallback(async () => {
     if (onDataDisposableRef.current) {
@@ -241,7 +257,7 @@ export default function Terminal({
 
     if (connectionRef.current) {
       try {
-        await connectionRef.current.invoke('CloseSession', projectId);
+        await connectionRef.current.invoke('CloseSession', projectId, effectiveTerminalId.current);
         await connectionRef.current.stop();
       } catch {}
       connectionRef.current = null;
@@ -272,10 +288,18 @@ export default function Terminal({
 
   // Connect to hub after initialization
   useEffect(() => {
-    if (isVisible && xtermRef.current && !isConnected && !isConnecting && !connectionFailed) {
+    if (isVisible && xtermRef.current && !isConnected && !isConnectingRef.current && !connectionFailed) {
       connectToHub();
     }
-  }, [isVisible, isConnected, isConnecting, connectionFailed, connectToHub]);
+  }, [isVisible, isConnected, connectionFailed, connectToHub]);
+
+  // Track mounted state
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -288,11 +312,16 @@ export default function Terminal({
         onResizeDisposableRef.current.dispose();
         onResizeDisposableRef.current = null;
       }
-      disconnectFromHub();
+      // Close session before disconnecting
+      if (connectionRef.current?.state === 'Connected') {
+        connectionRef.current.invoke('CloseSession', projectId, effectiveTerminalId.current).catch(() => {});
+        connectionRef.current.stop().catch(() => {});
+        connectionRef.current = null;
+      }
       xtermRef.current?.dispose();
       xtermRef.current = null;
     };
-  }, [disconnectFromHub]);
+  }, [projectId]);
 
   // Refit when size changes
   useEffect(() => {
@@ -328,58 +357,60 @@ export default function Terminal({
 
   return (
     <div className="flex flex-col h-full bg-[var(--bg-secondary)] border-l border-[var(--border)]">
-      {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2 border-b border-[var(--border)] bg-[var(--bg-tertiary)]">
-        <div className="flex items-center gap-2">
-          <TerminalSquare className="w-4 h-4 text-[var(--primary)]" />
-          <span className="text-sm font-medium text-[var(--text-primary)]">Terminal</span>
-          {isConnected && (
-            <span className="w-2 h-2 rounded-full bg-green-500" title="Connecte" />
-          )}
-          {isConnecting && (
-            <span className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" title="Connexion..." />
-          )}
-          {connectionFailed && !isConnecting && (
-            <span className="w-2 h-2 rounded-full bg-red-500" title="Connexion echouee" />
-          )}
-        </div>
-        <div className="flex items-center gap-1">
-          <button
-            onClick={handleClearTerminal}
-            className="p-1.5 rounded hover:bg-[var(--bg-hover)] transition-colors"
-            title="Effacer le terminal (Ctrl+L)"
-          >
-            <Trash2 className="w-4 h-4 text-[var(--text-muted)]" />
-          </button>
-          <button
-            onClick={handleReconnect}
-            className="p-1.5 rounded hover:bg-[var(--bg-hover)] transition-colors"
-            title="Reconnecter"
-          >
-            <RefreshCw className={`w-4 h-4 text-[var(--text-muted)] ${isConnecting ? 'animate-spin' : ''}`} />
-          </button>
-          {onToggleMaximize && (
+      {/* Header - optionnel */}
+      {showHeader && (
+        <div className="flex items-center justify-between px-3 py-2 border-b border-[var(--border)] bg-[var(--bg-tertiary)]">
+          <div className="flex items-center gap-2">
+            <TerminalSquare className="w-4 h-4 text-[var(--primary)]" />
+            <span className="text-sm font-medium text-[var(--text-primary)]">Terminal</span>
+            {isConnected && (
+              <span className="w-2 h-2 rounded-full bg-green-500" title="Connecte" />
+            )}
+            {isConnecting && (
+              <span className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" title="Connexion..." />
+            )}
+            {connectionFailed && !isConnecting && (
+              <span className="w-2 h-2 rounded-full bg-red-500" title="Connexion echouee" />
+            )}
+          </div>
+          <div className="flex items-center gap-1">
             <button
-              onClick={onToggleMaximize}
+              onClick={handleClearTerminal}
               className="p-1.5 rounded hover:bg-[var(--bg-hover)] transition-colors"
-              title={isMaximized ? 'Reduire' : 'Agrandir'}
+              title="Effacer le terminal (Ctrl+L)"
             >
-              {isMaximized ? (
-                <Minimize2 className="w-4 h-4 text-[var(--text-muted)]" />
-              ) : (
-                <Maximize2 className="w-4 h-4 text-[var(--text-muted)]" />
-              )}
+              <Trash2 className="w-4 h-4 text-[var(--text-muted)]" />
             </button>
-          )}
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded hover:bg-[var(--bg-hover)] transition-colors"
-            title="Fermer"
-          >
-            <X className="w-4 h-4 text-[var(--text-muted)]" />
-          </button>
+            <button
+              onClick={handleReconnect}
+              className="p-1.5 rounded hover:bg-[var(--bg-hover)] transition-colors"
+              title="Reconnecter"
+            >
+              <RefreshCw className={`w-4 h-4 text-[var(--text-muted)] ${isConnecting ? 'animate-spin' : ''}`} />
+            </button>
+            {onToggleMaximize && (
+              <button
+                onClick={onToggleMaximize}
+                className="p-1.5 rounded hover:bg-[var(--bg-hover)] transition-colors"
+                title={isMaximized ? 'Reduire' : 'Agrandir'}
+              >
+                {isMaximized ? (
+                  <Minimize2 className="w-4 h-4 text-[var(--text-muted)]" />
+                ) : (
+                  <Maximize2 className="w-4 h-4 text-[var(--text-muted)]" />
+                )}
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded hover:bg-[var(--bg-hover)] transition-colors"
+              title="Fermer"
+            >
+              <X className="w-4 h-4 text-[var(--text-muted)]" />
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Terminal container */}
       <div

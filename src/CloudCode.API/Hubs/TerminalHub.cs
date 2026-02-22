@@ -1,3 +1,4 @@
+using CloudCode.Application.Interfaces;
 using CloudCode.Domain.Enums;
 using CloudCode.Domain.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -17,29 +18,40 @@ public class TerminalHub : Hub
     private readonly IConfiguration _configuration;
     private readonly IHubContext<TerminalHub> _hubContext;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IFileService _fileService;
     private readonly ILogger<TerminalHub> _logger;
 
     public TerminalHub(
         IConfiguration configuration,
         IHubContext<TerminalHub> hubContext,
         IUnitOfWork unitOfWork,
+        IFileService fileService,
         ILogger<TerminalHub> logger)
     {
         _configuration = configuration;
         _hubContext = hubContext;
         _unitOfWork = unitOfWork;
+        _fileService = fileService;
         _logger = logger;
     }
 
-    public async Task CreateSession(Guid projectId)
+    /// <summary>
+    /// Crée une nouvelle session terminal. Supporte plusieurs terminaux par projet.
+    /// </summary>
+    /// <param name="projectId">ID du projet</param>
+    /// <param name="terminalId">ID unique du terminal (optionnel, généré si null)</param>
+    public async Task CreateSession(Guid projectId, string? terminalId = null)
     {
         var userId = GetUserId();
         if (string.IsNullOrEmpty(userId)) return;
 
-        var sessionId = $"{userId}_{projectId}";
+        // Générer un ID si non fourni
+        terminalId ??= Guid.NewGuid().ToString("N")[..8];
+        var sessionKey = GetSessionKey(userId, projectId, terminalId);
         var connectionId = Context.ConnectionId;
 
-        if (Sessions.TryRemove(sessionId, out var existingSession))
+        // Supprimer l'ancienne session si elle existe (même terminalId)
+        if (Sessions.TryRemove(sessionKey, out var existingSession))
         {
             existingSession.Dispose();
         }
@@ -50,16 +62,32 @@ public class TerminalHub : Hub
         var project = await _unitOfWork.Projects.GetByIdAsync(projectId);
         var projectLanguage = project?.Language ?? ProgrammingLanguage.JavaScript;
 
-        var terminal = new ConPtyTerminal(connectionId, _hubContext, _logger);
+        // Synchroniser les fichiers du projet vers le répertoire de travail (seulement pour le premier terminal)
+        var isFirstTerminal = !Sessions.Keys.Any(k => k.StartsWith($"{userId}_{projectId}_"));
+        if (isFirstTerminal)
+        {
+            try
+            {
+                await _fileService.SyncToWorkingDirectoryAsync(projectId, Guid.Parse(userId));
+                _logger.LogInformation("Fichiers synchronisés pour le projet {ProjectId}", projectId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Erreur lors de la synchronisation des fichiers");
+            }
+        }
+
+        var terminal = new ConPtyTerminal(connectionId, _hubContext, _logger, terminalId);
 
         try
         {
             terminal.Start(workDir, 120, 30);
-            Sessions[sessionId] = terminal;
+            Sessions[sessionKey] = terminal;
 
             await Clients.Caller.SendAsync("TerminalReady", new
             {
-                SessionId = sessionId,
+                SessionId = sessionKey,
+                TerminalId = terminalId,
                 WorkingDirectory = workDir,
                 Shell = "powershell.exe"
             });
@@ -74,31 +102,37 @@ public class TerminalHub : Hub
         }
     }
 
-    public async Task SendInput(Guid projectId, string input)
+    /// <summary>
+    /// Envoie une entrée utilisateur au terminal spécifié.
+    /// </summary>
+    public async Task SendInput(Guid projectId, string terminalId, string input)
     {
         var userId = GetUserId();
         if (string.IsNullOrEmpty(userId)) return;
 
-        var sessionId = $"{userId}_{projectId}";
+        var sessionKey = GetSessionKey(userId, projectId, terminalId);
 
-        if (Sessions.TryGetValue(sessionId, out var terminal))
+        if (Sessions.TryGetValue(sessionKey, out var terminal))
         {
             terminal.Write(input);
         }
         else
         {
-            await Clients.Caller.SendAsync("TerminalError", "Session non trouvee.");
+            await Clients.Caller.SendAsync("TerminalError", $"Session '{terminalId}' non trouvée.");
         }
     }
 
-    public Task ResizeTerminal(Guid projectId, int cols, int rows)
+    /// <summary>
+    /// Redimensionne le terminal spécifié.
+    /// </summary>
+    public Task ResizeTerminal(Guid projectId, string terminalId, int cols, int rows)
     {
         var userId = GetUserId();
         if (string.IsNullOrEmpty(userId)) return Task.CompletedTask;
 
-        var sessionId = $"{userId}_{projectId}";
+        var sessionKey = GetSessionKey(userId, projectId, terminalId);
 
-        if (Sessions.TryGetValue(sessionId, out var terminal))
+        if (Sessions.TryGetValue(sessionKey, out var terminal))
         {
             terminal.Resize(cols, rows);
         }
@@ -106,18 +140,43 @@ public class TerminalHub : Hub
         return Task.CompletedTask;
     }
 
-    public async Task CloseSession(Guid projectId)
+    /// <summary>
+    /// Ferme un terminal spécifique.
+    /// </summary>
+    public async Task CloseSession(Guid projectId, string terminalId)
     {
         var userId = GetUserId();
         if (string.IsNullOrEmpty(userId)) return;
 
-        var sessionId = $"{userId}_{projectId}";
+        var sessionKey = GetSessionKey(userId, projectId, terminalId);
 
-        if (Sessions.TryRemove(sessionId, out var terminal))
+        if (Sessions.TryRemove(sessionKey, out var terminal))
         {
             terminal.Dispose();
-            await Clients.Caller.SendAsync("TerminalClosed");
+            await Clients.Caller.SendAsync("TerminalClosed", terminalId);
         }
+    }
+
+    /// <summary>
+    /// Liste tous les terminaux actifs pour un projet.
+    /// </summary>
+    public Task<List<TerminalSessionInfo>> ListSessions(Guid projectId)
+    {
+        var userId = GetUserId();
+        if (string.IsNullOrEmpty(userId)) return Task.FromResult(new List<TerminalSessionInfo>());
+
+        var prefix = $"{userId}_{projectId}_";
+        var sessions = Sessions
+            .Where(s => s.Key.StartsWith(prefix))
+            .Select(s => new TerminalSessionInfo
+            {
+                TerminalId = s.Value.TerminalId,
+                CreatedAt = s.Value.CreatedAt
+            })
+            .OrderBy(s => s.CreatedAt)
+            .ToList();
+
+        return Task.FromResult(sessions);
     }
 
     public override Task OnDisconnectedAsync(Exception? exception)
@@ -140,10 +199,15 @@ public class TerminalHub : Hub
 
     private string? GetUserId() => Context.User?.FindFirst("userId")?.Value;
 
+    private static string GetSessionKey(string userId, Guid projectId, string terminalId)
+        => $"{userId}_{projectId}_{terminalId}";
+
     private string GetProjectWorkingDirectory(Guid projectId)
     {
-        var baseDir = _configuration.GetValue<string>("Terminal:WorkingDirectory")
-            ?? Path.Combine(Path.GetTempPath(), "cloudcode_projects");
+        var configuredDir = _configuration.GetValue<string>("Terminal:WorkingDirectory");
+        var baseDir = !string.IsNullOrEmpty(configuredDir)
+            ? configuredDir
+            : Path.Combine(Path.GetTempPath(), "cloudcode_projects");
         return Path.Combine(baseDir, projectId.ToString());
     }
 
@@ -189,11 +253,23 @@ public class ConPtyTerminal : IDisposable
     private Thread? _readThread;
     private volatile bool _disposed;
 
-    public ConPtyTerminal(string connectionId, IHubContext<TerminalHub> hubContext, ILogger logger)
+    /// <summary>
+    /// Identifiant unique du terminal (pour multi-terminal).
+    /// </summary>
+    public string TerminalId { get; }
+
+    /// <summary>
+    /// Date de création du terminal.
+    /// </summary>
+    public DateTime CreatedAt { get; }
+
+    public ConPtyTerminal(string connectionId, IHubContext<TerminalHub> hubContext, ILogger logger, string terminalId)
     {
         _connectionId = connectionId;
         _hubContext = hubContext;
         _logger = logger;
+        TerminalId = terminalId;
+        CreatedAt = DateTime.UtcNow;
     }
 
     public void Start(string workingDirectory, int cols, int rows)
@@ -438,4 +514,13 @@ public class ConPtyTerminal : IDisposable
     private static extern bool TerminateProcess(IntPtr hProcess, uint uExitCode);
 
     #endregion
+}
+
+/// <summary>
+/// Informations sur une session terminal active.
+/// </summary>
+public class TerminalSessionInfo
+{
+    public string TerminalId { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; }
 }

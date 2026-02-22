@@ -5,10 +5,16 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5072';
 let connection: signalR.HubConnection | null = null;
 let isConnecting = false;
 let isStopped = false;
+let connectionPromise: Promise<signalR.HubConnection | null> | null = null;
 
 export const createSignalRConnection = () => {
-  if (connection) {
+  if (connection && connection.state !== signalR.HubConnectionState.Disconnected) {
     return connection;
+  }
+
+  // Clean up old connection if disconnected
+  if (connection) {
+    connection = null;
   }
 
   connection = new signalR.HubConnectionBuilder()
@@ -17,68 +23,124 @@ export const createSignalRConnection = () => {
       skipNegotiation: true,
       transport: signalR.HttpTransportType.WebSockets,
     })
-    .withAutomaticReconnect()
-    .configureLogging(signalR.LogLevel.Warning)
+    .withAutomaticReconnect([0, 1000, 5000, 10000]) // Retry delays
+    .configureLogging(signalR.LogLevel.Error) // Reduce noise from negotiation errors
     .build();
 
   return connection;
 };
 
 export const startConnection = async (): Promise<signalR.HubConnection | null> => {
-  // Don't start if already connecting or if stopped
-  if (isConnecting || isStopped) {
-    return connection;
+  // Don't start if stopped
+  if (isStopped) {
+    return null;
   }
 
-  // Reset connection if disconnected
-  if (connection && connection.state === signalR.HubConnectionState.Disconnected) {
-    connection = null;
+  // If already connecting, return the existing promise to avoid multiple connections
+  if (isConnecting && connectionPromise) {
+    return connectionPromise;
+  }
+
+  // If already connected, return existing connection
+  if (connection && connection.state === signalR.HubConnectionState.Connected) {
+    return connection;
   }
 
   const conn = createSignalRConnection();
 
   if (conn.state === signalR.HubConnectionState.Disconnected) {
-    try {
-      isConnecting = true;
-      await conn.start();
-      isConnecting = false;
+    isConnecting = true;
 
-      // Check if stop was called while we were connecting
-      if (isStopped) {
-        conn.stop().catch(() => {});
+    connectionPromise = (async () => {
+      try {
+        // Double-check stop wasn't called
+        if (isStopped) {
+          return null;
+        }
+
+        await conn.start();
+
+        // Check if stop was called while we were connecting
+        if (isStopped) {
+          conn.stop().catch(() => {});
+          connection = null;
+          return null;
+        }
+
+        console.log('SignalR Connected');
+        return conn;
+      } catch (error: unknown) {
+        // Ignore expected errors when navigating away
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const isExpectedError =
+          errorMessage.includes('stop') ||
+          errorMessage.includes('abort') ||
+          errorMessage.includes('negotiation') ||
+          errorMessage.includes('HttpConnection') ||
+          isStopped;
+
+        if (!isExpectedError) {
+          console.error('SignalR Connection Error:', error);
+        }
+
         connection = null;
         return null;
+      } finally {
+        isConnecting = false;
+        connectionPromise = null;
       }
+    })();
 
-      console.log('SignalR Connected');
-      return conn;
-    } catch (error: unknown) {
-      isConnecting = false;
-      // Ignore "stopped during negotiation" error - this is expected when navigating away
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      if (!errorMessage.includes('stop') && !errorMessage.includes('abort')) {
-        console.error('SignalR Connection Error:', error);
-      }
-      connection = null;
-      return null;
-    }
+    return connectionPromise;
+  }
+
+  // Connection is in Connecting or Reconnecting state
+  if (conn.state === signalR.HubConnectionState.Connecting ||
+      conn.state === signalR.HubConnectionState.Reconnecting) {
+    // Wait a bit and return the connection
+    return new Promise((resolve) => {
+      const checkState = () => {
+        if (conn.state === signalR.HubConnectionState.Connected) {
+          resolve(conn);
+        } else if (conn.state === signalR.HubConnectionState.Disconnected || isStopped) {
+          resolve(null);
+        } else {
+          setTimeout(checkState, 100);
+        }
+      };
+      checkState();
+    });
   }
 
   return conn;
 };
 
-export const stopConnection = () => {
+export const stopConnection = async () => {
   isStopped = true;
+
+  // Wait for any ongoing connection attempt to finish
+  if (connectionPromise) {
+    await connectionPromise.catch(() => {});
+  }
+
   if (connection) {
     const conn = connection;
     connection = null;
-    conn.stop().catch(() => {});
+    try {
+      await conn.stop();
+    } catch {
+      // Ignore stop errors
+    }
   }
+
+  isConnecting = false;
+  connectionPromise = null;
 };
 
 export const resetConnectionState = () => {
   isStopped = false;
   isConnecting = false;
+  connectionPromise = null;
 };
 
 export const getConnection = () => connection;

@@ -47,6 +47,9 @@ builder.Services.AddInfrastructureServices(builder.Configuration);
 // SignalR
 builder.Services.AddSignalR();
 
+// HttpClient for reverse proxy
+builder.Services.AddHttpClient();
+
 // Health Checks
 builder.Services.AddHealthChecks();
 
@@ -87,6 +90,9 @@ app.UseCors("CorsPolicy");
 app.UseAuthentication();
 app.UseAuthorization();
 
+// Reverse proxy for user applications (after auth)
+app.UseReverseProxy();
+
 app.MapControllers();
 
 // Health Check endpoint
@@ -95,7 +101,6 @@ app.MapHealthChecks("/health");
 // SignalR Hubs
 app.MapHub<CodeHub>("/hubs/code");
 app.MapHub<TerminalHub>("/hubs/terminal");
-
 Console.WriteLine("CloudCode API running at: http://localhost:5072");
 Console.WriteLine("Swagger UI: http://localhost:5072/swagger");
 

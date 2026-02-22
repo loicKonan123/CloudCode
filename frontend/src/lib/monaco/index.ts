@@ -37,6 +37,7 @@ export function configureMonaco(monaco: Monaco): void {
 export const enhancedEditorOptions: monacoEditor.editor.IStandaloneEditorConstructionOptions = {
   fontSize: 14,
   minimap: { enabled: false },
+  glyphMargin: true,
   scrollBeyondLastLine: false,
   automaticLayout: true,
   tabSize: 2,
