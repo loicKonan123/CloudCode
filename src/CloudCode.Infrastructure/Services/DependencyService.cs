@@ -335,6 +335,14 @@ public class DependencyService : IDependencyService
         }
         else
         {
+            // Sur Windows, les processus Python actifs peuvent verrouiller les fichiers du venv.
+            // On termine ces processus avant d'installer pour éviter WinError 32.
+            var killed = KillVenvProcesses(venvPath);
+            if (killed > 0)
+            {
+                output.AppendLine($"Processus Python terminés ({killed}) pour libérer le venv.");
+                await Task.Delay(500, cancellationToken); // laisser l'OS libérer les handles
+            }
             output.AppendLine("Utilisation du venv existant.");
         }
 
@@ -382,6 +390,13 @@ public class DependencyService : IDependencyService
             else
             {
                 var errorMsg = !string.IsNullOrEmpty(cmdError) ? cmdError : "Erreur inconnue";
+
+                // Conseil spécifique pour WinError 32 (fichier verrouillé sur Windows)
+                if (errorMsg.Contains("WinError 32") || errorMsg.Contains("being used by another process"))
+                {
+                    errorMsg += "\n→ Conseil : fermez les terminaux Python ouverts pour ce projet, puis réessayez.";
+                }
+
                 output.AppendLine($"✗ {dep.Name}: {errorMsg}");
                 status.Error = errorMsg;
                 result.FailedCount++;
@@ -468,6 +483,59 @@ public class DependencyService : IDependencyService
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         result.Output = output.ToString();
         return result;
+    }
+
+    /// <summary>
+    /// Termine les processus Python qui utilisent le répertoire venv spécifié.
+    /// Nécessaire sur Windows pour éviter WinError 32 lors de l'installation pip.
+    /// </summary>
+    /// <returns>Nombre de processus tués.</returns>
+    private int KillVenvProcesses(string venvPath)
+    {
+        if (!OperatingSystem.IsWindows()) return 0;
+
+        var killed = 0;
+        try
+        {
+            var normalizedVenv = Path.GetFullPath(venvPath).ToLowerInvariant();
+            var names = new[] { "python", "python3", "pythonw" };
+
+            foreach (var name in names)
+            {
+                Process[] procs;
+                try { procs = Process.GetProcessesByName(name); }
+                catch { continue; }
+
+                foreach (var proc in procs)
+                {
+                    try
+                    {
+                        // MainModule.FileName accessible pour les processus du même utilisateur
+                        var exePath = proc.MainModule?.FileName?.ToLowerInvariant();
+                        if (exePath != null && exePath.StartsWith(normalizedVenv))
+                        {
+                            proc.Kill(entireProcessTree: true);
+                            killed++;
+                            _logger.LogInformation("Processus Python {PID} ({Path}) tué avant pip install", proc.Id, exePath);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogDebug(ex, "Impossible d'inspecter/tuer le processus {PID}", proc.Id);
+                    }
+                    finally
+                    {
+                        proc.Dispose();
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Erreur lors de la terminaison des processus Python");
+        }
+
+        return killed;
     }
 
     private async Task<(bool success, string output, string error)> RunCommandAsync(

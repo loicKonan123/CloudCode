@@ -22,4 +22,9 @@ public interface IFileService
     /// Synchronise les fichiers du projet vers le répertoire de travail.
     /// </summary>
     Task SyncToWorkingDirectoryAsync(Guid projectId, Guid userId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Recherche un texte dans tous les fichiers du projet.
+    /// </summary>
+    Task<IEnumerable<SearchResultDto>> SearchAsync(Guid projectId, Guid userId, string query, CancellationToken cancellationToken = default);
 }

@@ -484,6 +484,48 @@ public class FileService : IFileService
         }
     }
 
+    public async Task<IEnumerable<SearchResultDto>> SearchAsync(Guid projectId, Guid userId, string query, CancellationToken cancellationToken = default)
+    {
+        if (!await _projectService.UserHasAccessAsync(projectId, userId, cancellationToken))
+            throw new UnauthorizedException("ACCESS_DENIED", "Vous n'avez pas accès à ce projet.");
+
+        if (string.IsNullOrWhiteSpace(query) || query.Length < 2)
+            return [];
+
+        var files = await _unitOfWork.Files.GetByProjectIdAsync(projectId, cancellationToken);
+        var results = new List<SearchResultDto>();
+
+        foreach (var file in files.Where(f => !f.IsFolder && !string.IsNullOrEmpty(f.Content)))
+        {
+            var lines = file.Content!.Split('\n');
+            int matchCount = 0;
+
+            for (int i = 0; i < lines.Length && matchCount < 50; i++)
+            {
+                int col = lines[i].IndexOf(query, StringComparison.OrdinalIgnoreCase);
+                if (col >= 0)
+                {
+                    results.Add(new SearchResultDto
+                    {
+                        FileId = file.Id,
+                        FileName = file.Name,
+                        FilePath = file.Path,
+                        LineNumber = i + 1,
+                        LineContent = lines[i].Trim(),
+                        ColumnStart = col,
+                    });
+                    matchCount++;
+
+                    if (results.Count >= 200) break;
+                }
+            }
+
+            if (results.Count >= 200) break;
+        }
+
+        return results;
+    }
+
     private FileTreeItemDto BuildFileTreeItem(CodeFile file, Dictionary<Guid, CodeFile> fileDict)
     {
         var item = new FileTreeItemDto

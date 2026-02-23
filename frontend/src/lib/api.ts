@@ -250,4 +250,74 @@ export const environmentApi = {
     api.post<{ message: string }>(`/environment/project/${projectId}/sync`),
 };
 
+// ===========================================
+// Search API
+// ===========================================
+export const searchApi = {
+  search: (projectId: string, query: string) =>
+    api.get<import('@/types').SearchResult[]>(`/files/project/${projectId}/search`, { params: { query } }),
+};
+
+// ===========================================
+// Formatting API
+// ===========================================
+export const formattingApi = {
+  format: (code: string, language: string) =>
+    api.post<import('@/types').FormattingResult>('/formatting/format', { code, language }),
+};
+
+// ===========================================
+// Git API
+// ===========================================
+export const gitApi = {
+  init: (projectId: string) =>
+    api.post<import('@/types').GitOperationResult>(`/projects/${projectId}/git/init`),
+
+  status: (projectId: string) =>
+    api.get<import('@/types').GitStatus>(`/projects/${projectId}/git/status`),
+
+  diff: (projectId: string, file?: string) =>
+    api.get<{ diff: string }>(`/projects/${projectId}/git/diff`, { params: file ? { file } : {} }),
+
+  stageAll: (projectId: string) =>
+    api.post<import('@/types').GitOperationResult>(`/projects/${projectId}/git/stage`),
+
+  stageFile: (projectId: string, filePath: string) =>
+    api.post<import('@/types').GitOperationResult>(`/projects/${projectId}/git/stage/${filePath}`),
+
+  unstageFile: (projectId: string, filePath: string) =>
+    api.post<import('@/types').GitOperationResult>(`/projects/${projectId}/git/unstage/${filePath}`),
+
+  commit: (projectId: string, message: string) =>
+    api.post<import('@/types').GitOperationResult>(`/projects/${projectId}/git/commit`, { message }),
+
+  push: (projectId: string, branch = 'main') =>
+    api.post<import('@/types').GitOperationResult>(`/projects/${projectId}/git/push`, { branch }),
+
+  pull: (projectId: string, branch = 'main') =>
+    api.post<import('@/types').GitOperationResult>(`/projects/${projectId}/git/pull`, { branch }),
+
+  branches: (projectId: string) =>
+    api.get<string[]>(`/projects/${projectId}/git/branches`),
+
+  checkout: (projectId: string, branch: string, create: boolean) =>
+    api.post<import('@/types').GitOperationResult>(`/projects/${projectId}/git/checkout`, { branch, create }),
+
+  log: (projectId: string, limit = 20) =>
+    api.get<import('@/types').GitCommit[]>(`/projects/${projectId}/git/log`, { params: { limit } }),
+
+  setRemote: (projectId: string, url: string) =>
+    api.post<import('@/types').GitOperationResult>(`/projects/${projectId}/git/remote`, { url }),
+
+  // Credentials
+  getCredentials: () =>
+    api.get<import('@/types').GitCredentialInfo | null>('/git/credentials'),
+
+  saveCredentials: (provider: string, token: string, username: string) =>
+    api.post('/git/credentials', { provider, token, username }),
+
+  deleteCredentials: () =>
+    api.delete('/git/credentials'),
+};
+
 export default api;

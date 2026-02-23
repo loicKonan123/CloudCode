@@ -160,4 +160,17 @@ public class FilesController : BaseApiController
 
         return File(zipBytes, "application/zip", $"project-{projectId}.zip");
     }
+
+    /// <summary>
+    /// Rechercher un texte dans tous les fichiers du projet.
+    /// </summary>
+    [HttpGet("project/{projectId:guid}/search")]
+    [ProducesResponseType(typeof(IEnumerable<SearchResultDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<IEnumerable<SearchResultDto>>> SearchFiles(Guid projectId, [FromQuery] string query)
+    {
+        var userId = GetRequiredUserId();
+        var results = await _fileService.SearchAsync(projectId, userId, query);
+        return Ok(results);
+    }
 }

@@ -259,6 +259,59 @@ export interface UpdateEnvironmentVariableDto {
   isSecret?: boolean;
 }
 
+// ===== Search Types =====
+export interface SearchResult {
+  fileId: string;
+  fileName: string;
+  filePath: string;
+  lineNumber: number;
+  lineContent: string;
+  columnStart: number;
+}
+
+// ===== Formatting Types =====
+export interface FormattingResult {
+  formattedCode: string;
+  success: boolean;
+  error?: string;
+}
+
+// ===== Git Types =====
+export interface GitFileStatus {
+  path: string;
+  status: string; // "M", "A", "D", "R", "?"
+}
+
+export interface GitStatus {
+  isRepo: boolean;
+  branch: string;
+  remoteUrl?: string;
+  staged: GitFileStatus[];
+  unstaged: GitFileStatus[];
+  untracked: GitFileStatus[];
+  aheadBy: number;
+  behindBy: number;
+}
+
+export interface GitCommit {
+  hash: string;
+  shortHash: string;
+  message: string;
+  author: string;
+  date: string;
+}
+
+export interface GitOperationResult {
+  success: boolean;
+  output: string;
+  error?: string;
+}
+
+export interface GitCredentialInfo {
+  provider: string;
+  username: string;
+}
+
 // ===== API Types =====
 export interface ApiError {
   code: string;

@@ -94,6 +94,21 @@ public class TerminalHub : Hub
 
             var welcome = BuildWelcomeMessage(workDir, projectLanguage);
             await Clients.Caller.SendAsync("TerminalOutput", welcome);
+
+            // Auto-activer le venv pour les projets Python
+            if (projectLanguage == ProgrammingLanguage.Python)
+            {
+                var venvActivate = Path.Combine(workDir, "venv", "Scripts", "Activate.ps1");
+                if (File.Exists(venvActivate))
+                {
+                    var terminalRef = terminal;
+                    _ = Task.Run(async () =>
+                    {
+                        await Task.Delay(1500); // laisser PowerShell démarrer
+                        terminalRef.Write($". \"{venvActivate}\"\r\n");
+                    });
+                }
+            }
         }
         catch (Exception ex)
         {
@@ -222,7 +237,7 @@ public class TerminalHub : Hub
         {
             var venvExists = Directory.Exists(Path.Combine(workDir, "venv"));
             if (venvExists)
-                sb.Append("\x1b[32m[Python] venv detecte.\x1b[0m Activez: \x1b[33m.\\venv\\Scripts\\Activate\x1b[0m\r\n\r\n");
+                sb.Append("\x1b[32m[Python] venv detecte - activation automatique...\x1b[0m\r\n\r\n");
             else
                 sb.Append("\x1b[33m[Python]\x1b[0m Creez un venv: \x1b[33mpython -m venv venv\x1b[0m\r\n\r\n");
         }
@@ -334,7 +349,7 @@ public class ConPtyTerminal : IDisposable
                 throw new Win32Exception(Marshal.GetLastWin32Error());
             }
 
-            string command = "powershell.exe -NoLogo";
+            string command = "powershell.exe -NoLogo -ExecutionPolicy Bypass";
 
             if (!CreateProcess(
                 null,

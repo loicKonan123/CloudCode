@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
-import { projectsApi, filesApi, executionApi } from '@/lib/api';
+import { projectsApi, filesApi, executionApi, formattingApi } from '@/lib/api';
 import { Project, CodeFile, ExecutionResult, ProgrammingLanguage } from '@/types';
 import * as signalR from '@microsoft/signalr';
 import { getMonacoLanguageFromFilename, getProgrammingLanguageFromFilename, getFileIcon } from '@/lib/utils';
@@ -40,12 +40,17 @@ import {
   Columns2,
   PanelRightClose,
   Eye,
+  Search,
+  GitBranch,
+  Wand2,
 } from 'lucide-react';
 import CollaboratorsModal from '@/components/collaboration/CollaboratorsModal';
 import PackageManager from '@/components/packages/PackageManager';
 import MultiTerminal from '@/components/terminal/MultiTerminal';
 import PreviewPanel from '@/components/preview/PreviewPanel';
 import EnvManager from '@/components/environment/EnvManager';
+import SearchPanel from '@/components/search/SearchPanel';
+import GitPanel from '@/components/git/GitPanel';
 import { ConfirmDialog, InputDialog, KeyboardShortcutsModal, ToastContainer, useToast, ThemeSwitcher, FontSizeControl, SettingsPanel, Breadcrumbs } from '@/components/ui';
 import { useThemeStore } from '@/stores/themeStore';
 import { useEditorStore } from '@/stores/editorStore';
@@ -91,6 +96,9 @@ export default function IDEPage() {
   const [isSplitView, setIsSplitView] = useState(false);
   const [splitActiveTabId, setSplitActiveTabId] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [showGit, setShowGit] = useState(false);
+  const [isFormatting, setIsFormatting] = useState(false);
 
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -338,6 +346,38 @@ export default function IDEPage() {
     },
     [openTabs]
   );
+
+  // Format the active file (Alt+Shift+F)
+  const handleFormat = useCallback(async () => {
+    if (!activeTab || isFormatting) return;
+    const language = getProgrammingLanguageFromFilename(activeTab.file.name) || 'javascript';
+    try {
+      setIsFormatting(true);
+      const res = await formattingApi.format(activeTab.content, language.toString().toLowerCase());
+      if (res.data.success) {
+        updateTabContent(activeTabId!, res.data.formattedCode);
+        toast.success('Code formaté');
+      } else {
+        toast.error(res.data.error || 'Formateur indisponible');
+      }
+    } catch {
+      toast.error('Erreur de formatage');
+    } finally {
+      setIsFormatting(false);
+    }
+  }, [activeTab, activeTabId, isFormatting, updateTabContent, toast]);
+
+  // Navigate to search result
+  const handleSearchResultClick = useCallback((fileId: string, lineNumber: number) => {
+    const file = files.find(f => f.id === fileId);
+    if (file) {
+      handleFileSelect(file);
+      setTimeout(() => {
+        const ed = (window as unknown as { monacoEditor?: { revealLineInCenter: (n: number) => void } }).monacoEditor;
+        ed?.revealLineInCenter(lineNumber);
+      }, 300);
+    }
+  }, [files]);
 
   const handleCodeChange = useCallback(
     (value: string | undefined) => {
@@ -599,11 +639,28 @@ export default function IDEPage() {
         e.preventDefault();
         setShowPreview(!showPreview);
       }
+      // Ctrl+Shift+F - Toggle search
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'F') {
+        e.preventDefault();
+        setShowSearch(prev => !prev);
+        setShowGit(false);
+      }
+      // Ctrl+Shift+G - Toggle git
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'G') {
+        e.preventDefault();
+        setShowGit(prev => !prev);
+        setShowSearch(false);
+      }
+      // Alt+Shift+F - Format code
+      if (e.altKey && e.shiftKey && e.key === 'F') {
+        e.preventDefault();
+        handleFormat();
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedFile, code, activeTabId, showOutput, showTerminal, showPreview]);
+  }, [selectedFile, code, activeTabId, showOutput, showTerminal, showPreview, handleFormat]);
 
   // Cleanup auto-save timer and warn on page leave
   useEffect(() => {
@@ -849,6 +906,16 @@ export default function IDEPage() {
             {isRunning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
             Exécuter
           </button>
+
+          <button
+            onClick={handleFormat}
+            disabled={!selectedFile || isFormatting}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg transition disabled:opacity-50"
+            title="Formater le code (Alt+Shift+F)"
+          >
+            {isFormatting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+            Formater
+          </button>
         </div>
       </header>
 
@@ -905,6 +972,34 @@ export default function IDEPage() {
           >
             <TerminalSquare className="w-4 h-4" />
             <span>Terminal</span>
+          </button>
+
+          {/* Search Button */}
+          <button
+            onClick={() => { setShowSearch(prev => !prev); setShowGit(false); }}
+            className={`mx-3 mt-2 flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition ${
+              showSearch
+                ? 'bg-blue-600/30 text-blue-400 hover:bg-blue-600/40'
+                : 'bg-gray-700/50 hover:bg-gray-700 text-gray-300 hover:text-white'
+            }`}
+            title="Recherche (Ctrl+Shift+F)"
+          >
+            <Search className="w-4 h-4" />
+            <span>Recherche</span>
+          </button>
+
+          {/* Git Button */}
+          <button
+            onClick={() => { setShowGit(prev => !prev); setShowSearch(false); }}
+            className={`mx-3 mt-2 flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition ${
+              showGit
+                ? 'bg-purple-600/30 text-purple-400 hover:bg-purple-600/40'
+                : 'bg-gray-700/50 hover:bg-gray-700 text-gray-300 hover:text-white'
+            }`}
+            title="Git (Ctrl+Shift+G)"
+          >
+            <GitBranch className="w-4 h-4" />
+            <span>Git</span>
           </button>
 
           <div className="flex-1 overflow-y-auto p-2">
@@ -1087,6 +1182,24 @@ export default function IDEPage() {
               </div>
             )}
           </div>
+
+          {/* Search Panel - Left overlay */}
+          {showSearch && (
+            <SearchPanel
+              projectId={projectId}
+              files={files}
+              onClose={() => setShowSearch(false)}
+              onResultClick={handleSearchResultClick}
+            />
+          )}
+
+          {/* Git Panel - Left overlay */}
+          {showGit && (
+            <GitPanel
+              projectId={projectId}
+              onClose={() => setShowGit(false)}
+            />
+          )}
 
           {/* Preview Panel - Right Side */}
           {showPreview && (

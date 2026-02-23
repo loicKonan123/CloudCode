@@ -21,6 +21,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<ProjectDependency> ProjectDependencies => Set<ProjectDependency>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<EnvironmentVariable> EnvironmentVariables => Set<EnvironmentVariable>();
+    public DbSet<GitCredential> GitCredentials => Set<GitCredential>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
