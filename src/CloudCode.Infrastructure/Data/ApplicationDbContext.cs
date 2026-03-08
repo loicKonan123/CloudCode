@@ -28,6 +28,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<UserProgress> UserProgress => Set<UserProgress>();
     public DbSet<Course> Courses => Set<Course>();
     public DbSet<CourseChallenge> CourseChallenges => Set<CourseChallenge>();
+    public DbSet<VsMatch> VsMatches => Set<VsMatch>();
+    public DbSet<VsRank> VsRanks => Set<VsRank>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -210,6 +210,116 @@ export interface CreateCourseDto {
   challengeIds: string[];
 }
 
+// ===== VS Mode Types =====
+export enum VsMatchStatus {
+  Waiting = 1,
+  InProgress = 2,
+  Finished = 3,
+  Cancelled = 4,
+}
+
+export interface VsPlayer {
+  id: string;
+  username: string;
+  avatar?: string;
+  elo: number;
+  tier: string;
+  submitted: boolean;
+}
+
+export interface VsRank {
+  userId: string;
+  username: string;
+  avatar?: string;
+  elo: number;
+  tier: string;
+  wins: number;
+  losses: number;
+  draws: number;
+  currentStreak: number;
+  bestStreak: number;
+  gamesPlayed: number;
+  winRate: number;
+}
+
+export interface VsMatch {
+  id: string;
+  player1: VsPlayer;
+  player2: VsPlayer;
+  challengeTitle: string;
+  challengeSlug: string;
+  language: string;
+  status: VsMatchStatus;
+  winnerId?: string;
+  startedAt?: string;
+  finishedAt?: string;
+  player1EloChange: number;
+  player2EloChange: number;
+}
+
+export interface VsMatchResult {
+  passed: boolean;
+  passedTests: number;
+  totalTests: number;
+  score: number;
+  executionTimeMs: number;
+  errorOutput?: string;
+}
+
+export interface VsLeaderboardEntry {
+  rank: number;
+  userId: string;
+  username: string;
+  avatar?: string;
+  elo: number;
+  tier: string;
+  wins: number;
+  losses: number;
+  winRate: number;
+}
+
+export interface MatchFoundPayload {
+  matchId: string;
+  opponent: VsPlayer;
+  challengeSlug: string;
+  challengeTitle: string;
+  language: string;
+}
+
+export interface MatchEndedPayload {
+  matchId: string;
+  winnerId?: string;
+  winnerUsername?: string;
+  player1EloChange: number;
+  player2EloChange: number;
+  isDraw: boolean;
+}
+
+export interface OpponentStatusPayload {
+  playerId: string;
+  event: 'submitting' | 'passed' | 'failed';
+}
+
+export const TierColors: Record<string, string> = {
+  Bronze: 'text-orange-600',
+  Silver: 'text-slate-400',
+  Gold: 'text-yellow-400',
+  Platinum: 'text-cyan-400',
+  Diamond: 'text-blue-400',
+  Master: 'text-purple-400',
+  Grandmaster: 'text-red-400',
+};
+
+export const TierGlows: Record<string, string> = {
+  Bronze: 'shadow-orange-600/30',
+  Silver: 'shadow-slate-400/30',
+  Gold: 'shadow-yellow-400/30',
+  Platinum: 'shadow-cyan-400/30',
+  Diamond: 'shadow-blue-400/30',
+  Master: 'shadow-purple-400/30',
+  Grandmaster: 'shadow-red-400/30',
+};
+
 // ===== Admin Types =====
 export interface AdminUser {
   id: string;

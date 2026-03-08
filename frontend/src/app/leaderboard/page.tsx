@@ -61,6 +61,9 @@ export default function LeaderboardPage() {
               <button onClick={() => router.push('/leaderboard')} className="text-[#3caff6] font-semibold text-sm">
                 Leaderboard
               </button>
+              <button onClick={() => router.push('/vs')} className="text-slate-400 hover:text-[#3caff6] transition-colors text-sm font-medium">
+                VS Mode
+              </button>
               {user?.isAdmin && (
                 <button onClick={() => router.push('/admin/challenges')} className="text-slate-400 hover:text-[#3caff6] transition-colors text-sm font-medium">
                   Admin
@@ -103,6 +106,12 @@ export default function LeaderboardPage() {
           <button onClick={() => { router.push('/leaderboard'); setMobileMenuOpen(false); }} className="block w-full text-left text-[#3caff6] font-semibold text-sm py-2">
             Leaderboard
           </button>
+          <button onClick={() => { router.push('/vs'); setMobileMenuOpen(false); }} className="block w-full text-left text-slate-400 hover:text-[#3caff6] text-sm font-medium py-2">
+            VS Mode
+          </button>
+              <button onClick={() => router.push('/vs')} className="text-slate-400 hover:text-[#3caff6] transition-colors text-sm font-medium">
+                VS Mode
+              </button>
           {user?.isAdmin && (
             <button onClick={() => { router.push('/admin/challenges'); setMobileMenuOpen(false); }} className="block w-full text-left text-slate-400 hover:text-[#3caff6] text-sm font-medium py-2">
               Admin

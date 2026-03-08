@@ -155,4 +155,30 @@ export const adminUsersApi = {
     api.post<import('@/types').AdminUser>(`/admin/users/${id}/toggle-admin`),
 };
 
+// ===========================================
+// VS Mode API
+// ===========================================
+export const vsApi = {
+  getMyRank: () =>
+    api.get<import('@/types').VsRank>('/vs/rank'),
+
+  getRank: (userId: string) =>
+    api.get<import('@/types').VsRank>(`/vs/rank/${userId}`),
+
+  getLeaderboard: () =>
+    api.get<import('@/types').VsLeaderboardEntry[]>('/vs/leaderboard'),
+
+  getMatch: (matchId: string) =>
+    api.get<import('@/types').VsMatch>(`/vs/matches/${matchId}`),
+
+  getHistory: () =>
+    api.get<import('@/types').VsMatch[]>('/vs/matches'),
+
+  submit: (matchId: string, code: string, language: string) =>
+    api.post<import('@/types').VsMatchResult>(`/vs/matches/${matchId}/submit`, { code, language }),
+
+  forfeit: (matchId: string) =>
+    api.post(`/vs/matches/${matchId}/forfeit`),
+};
+
 export default api;

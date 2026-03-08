@@ -105,6 +105,7 @@ app.MapHealthChecks("/health");
 // SignalR Hubs
 app.MapHub<CodeHub>("/hubs/code");
 app.MapHub<TerminalHub>("/hubs/terminal");
+app.MapHub<VsHub>("/hubs/vs");
 Console.WriteLine("CloudCode API running at: http://localhost:5072");
 Console.WriteLine("Swagger UI: http://localhost:5072/swagger");
 
