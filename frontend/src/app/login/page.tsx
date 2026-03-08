@@ -1,4 +1,5 @@
 'use client';
+import AnimatedLogo from '@/components/AnimatedLogo';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -24,14 +25,35 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: '#101b22' }}>
-      <div className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden app-grid" style={{ backgroundColor: '#101b22' }}>
+
+      {/* ── Animated background ── */}
+      <style>{`
+        @keyframes _orb1 { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(40px,-30px) scale(1.06)} }
+        @keyframes _orb2 { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(-35px,25px) scale(1.08)} }
+      `}</style>
+      <div className="absolute inset-0 pointer-events-none">
+        {/* Orb top-left */}
+        <div style={{
+          position:'absolute', top:'-15%', left:'-10%',
+          width:520, height:520, borderRadius:'50%',
+          background:'radial-gradient(circle, rgba(60,175,246,0.13) 0%, transparent 70%)',
+          animation:'_orb1 14s ease-in-out infinite',
+        }} />
+        {/* Orb bottom-right */}
+        <div style={{
+          position:'absolute', bottom:'-20%', right:'-8%',
+          width:460, height:460, borderRadius:'50%',
+          background:'radial-gradient(circle, rgba(60,175,246,0.09) 0%, transparent 70%)',
+          animation:'_orb2 18s ease-in-out infinite',
+        }} />
+      </div>
+
+      <div className="relative z-10 w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-10">
           <div className="inline-flex items-center justify-center gap-3 mb-4">
-            <svg className="w-12 h-12 text-[#3caff6]" fill="currentColor" viewBox="0 0 48 48">
-              <path d="M44 4H30.6666V17.3334H17.3334V30.6666H4V44H44V4Z" />
-            </svg>
+            <AnimatedLogo size={44} />
           </div>
           <h1 className="text-3xl font-bold text-white tracking-tight">CloudCode</h1>
           <p className="text-slate-500 mt-2 text-sm">Coding Challenges Platform</p>
@@ -117,3 +139,4 @@ export default function LoginPage() {
     </div>
   );
 }
+

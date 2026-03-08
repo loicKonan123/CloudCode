@@ -1,4 +1,5 @@
 'use client';
+import AnimatedLogo from '@/components/AnimatedLogo';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
@@ -150,7 +151,7 @@ export default function ChallengePage() {
 
   if (isLoading || !challenge) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#101b22' }}>
+      <div className="min-h-screen flex items-center justify-center app-grid" style={{ backgroundColor: '#101b22' }}>
         <div className="w-8 h-8 border-2 border-[#3caff6] border-t-transparent rounded-full animate-spin" />
       </div>
     );
@@ -168,9 +169,7 @@ export default function ChallengePage() {
       <header className="flex flex-col md:flex-row md:items-center justify-between px-4 md:px-6 py-3 border-b border-slate-800 bg-[#101b22] z-10 gap-3">
         <div className="flex items-center gap-4 md:gap-6 min-w-0">
           <div className="flex items-center gap-2 text-[#3caff6] shrink-0">
-            <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 48 48">
-              <path d="M44 4H30.6666V17.3334H17.3334V30.6666H4V44H44V4Z" />
-            </svg>
+            <AnimatedLogo size={28} />
             <h1 className="text-xl font-bold tracking-tight hidden sm:block">CloudCode</h1>
           </div>
           <nav className="flex items-center gap-2 text-sm min-w-0">

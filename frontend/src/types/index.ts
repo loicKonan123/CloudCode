@@ -168,6 +168,48 @@ export interface CreateTestCaseDto {
   description?: string;
 }
 
+// ===== Course Types =====
+export interface CourseListItem {
+  id: string;
+  title: string;
+  slug: string;
+  description: string;
+  language: ChallengeLanguage;
+  challengeCount: number;
+  isPublished: boolean;
+  orderIndex: number;
+}
+
+export interface CourseChallengeItem {
+  id: string;
+  title: string;
+  slug: string;
+  difficulty: ChallengeDifficulty;
+  tags: string[];
+  orderIndex: number;
+  isSolved: boolean;
+}
+
+export interface CourseDetail {
+  id: string;
+  title: string;
+  slug: string;
+  description: string;
+  language: ChallengeLanguage;
+  isPublished: boolean;
+  orderIndex: number;
+  challenges: CourseChallengeItem[];
+}
+
+export interface CreateCourseDto {
+  title: string;
+  description: string;
+  language: ChallengeLanguage;
+  orderIndex: number;
+  isPublished: boolean;
+  challengeIds: string[];
+}
+
 // ===== Admin Types =====
 export interface AdminUser {
   id: string;

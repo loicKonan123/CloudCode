@@ -51,6 +51,7 @@ public static class DependencyInjection
         services.AddScoped<IGitCredentialService, GitCredentialService>();
         services.AddScoped<IChallengeService, ChallengeService>();
         services.AddScoped<IJudgeService, JudgeService>();
+        services.AddScoped<ICourseService, CourseService>();
 
         // JWT Authentication
         var jwtSecretKey = configuration["Jwt:SecretKey"]

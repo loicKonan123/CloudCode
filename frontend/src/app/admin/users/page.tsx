@@ -1,4 +1,5 @@
 'use client';
+import AnimatedLogo from '@/components/AnimatedLogo';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -55,16 +56,14 @@ export default function AdminUsersPage() {
   const regular = users.filter(u => !u.isAdmin);
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#101b22', color: '#e2e8f0' }}>
+    <div className="min-h-screen flex flex-col app-grid" style={{ backgroundColor: '#101b22', color: '#e2e8f0' }}>
       {/* Header */}
       <header className="border-b border-slate-800 bg-[#101b22] sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-4">
               <button onClick={() => router.push('/')} className="flex items-center gap-2 text-[#3caff6]">
-                <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 48 48">
-                  <path d="M44 4H30.6666V17.3334H17.3334V30.6666H4V44H44V4Z" />
-                </svg>
+                <AnimatedLogo size={24} />
                 <span className="text-white text-xl font-bold tracking-tight">CloudCode</span>
               </button>
               <div className="hidden sm:flex items-center gap-2 text-slate-600">

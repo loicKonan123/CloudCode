@@ -1,20 +1,29 @@
 'use client';
+import AnimatedLogo from '@/components/AnimatedLogo';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { useAuthStore } from '@/stores/authStore';
 import { challengesApi } from '@/lib/api';
 import { ChallengeListItem, LeaderboardEntry, DifficultyNames } from '@/types';
+
+// Three.js scene loaded only client-side (no SSR)
+const HeroScene = dynamic(() => import('@/components/three/HeroScene'), { ssr: false });
+
 
 export default function HomePage() {
   const router = useRouter();
   const { isAuthenticated, checkAuth } = useAuthStore();
   const [featuredChallenge, setFeaturedChallenge] = useState<ChallengeListItem | null>(null);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [cursorOn, setCursorOn] = useState(true);
 
   useEffect(() => {
     checkAuth();
     loadData();
+    const blink = setInterval(() => setCursorOn(v => !v), 530);
+    return () => clearInterval(blink);
   }, [checkAuth]);
 
   const loadData = async () => {
@@ -23,69 +32,65 @@ export default function HomePage() {
         challengesApi.getAll(),
         challengesApi.getLeaderboard('all'),
       ]);
-      if (challengesRes.status === 'fulfilled' && challengesRes.value.data.length > 0) {
+      if (challengesRes.status === 'fulfilled' && challengesRes.value.data.length > 0)
         setFeaturedChallenge(challengesRes.value.data[0]);
-      }
-      if (leaderboardRes.status === 'fulfilled') {
+      if (leaderboardRes.status === 'fulfilled')
         setLeaderboard(leaderboardRes.value.data.slice(0, 4));
-      }
-    } catch {
-      // ignore
-    }
+    } catch {}
   };
 
   const handleStartCoding = () => {
-    if (isAuthenticated) {
-      router.push('/challenges');
-    } else {
-      router.push('/register');
-    }
+    if (isAuthenticated) router.push('/challenges');
+    else router.push('/register');
   };
 
-  const rankColors = [
-    'text-[#3caff6] bg-[#3caff6]/10 border-[#3caff6]/20',
-    '',
-    '',
-    '',
-  ];
-
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#101b22', color: '#e2e8f0' }}>
-      {/* Header */}
+    <div className="min-h-screen flex flex-col app-grid" style={{ backgroundColor: '#101b22', color: '#e2e8f0' }}>
+
+      {/* ── Global keyframes ── */}
+      <style>{`
+        @keyframes fadeUp {
+          from { opacity:0; transform:translateY(22px); }
+          to   { opacity:1; transform:translateY(0); }
+        }
+        @keyframes borderGlow {
+          0%,100% { box-shadow: 0 0 0 0 rgba(60,175,246,0); }
+          50%     { box-shadow: 0 0 24px 3px rgba(60,175,246,0.18); }
+        }
+        .fu0  { animation: fadeUp .75s ease-out .0s  both; }
+        .fu1  { animation: fadeUp .75s ease-out .15s both; }
+        .fu2  { animation: fadeUp .75s ease-out .3s  both; }
+        .fu3  { animation: fadeUp .75s ease-out .5s  both; }
+        .stat-card { transition: border-color .25s, transform .25s, box-shadow .25s; }
+        .stat-card:hover {
+          border-color: rgba(60,175,246,.45) !important;
+          transform: translateY(-3px);
+          box-shadow: 0 8px 32px rgba(60,175,246,.1);
+        }
+      `}</style>
+
+      {/* ── Header ── */}
       <header className="flex items-center justify-between whitespace-nowrap border-b border-slate-800 px-6 py-4 lg:px-20">
         <div className="flex items-center gap-8">
           <div className="flex items-center gap-2 text-[#3caff6]">
-            <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 48 48">
-              <path d="M44 4H30.6666V17.3334H17.3334V30.6666H4V44H44V4Z" />
-            </svg>
+            <AnimatedLogo size={28} />
             <h2 className="text-white text-xl font-bold tracking-tight">CloudCode</h2>
           </div>
           <nav className="hidden md:flex items-center gap-8">
-            <button onClick={() => router.push('/challenges')} className="text-slate-300 text-sm font-medium hover:text-[#3caff6] transition-colors">
-              Challenges
-            </button>
-            <button onClick={() => router.push('/leaderboard')} className="text-slate-300 text-sm font-medium hover:text-[#3caff6] transition-colors">
-              Leaderboard
-            </button>
+            <button onClick={() => router.push('/challenges')} className="text-slate-300 text-sm font-medium hover:text-[#3caff6] transition-colors">Challenges</button>
+            <button onClick={() => router.push('/courses')} className="text-slate-300 text-sm font-medium hover:text-[#3caff6] transition-colors">Courses</button>
+            <button onClick={() => router.push('/leaderboard')} className="text-slate-300 text-sm font-medium hover:text-[#3caff6] transition-colors">Leaderboard</button>
           </nav>
         </div>
         <div className="flex items-center gap-4">
           {isAuthenticated ? (
-            <button
-              onClick={() => router.push('/challenges')}
-              className="flex cursor-pointer items-center justify-center rounded-lg h-10 px-5 bg-[#3caff6] text-[#101b22] text-sm font-bold hover:opacity-90 transition-opacity"
-            >
+            <button onClick={() => router.push('/challenges')} className="flex cursor-pointer items-center justify-center rounded-lg h-10 px-5 bg-[#3caff6] text-[#101b22] text-sm font-bold hover:opacity-90 transition-opacity">
               My Challenges
             </button>
           ) : (
             <>
-              <button onClick={() => router.push('/login')} className="hidden sm:block text-slate-300 text-sm font-medium hover:text-[#3caff6] transition-colors">
-                Sign in
-              </button>
-              <button
-                onClick={() => router.push('/register')}
-                className="flex cursor-pointer items-center justify-center rounded-lg h-10 px-5 bg-[#3caff6] text-[#101b22] text-sm font-bold hover:opacity-90 transition-opacity"
-              >
+              <button onClick={() => router.push('/login')} className="hidden sm:block text-slate-300 text-sm font-medium hover:text-[#3caff6] transition-colors">Sign in</button>
+              <button onClick={() => router.push('/register')} className="flex cursor-pointer items-center justify-center rounded-lg h-10 px-5 bg-[#3caff6] text-[#101b22] text-sm font-bold hover:opacity-90 transition-opacity">
                 Sign Up
               </button>
             </>
@@ -94,56 +99,102 @@ export default function HomePage() {
       </header>
 
       <main className="flex flex-col flex-1 px-6 lg:px-20 py-10 max-w-[1280px] mx-auto w-full">
-        {/* Hero Section */}
-        <section className="flex flex-col lg:flex-row gap-12 items-center mb-16">
-          <div className="flex flex-col gap-8 flex-1">
+
+        {/* ══ Hero ══ */}
+        <section className="relative flex flex-col lg:flex-row gap-12 items-center mb-16" style={{ minHeight: 560 }}>
+
+          {/* ── Three.js 3D background ── */}
+          <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ borderRadius: 24 }}>
+            <HeroScene />
+            {/* Vignette so text stays readable */}
+            <div style={{
+              position: 'absolute', inset: 0,
+              background: 'radial-gradient(ellipse 110% 110% at 50% 50%, transparent 30%, rgba(16,27,34,.65) 100%)',
+              pointerEvents: 'none',
+            }} />
+          </div>
+
+          {/* ── Left: Text ── */}
+          <div className="relative z-10 flex flex-col gap-8 flex-1">
             <div className="flex flex-col gap-4">
-              <span className="text-[#3caff6] font-bold tracking-widest text-xs uppercase">Welcome to the future of coding</span>
-              <h1 className="text-4xl lg:text-6xl font-black leading-tight tracking-tight">
+              <span className="fu0 text-[#3caff6] font-bold tracking-widest text-xs uppercase">
+                Welcome to the future of coding
+              </span>
+              <h1 className="fu1 text-4xl lg:text-6xl font-black leading-tight tracking-tight">
                 Master the Art of <span className="text-[#3caff6]">Coding</span> with CloudCode
               </h1>
-              <p className="text-slate-400 text-lg lg:text-xl leading-relaxed max-w-xl">
+              <p className="fu2 text-slate-400 text-lg lg:text-xl leading-relaxed max-w-xl">
                 Join the elite community of developers solving complex problems in Python and JavaScript. Elevate your skills one challenge at a time.
               </p>
             </div>
-            <div className="flex flex-wrap gap-4">
+            <div className="fu3 flex flex-wrap gap-4">
               <button
                 onClick={handleStartCoding}
-                className="flex min-w-[180px] cursor-pointer items-center justify-center rounded-lg h-14 px-8 bg-[#3caff6] text-[#101b22] text-base font-bold shadow-lg shadow-[#3caff6]/20 hover:scale-[1.02] transition-transform"
+                className="flex min-w-[180px] cursor-pointer items-center justify-center rounded-lg h-14 px-8 bg-[#3caff6] text-[#101b22] text-base font-bold hover:scale-[1.03] transition-transform"
+                style={{ boxShadow: '0 0 30px rgba(60,175,246,.35)' }}
               >
                 Start Coding Now
               </button>
               <button
                 onClick={() => router.push('/leaderboard')}
-                className="flex min-w-[180px] cursor-pointer items-center justify-center rounded-lg h-14 px-8 bg-slate-800 text-white text-base font-bold border border-slate-700 hover:bg-slate-700 transition-colors"
+                className="flex min-w-[180px] cursor-pointer items-center justify-center rounded-lg h-14 px-8 text-white text-base font-bold border border-slate-700 hover:bg-slate-700/60 transition-colors"
+                style={{ background: 'rgba(30,41,59,.6)', backdropFilter: 'blur(8px)' }}
               >
                 View Leaderboard
               </button>
             </div>
           </div>
-          <div className="flex-1 w-full">
-            <div className="relative rounded-2xl overflow-hidden aspect-video shadow-2xl border border-slate-800">
-              <div className="absolute inset-0 bg-gradient-to-br from-[#3caff6]/20 to-transparent" />
-              <div className="absolute inset-0 flex items-center justify-center bg-slate-900/80">
-                <div className="text-left p-6 sm:p-8 font-mono text-sm space-y-2 w-full max-w-md">
-                  <div className="flex gap-2 mb-4">
-                    <div className="w-3 h-3 rounded-full bg-red-500" />
-                    <div className="w-3 h-3 rounded-full bg-yellow-500" />
-                    <div className="w-3 h-3 rounded-full bg-green-500" />
-                  </div>
-                  <p><span className="text-purple-400">def</span> <span className="text-[#3caff6]">two_sum</span>(nums, target):</p>
-                  <p className="pl-4"><span className="text-purple-400">for</span> i <span className="text-purple-400">in</span> <span className="text-yellow-300">range</span>(<span className="text-yellow-300">len</span>(nums)):</p>
-                  <p className="pl-8"><span className="text-purple-400">for</span> j <span className="text-purple-400">in</span> <span className="text-yellow-300">range</span>(i+<span className="text-orange-300">1</span>, <span className="text-yellow-300">len</span>(nums)):</p>
-                  <p className="pl-12"><span className="text-purple-400">if</span> nums[i] + nums[j] == target:</p>
-                  <p className="pl-16"><span className="text-purple-400">return</span> [i, j]</p>
-                  <p className="mt-4 text-green-400">{`> Output: [0, 1] ✓`}</p>
+
+          {/* ── Right: Code panel ── */}
+          <div className="relative z-10 flex-1 w-full">
+            <div
+              className="relative rounded-2xl overflow-hidden aspect-video shadow-2xl border border-slate-700/60"
+              style={{
+                background: 'rgba(10,18,24,0.88)',
+                backdropFilter: 'blur(16px)',
+                animation: 'borderGlow 4s ease-in-out infinite',
+              }}
+            >
+              {/* Top bar */}
+              <div className="absolute top-0 left-0 right-0 h-9 border-b border-slate-800/60 flex items-center px-4 gap-2" style={{ background: 'rgba(16,27,34,.7)' }}>
+                <div className="w-3 h-3 rounded-full bg-red-500/80" />
+                <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
+                <div className="w-3 h-3 rounded-full bg-green-500/80" />
+                <span className="ml-3 text-slate-500 text-xs font-mono">solution.py</span>
+              </div>
+
+              {/* Code */}
+              <div className="absolute inset-0 top-9 flex items-center justify-center">
+                <div className="text-left px-6 py-4 font-mono text-sm space-y-1.5 w-full max-w-md">
+                  <p><span className="text-purple-400">def</span> <span className="text-[#3caff6]">two_sum</span><span className="text-slate-300">(nums, target):</span></p>
+                  <p className="pl-4 text-slate-500">{"    # Hash-map approach — O(n)"}</p>
+                  <p className="pl-4"><span className="text-orange-300">seen</span> <span className="text-slate-400">=</span> <span className="text-slate-300">{'{}'}</span></p>
+                  <p className="pl-4"><span className="text-purple-400">for</span> <span className="text-slate-300">i, num</span> <span className="text-purple-400">in</span> <span className="text-yellow-300">enumerate</span><span className="text-slate-300">(nums):</span></p>
+                  <p className="pl-8"><span className="text-purple-400">if</span> <span className="text-slate-300">target <span className="text-slate-400">-</span> num</span> <span className="text-purple-400">in</span> <span className="text-orange-300">seen</span><span className="text-slate-300">:</span></p>
+                  <p className="pl-12"><span className="text-purple-400">return</span> <span className="text-slate-300">[<span className="text-orange-300">seen</span>[target <span className="text-slate-400">-</span> num], i]</span></p>
+                  <p className="pl-8"><span className="text-orange-300">seen</span><span className="text-slate-300">[num] <span className="text-slate-400">=</span> i</span></p>
+                  <p className="mt-4">
+                    <span className="text-green-400">{'> '}Output: [0, 1] ✓</span>
+                    <span
+                      className="ml-1 text-[#3caff6] font-bold"
+                      style={{ opacity: cursorOn ? 1 : 0, transition: 'opacity .08s' }}
+                    >▋</span>
+                  </p>
                 </div>
               </div>
+
+              {/* Corner glow */}
+              <div style={{
+                position: 'absolute', top: 0, right: 0,
+                width: 160, height: 160,
+                background: 'radial-gradient(circle at top right, rgba(60,175,246,.08) 0%, transparent 70%)',
+                pointerEvents: 'none',
+              }} />
             </div>
           </div>
         </section>
 
-        {/* Stats Grid */}
+        {/* ══ Stats ══ */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-16">
           {[
             { icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z', label: 'Developers', value: '10k+' },
@@ -151,7 +202,7 @@ export default function HomePage() {
             { icon: 'M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129', label: 'Languages', value: 'Python & JS' },
             { icon: 'M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z', label: 'Daily Rewards', value: '2.5k XP' },
           ].map((stat) => (
-            <div key={stat.label} className="flex flex-col gap-2 rounded-xl p-6 sm:p-8 bg-slate-800/50 border border-slate-800 transition-all hover:border-[#3caff6]/50">
+            <div key={stat.label} className="stat-card flex flex-col gap-2 rounded-xl p-6 sm:p-8 bg-slate-800/50 border border-slate-800">
               <svg className="w-7 h-7 text-[#3caff6] mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={stat.icon} />
               </svg>
@@ -161,8 +212,9 @@ export default function HomePage() {
           ))}
         </div>
 
-        {/* Challenge of the Day + Leaderboard */}
+        {/* ══ Challenge of the Day + Leaderboard ══ */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12 mb-16">
+
           {/* Challenge of the Day */}
           <div className="lg:col-span-2">
             <div className="flex items-center justify-between mb-8">
@@ -205,8 +257,7 @@ export default function HomePage() {
                     <p className="text-slate-400 text-sm sm:text-base leading-relaxed mb-6">
                       {featuredChallenge.tags.length > 0
                         ? `Tags: ${featuredChallenge.tags.join(', ')}. ${featuredChallenge.successRate > 0 ? `Success rate: ${featuredChallenge.successRate}%` : 'Be the first to solve it!'}`
-                        : `Solve this ${DifficultyNames[featuredChallenge.difficulty].toLowerCase()} challenge and earn points!`
-                      }
+                        : `Solve this ${DifficultyNames[featuredChallenge.difficulty].toLowerCase()} challenge and earn points!`}
                     </p>
                   </div>
                   <div className="flex items-center justify-between mt-auto">
@@ -228,13 +279,11 @@ export default function HomePage() {
                 </div>
               </div>
             ) : (
-              <div className="rounded-2xl border border-slate-800 bg-slate-800/40 p-12 text-center text-slate-500">
-                Loading challenge...
-              </div>
+              <div className="rounded-2xl border border-slate-800 bg-slate-800/40 p-12 text-center text-slate-500">Loading challenge...</div>
             )}
           </div>
 
-          {/* Leaderboard Preview */}
+          {/* Leaderboard preview */}
           <div className="lg:col-span-1">
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-3">
@@ -247,15 +296,9 @@ export default function HomePage() {
             <div className="rounded-2xl border border-slate-800 bg-slate-800/40 p-2">
               <div className="flex flex-col">
                 {leaderboard.length > 0 ? leaderboard.map((entry, i) => (
-                  <div key={entry.userId} className={`flex items-center gap-4 p-4 rounded-xl transition-colors ${
-                    i === 0 ? 'bg-[#3caff6]/10 border border-[#3caff6]/20 mb-2' : 'hover:bg-slate-700/50'
-                  }`}>
-                    <span className={`font-black text-lg w-6 text-center ${i === 0 ? 'text-[#3caff6]' : 'text-slate-500'}`}>
-                      {entry.rank}
-                    </span>
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${
-                      i === 0 ? 'bg-[#3caff6]/20 text-[#3caff6]' : 'bg-slate-700 text-slate-300'
-                    }`}>
+                  <div key={entry.userId} className={`flex items-center gap-4 p-4 rounded-xl transition-colors ${i === 0 ? 'bg-[#3caff6]/10 border border-[#3caff6]/20 mb-2' : 'hover:bg-slate-700/50'}`}>
+                    <span className={`font-black text-lg w-6 text-center ${i === 0 ? 'text-[#3caff6]' : 'text-slate-500'}`}>{entry.rank}</span>
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${i === 0 ? 'bg-[#3caff6]/20 text-[#3caff6]' : 'bg-slate-700 text-slate-300'}`}>
                       {entry.username.charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -268,18 +311,16 @@ export default function HomePage() {
                       </svg>
                     )}
                   </div>
-                )) : (
-                  [1, 2, 3, 4].map((i) => (
-                    <div key={i} className={`flex items-center gap-4 p-4 rounded-xl ${i === 1 ? 'bg-[#3caff6]/10 border border-[#3caff6]/20 mb-2' : ''}`}>
-                      <span className={`font-black text-lg w-6 text-center ${i === 1 ? 'text-[#3caff6]' : 'text-slate-500'}`}>{i}</span>
-                      <div className="w-10 h-10 rounded-full bg-slate-700 animate-pulse" />
-                      <div className="flex-1 space-y-2">
-                        <div className="h-3 bg-slate-700 rounded w-24 animate-pulse" />
-                        <div className="h-2 bg-slate-700 rounded w-16 animate-pulse" />
-                      </div>
+                )) : [1, 2, 3, 4].map((i) => (
+                  <div key={i} className={`flex items-center gap-4 p-4 rounded-xl ${i === 1 ? 'bg-[#3caff6]/10 border border-[#3caff6]/20 mb-2' : ''}`}>
+                    <span className={`font-black text-lg w-6 text-center ${i === 1 ? 'text-[#3caff6]' : 'text-slate-500'}`}>{i}</span>
+                    <div className="w-10 h-10 rounded-full bg-slate-700 animate-pulse" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-3 bg-slate-700 rounded w-24 animate-pulse" />
+                      <div className="h-2 bg-slate-700 rounded w-16 animate-pulse" />
                     </div>
-                  ))
-                )}
+                  </div>
+                ))}
               </div>
               <div className="p-4 border-t border-slate-800 text-center">
                 <button onClick={() => router.push('/leaderboard')} className="text-[#3caff6] text-sm font-bold hover:underline">Full Leaderboard</button>
@@ -288,7 +329,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Supported Languages */}
+        {/* ══ Languages ══ */}
         <section className="py-12 border-t border-slate-800">
           <h2 className="text-sm font-bold mb-8 text-center uppercase tracking-widest text-slate-400">Supported Languages</h2>
           <div className="flex flex-wrap justify-center gap-12 items-center">
@@ -314,14 +355,12 @@ export default function HomePage() {
         </section>
       </main>
 
-      {/* Footer */}
+      {/* ══ Footer ══ */}
       <footer className="mt-auto border-t border-slate-800 bg-slate-800/20 px-6 lg:px-20 py-12">
         <div className="max-w-[1280px] mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
           <div>
             <div className="flex items-center gap-2 text-[#3caff6] mb-6">
-              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 48 48">
-                <path d="M44 4H30.6666V17.3334H17.3334V30.6666H4V44H44V4Z" />
-              </svg>
+              <AnimatedLogo size={24} />
               <h2 className="text-white text-lg font-bold">CloudCode</h2>
             </div>
             <p className="text-slate-500 text-sm leading-relaxed">
@@ -332,6 +371,7 @@ export default function HomePage() {
             <h4 className="text-white font-bold text-sm mb-6 uppercase tracking-wider">Explore</h4>
             <ul className="flex flex-col gap-4">
               <li><button onClick={() => router.push('/challenges')} className="text-slate-500 text-sm hover:text-[#3caff6] transition-colors">All Challenges</button></li>
+              <li><button onClick={() => router.push('/courses')} className="text-slate-500 text-sm hover:text-[#3caff6] transition-colors">Courses</button></li>
               <li><button onClick={() => router.push('/leaderboard')} className="text-slate-500 text-sm hover:text-[#3caff6] transition-colors">Leaderboard</button></li>
             </ul>
           </div>

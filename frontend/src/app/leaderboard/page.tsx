@@ -1,4 +1,5 @@
 'use client';
+import AnimatedLogo from '@/components/AnimatedLogo';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -40,19 +41,20 @@ export default function LeaderboardPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col font-(--font-inter)" style={{ backgroundColor: '#101b22', color: '#e2e8f0' }}>
+    <div className="min-h-screen flex flex-col font-(--font-inter) app-grid" style={{ backgroundColor: '#101b22', color: '#e2e8f0' }}>
       {/* Header */}
       <header className="border-b border-slate-800 bg-[#101b22] sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-2">
-              <svg className="w-8 h-8 text-[#3caff6]" fill="none" viewBox="0 0 48 48">
-                <path d="M44 4H30.6666V17.3334H17.3334V30.6666H4V44H44V4Z" fill="currentColor" />
-              </svg>
+              <AnimatedLogo size={28} />
               <span className="text-xl font-bold tracking-tight text-white">CloudCode</span>
             </div>
 
             <nav className="hidden md:flex items-center gap-8">
+              <button onClick={() => router.push('/courses')} className="text-slate-400 hover:text-[#3caff6] transition-colors text-sm font-medium">
+                Courses
+              </button>
               <button onClick={() => router.push('/challenges')} className="text-slate-400 hover:text-[#3caff6] transition-colors text-sm font-medium">
                 Challenges
               </button>
@@ -250,9 +252,7 @@ export default function LeaderboardPage() {
       <footer className="bg-slate-900 border-t border-slate-800 py-8 mt-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-2 grayscale opacity-50">
-            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 48 48">
-              <path d="M44 4H30.6666V17.3334H17.3334V30.6666H4V44H44V4Z" />
-            </svg>
+            <AnimatedLogo size={20} />
             <span className="font-bold text-lg">CloudCode</span>
           </div>
           <p className="text-xs text-slate-500">2026 CloudCode. All rights reserved.</p>

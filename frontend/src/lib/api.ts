@@ -118,6 +118,33 @@ export const challengesApi = {
 };
 
 // ===========================================
+// Courses API
+// ===========================================
+export const coursesApi = {
+  getAll: (language?: number) =>
+    api.get<import('@/types').CourseListItem[]>('/courses', { params: language ? { language } : {} }),
+
+  getBySlug: (slug: string) =>
+    api.get<import('@/types').CourseDetail>(`/courses/${slug}`),
+
+  // Admin
+  adminGetAll: () =>
+    api.get<import('@/types').CourseListItem[]>('/admin/courses'),
+
+  adminCreate: (data: import('@/types').CreateCourseDto) =>
+    api.post<import('@/types').CourseDetail>('/admin/courses', data),
+
+  adminUpdate: (id: string, data: import('@/types').CreateCourseDto) =>
+    api.put<import('@/types').CourseDetail>(`/admin/courses/${id}`, data),
+
+  adminDelete: (id: string) =>
+    api.delete(`/admin/courses/${id}`),
+
+  adminTogglePublish: (id: string) =>
+    api.post<import('@/types').CourseDetail>(`/admin/courses/${id}/publish`),
+};
+
+// ===========================================
 // Admin Users API
 // ===========================================
 export const adminUsersApi = {
