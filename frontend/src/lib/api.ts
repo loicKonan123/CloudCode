@@ -117,4 +117,15 @@ export const challengesApi = {
     api.post<import('@/types').ChallengeDetail>(`/admin/challenges/${id}/publish`),
 };
 
+// ===========================================
+// Admin Users API
+// ===========================================
+export const adminUsersApi = {
+  getAll: () =>
+    api.get<import('@/types').AdminUser[]>('/admin/users'),
+
+  toggleAdmin: (id: string) =>
+    api.post<import('@/types').AdminUser>(`/admin/users/${id}/toggle-admin`),
+};
+
 export default api;

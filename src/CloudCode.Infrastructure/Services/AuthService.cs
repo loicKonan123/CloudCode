@@ -76,7 +76,8 @@ public class AuthService : IAuthService
                 Id = user.Id,
                 Email = user.Email,
                 Username = user.Username,
-                Avatar = user.Avatar
+                Avatar = user.Avatar,
+                IsAdmin = user.IsAdmin
             }
         };
     }
@@ -118,7 +119,8 @@ public class AuthService : IAuthService
                 Id = user.Id,
                 Email = user.Email,
                 Username = user.Username,
-                Avatar = user.Avatar
+                Avatar = user.Avatar,
+                IsAdmin = user.IsAdmin
             }
         };
     }
@@ -154,7 +156,8 @@ public class AuthService : IAuthService
                 Id = user.Id,
                 Email = user.Email,
                 Username = user.Username,
-                Avatar = user.Avatar
+                Avatar = user.Avatar,
+                IsAdmin = user.IsAdmin
             }
         };
     }

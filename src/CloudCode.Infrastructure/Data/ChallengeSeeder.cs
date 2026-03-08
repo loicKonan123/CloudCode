@@ -1,6 +1,7 @@
 using System.Text.Json;
 using CloudCode.Domain.Entities;
 using CloudCode.Domain.Enums;
+using CloudCode.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -12,9 +13,33 @@ public static class ChallengeSeeder
     {
         using var scope = serviceProvider.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var passwordHasher = scope.ServiceProvider.GetRequiredService<PasswordHasher>();
 
         // Apply pending migrations
         await db.Database.MigrateAsync();
+
+        // Seed admin user if not exists
+        const string adminEmail = "devalinloic@gmail.com";
+        var existingAdmin = await db.Users.FirstOrDefaultAsync(u => u.Email == adminEmail);
+        if (existingAdmin == null)
+        {
+            db.Users.Add(new User
+            {
+                Id = Guid.NewGuid(),
+                Email = adminEmail,
+                Username = "devalinloic",
+                PasswordHash = passwordHasher.HashPassword("Admin@2026!"),
+                IsAdmin = true,
+                EmailConfirmed = true,
+                CreatedAt = DateTime.UtcNow
+            });
+            await db.SaveChangesAsync();
+        }
+        else if (!existingAdmin.IsAdmin)
+        {
+            existingAdmin.IsAdmin = true;
+            await db.SaveChangesAsync();
+        }
 
         // Don't seed if challenges already exist
         if (await db.Challenges.AnyAsync()) return;

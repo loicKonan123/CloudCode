@@ -80,7 +80,7 @@ export default function HomePage() {
           ) : (
             <>
               <button onClick={() => router.push('/login')} className="hidden sm:block text-slate-300 text-sm font-medium hover:text-[#3caff6] transition-colors">
-                Se connecter
+                Sign in
               </button>
               <button
                 onClick={() => router.push('/register')}

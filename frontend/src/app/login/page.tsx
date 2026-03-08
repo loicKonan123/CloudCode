@@ -39,7 +39,7 @@ export default function LoginPage() {
 
         {/* Form Card */}
         <div className="bg-slate-800/50 rounded-xl p-8 border border-slate-800">
-          <h2 className="text-xl font-bold text-white mb-6">Connexion</h2>
+          <h2 className="text-xl font-bold text-white mb-6">Sign in</h2>
 
           {error && (
             <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
@@ -62,7 +62,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 bg-slate-900/50 border border-slate-700 rounded-lg text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-[#3caff6]/50 focus:border-[#3caff6] transition text-sm"
-                  placeholder="vous@exemple.com"
+                  placeholder="you@example.com"
                   required
                 />
               </div>
@@ -70,7 +70,7 @@ export default function LoginPage() {
 
             <div>
               <label htmlFor="password" className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-                Mot de passe
+                Password
               </label>
               <div className="relative">
                 <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -96,19 +96,19 @@ export default function LoginPage() {
               {isLoading ? (
                 <>
                   <div className="w-4 h-4 border-2 border-[#101b22] border-t-transparent rounded-full animate-spin" />
-                  Connexion...
+                  Signing in...
                 </>
               ) : (
-                'Se connecter'
+                'Sign in'
               )}
             </button>
           </form>
 
           <div className="mt-6 text-center">
             <p className="text-slate-500 text-sm">
-              Pas encore de compte ?{' '}
+              Don&apos;t have an account?{' '}
               <Link href="/register" className="text-[#3caff6] hover:text-[#3caff6]/80 font-medium transition">
-                S&apos;inscrire
+                Sign up
               </Link>
             </p>
           </div>

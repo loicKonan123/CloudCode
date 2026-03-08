@@ -15,6 +15,7 @@ public class User : BaseEntity
     public bool EmailConfirmed { get; set; }
     public string? RefreshToken { get; set; }
     public DateTime? RefreshTokenExpiry { get; set; }
+    public bool IsAdmin { get; set; }
 
     // Navigation properties
     public virtual ICollection<Project> Projects { get; set; } = new List<Project>();

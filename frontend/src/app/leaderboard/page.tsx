@@ -59,6 +59,11 @@ export default function LeaderboardPage() {
               <button onClick={() => router.push('/leaderboard')} className="text-[#3caff6] font-semibold text-sm">
                 Leaderboard
               </button>
+              {user?.isAdmin && (
+                <button onClick={() => router.push('/admin/challenges')} className="text-slate-400 hover:text-[#3caff6] transition-colors text-sm font-medium">
+                  Admin
+                </button>
+              )}
             </nav>
 
             <div className="flex items-center gap-3">
@@ -67,7 +72,7 @@ export default function LeaderboardPage() {
                 <div className="h-9 w-9 rounded-full bg-[#3caff6]/20 flex items-center justify-center border border-[#3caff6]/30 text-[#3caff6] font-bold text-sm">
                   {user?.username?.charAt(0).toUpperCase()}
                 </div>
-                <button onClick={() => { logout(); router.push('/login'); }} className="p-2 text-slate-500 hover:text-red-400 transition-colors" title="Se déconnecter">
+                <button onClick={() => { logout(); router.push('/login'); }} className="p-2 text-slate-500 hover:text-red-400 transition-colors" title="Sign out">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                   </svg>
@@ -96,8 +101,13 @@ export default function LeaderboardPage() {
           <button onClick={() => { router.push('/leaderboard'); setMobileMenuOpen(false); }} className="block w-full text-left text-[#3caff6] font-semibold text-sm py-2">
             Leaderboard
           </button>
+          {user?.isAdmin && (
+            <button onClick={() => { router.push('/admin/challenges'); setMobileMenuOpen(false); }} className="block w-full text-left text-slate-400 hover:text-[#3caff6] text-sm font-medium py-2">
+              Admin
+            </button>
+          )}
           <button onClick={() => { logout(); router.push('/login'); setMobileMenuOpen(false); }} className="block w-full text-left text-red-400 hover:text-red-300 text-sm font-medium py-2">
-            Se déconnecter
+            Sign out
           </button>
         </div>
       )}

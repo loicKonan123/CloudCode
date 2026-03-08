@@ -8,6 +8,7 @@ export interface User {
   email: string;
   username: string;
   avatar?: string;
+  isAdmin?: boolean;
 }
 
 export interface AuthResponse {
@@ -165,6 +166,15 @@ export interface CreateTestCaseDto {
   isHidden: boolean;
   orderIndex: number;
   description?: string;
+}
+
+// ===== Admin Types =====
+export interface AdminUser {
+  id: string;
+  email: string;
+  username: string;
+  isAdmin: boolean;
+  createdAt: string;
 }
 
 // ===== API Types =====

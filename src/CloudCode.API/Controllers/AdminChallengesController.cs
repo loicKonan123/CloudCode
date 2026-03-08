@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CloudCode.Controllers;
 
-[Authorize]
+[Authorize(Policy = "AdminOnly")]
 [Route("api/admin/challenges")]
 public class AdminChallengesController : BaseApiController
 {

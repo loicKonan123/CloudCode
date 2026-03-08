@@ -20,12 +20,12 @@ export default function RegisterPage() {
     setLocalError('');
 
     if (password !== confirmPassword) {
-      setLocalError('Les mots de passe ne correspondent pas');
+      setLocalError('Passwords do not match');
       return;
     }
 
     if (password.length < 6) {
-      setLocalError('Le mot de passe doit contenir au moins 6 caractères');
+      setLocalError('Password must be at least 6 characters');
       return;
     }
 
@@ -50,12 +50,12 @@ export default function RegisterPage() {
             </svg>
           </div>
           <h1 className="text-3xl font-bold text-white tracking-tight">CloudCode</h1>
-          <p className="text-slate-500 mt-2 text-sm">Créez votre compte</p>
+          <p className="text-slate-500 mt-2 text-sm">Create your account</p>
         </div>
 
         {/* Form Card */}
         <div className="bg-slate-800/50 rounded-xl p-8 border border-slate-800">
-          <h2 className="text-xl font-bold text-white mb-6">Inscription</h2>
+          <h2 className="text-xl font-bold text-white mb-6">Create account</h2>
 
           {displayError && (
             <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
@@ -66,7 +66,7 @@ export default function RegisterPage() {
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label htmlFor="username" className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-                Nom d&apos;utilisateur
+                Username
               </label>
               <div className="relative">
                 <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -78,7 +78,7 @@ export default function RegisterPage() {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 bg-slate-900/50 border border-slate-700 rounded-lg text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-[#3caff6]/50 focus:border-[#3caff6] transition text-sm"
-                  placeholder="votre_pseudo"
+                  placeholder="your_username"
                   required
                 />
               </div>
@@ -98,7 +98,7 @@ export default function RegisterPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 bg-slate-900/50 border border-slate-700 rounded-lg text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-[#3caff6]/50 focus:border-[#3caff6] transition text-sm"
-                  placeholder="vous@exemple.com"
+                  placeholder="you@example.com"
                   required
                 />
               </div>
@@ -106,7 +106,7 @@ export default function RegisterPage() {
 
             <div>
               <label htmlFor="password" className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-                Mot de passe
+                Password
               </label>
               <div className="relative">
                 <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -126,7 +126,7 @@ export default function RegisterPage() {
 
             <div>
               <label htmlFor="confirmPassword" className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-                Confirmer le mot de passe
+                Confirm password
               </label>
               <div className="relative">
                 <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -152,19 +152,19 @@ export default function RegisterPage() {
               {isLoading ? (
                 <>
                   <div className="w-4 h-4 border-2 border-[#101b22] border-t-transparent rounded-full animate-spin" />
-                  Création...
+                  Creating...
                 </>
               ) : (
-                "S'inscrire"
+                "Sign up"
               )}
             </button>
           </form>
 
           <div className="mt-6 text-center">
             <p className="text-slate-500 text-sm">
-              Déjà un compte ?{' '}
+              Already have an account?{' '}
               <Link href="/login" className="text-[#3caff6] hover:text-[#3caff6]/80 font-medium transition">
-                Se connecter
+                Sign in
               </Link>
             </p>
           </div>
