@@ -207,10 +207,16 @@ public class DependencyService : IDependencyService
         Directory.CreateDirectory(workDir);
 
         var venvPath = Path.Combine(workDir, "venv");
-        if (Directory.Exists(venvPath))
+        var venvCfg = Path.Combine(venvPath, "pyvenv.cfg");
+        if (Directory.Exists(venvPath) && File.Exists(venvCfg))
         {
             _logger.LogInformation("venv existe déjà pour le projet {ProjectId}", projectId);
             return true;
+        }
+        if (Directory.Exists(venvPath) && !File.Exists(venvCfg))
+        {
+            _logger.LogWarning("venv corrompu pour le projet {ProjectId}, suppression...", projectId);
+            try { Directory.Delete(venvPath, recursive: true); } catch { }
         }
 
         var pythonPath = GetPythonPath();
@@ -319,6 +325,17 @@ public class DependencyService : IDependencyService
 
         // Vérifier/créer le venv
         var venvPath = Path.Combine(workDir, "venv");
+        var venvCfg = Path.Combine(venvPath, "pyvenv.cfg");
+        var venvIsCorrupt = Directory.Exists(venvPath) && !File.Exists(venvCfg);
+
+        if (venvIsCorrupt)
+        {
+            output.AppendLine("venv corrompu détecté (pyvenv.cfg manquant) — suppression et recréation...");
+            KillVenvProcesses(venvPath);
+            await Task.Delay(300, cancellationToken);
+            try { Directory.Delete(venvPath, recursive: true); } catch { }
+        }
+
         if (!Directory.Exists(venvPath))
         {
             output.AppendLine("Création de l'environnement virtuel Python...");

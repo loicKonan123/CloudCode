@@ -12,13 +12,9 @@ export default function HomePage() {
   useEffect(() => {
     checkAuth();
 
-    // Small delay to check auth state
+    // Redirect to challenges (main page)
     const timeout = setTimeout(() => {
-      if (isAuthenticated) {
-        router.push('/dashboard');
-      } else {
-        router.push('/login');
-      }
+      router.push('/challenges');
     }, 500);
 
     return () => clearTimeout(timeout);
@@ -31,7 +27,7 @@ export default function HomePage() {
           <Code2 className="w-10 h-10 text-white" />
         </div>
         <h1 className="text-4xl font-bold text-white mb-4">CloudCode</h1>
-        <p className="text-gray-400 mb-8">IDE collaboratif en ligne</p>
+        <p className="text-gray-400 mb-8">Coding Challenges Platform</p>
         <Loader2 className="w-8 h-8 text-blue-500 animate-spin mx-auto" />
       </div>
     </div>

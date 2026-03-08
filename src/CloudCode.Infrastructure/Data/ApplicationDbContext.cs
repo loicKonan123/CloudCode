@@ -22,6 +22,10 @@ public class ApplicationDbContext : DbContext
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<EnvironmentVariable> EnvironmentVariables => Set<EnvironmentVariable>();
     public DbSet<GitCredential> GitCredentials => Set<GitCredential>();
+    public DbSet<Challenge> Challenges => Set<Challenge>();
+    public DbSet<TestCase> TestCases => Set<TestCase>();
+    public DbSet<UserSubmission> UserSubmissions => Set<UserSubmission>();
+    public DbSet<UserProgress> UserProgress => Set<UserProgress>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

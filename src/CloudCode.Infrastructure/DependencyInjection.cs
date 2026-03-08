@@ -49,6 +49,9 @@ public static class DependencyInjection
         services.AddScoped<IFormattingService, FormattingService>();
         services.AddScoped<IGitService, GitService>();
         services.AddScoped<IGitCredentialService, GitCredentialService>();
+        services.AddScoped<IChallengeService, ChallengeService>();
+        services.AddScoped<IJudgeService, JudgeService>();
+
         // JWT Authentication
         var jwtSecretKey = configuration["Jwt:SecretKey"]
             ?? throw new InvalidOperationException("JWT SecretKey not configured");

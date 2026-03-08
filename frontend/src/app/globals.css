@@ -1,30 +1,31 @@
 @import "tailwindcss";
 
 :root {
-  /* Default dark theme - will be overridden by ThemeProvider */
-  --bg-primary: #0d1117;
-  --bg-secondary: #161b22;
-  --bg-tertiary: #21262d;
-  --bg-hover: #30363d;
-  --bg-input: #0d1117;
+  /* CloudCode dark theme */
+  --bg-primary: #101b22;
+  --bg-secondary: #101b22;
+  --bg-tertiary: #1a2730;
+  --bg-hover: #1e2d38;
+  --bg-input: #162029;
+  --bg-card: rgba(30, 41, 59, 0.4);
 
   --text-primary: #f0f6fc;
   --text-secondary: #8b949e;
   --text-muted: #6e7681;
 
-  --border: #30363d;
-  --border-light: #484f58;
+  --border: #1e293b;
+  --border-light: #334155;
 
-  --primary: #2f81f7;
-  --primary-hover: #1f6feb;
-  --primary-light: rgba(47, 129, 247, 0.15);
+  --primary: #3caff6;
+  --primary-hover: #2da0e7;
+  --primary-light: rgba(60, 175, 246, 0.15);
 
-  --success: #3fb950;
-  --error: #f85149;
-  --warning: #d29922;
+  --success: #22c55e;
+  --error: #ef4444;
+  --warning: #f59e0b;
 
-  --scrollbar-thumb: #484f58;
-  --scrollbar-track: #161b22;
+  --scrollbar-thumb: #315368;
+  --scrollbar-track: transparent;
 
   color-scheme: dark;
 }
@@ -32,8 +33,8 @@
 @theme inline {
   --color-background: var(--bg-primary);
   --color-foreground: var(--text-primary);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-fira-code);
 }
 
 html {

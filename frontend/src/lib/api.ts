@@ -222,6 +222,9 @@ export const dependenciesApi = {
 
   getProjectEnvironment: (projectId: string) =>
     api.get<import('@/types').ProjectEnvironmentDto>(`/dependencies/project/${projectId}/environment`),
+
+  installFromFile: (projectId: string) =>
+    api.post<import('@/types').InstallResultDto>(`/dependencies/project/${projectId}/install-file`, {}, { timeout: 180000 }),
 };
 
 // ===========================================
@@ -318,6 +321,47 @@ export const gitApi = {
 
   deleteCredentials: () =>
     api.delete('/git/credentials'),
+};
+
+// ===========================================
+// Challenges API
+// ===========================================
+export const challengesApi = {
+  getAll: (difficulty?: number, language?: number) =>
+    api.get<import('@/types').ChallengeListItem[]>('/challenges', {
+      params: { ...(difficulty && { difficulty }), ...(language && { language }) },
+    }),
+
+  getBySlug: (slug: string) =>
+    api.get<import('@/types').ChallengeDetail>(`/challenges/${slug}`),
+
+  test: (slug: string, code: string, language: number) =>
+    api.post<import('@/types').JudgeResult>(`/challenges/${slug}/test`, { code, language }),
+
+  submit: (slug: string, code: string, language: number) =>
+    api.post<import('@/types').JudgeResult>(`/challenges/${slug}/submit`, { code, language }),
+
+  getSubmissions: (slug: string) =>
+    api.get<import('@/types').SubmissionInfo[]>(`/challenges/${slug}/submissions`),
+
+  getLeaderboard: (period = 'all') =>
+    api.get<import('@/types').LeaderboardEntry[]>('/leaderboard', { params: { period } }),
+
+  // Admin
+  adminGetAll: () =>
+    api.get<import('@/types').ChallengeListItem[]>('/admin/challenges'),
+
+  adminCreate: (data: import('@/types').CreateChallengeDto) =>
+    api.post<import('@/types').ChallengeDetail>('/admin/challenges', data),
+
+  adminUpdate: (id: string, data: Partial<import('@/types').CreateChallengeDto>) =>
+    api.put<import('@/types').ChallengeDetail>(`/admin/challenges/${id}`, data),
+
+  adminDelete: (id: string) =>
+    api.delete(`/admin/challenges/${id}`),
+
+  adminTogglePublish: (id: string) =>
+    api.post<import('@/types').ChallengeDetail>(`/admin/challenges/${id}/publish`),
 };
 
 export default api;

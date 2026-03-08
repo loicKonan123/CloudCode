@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
-import { projectsApi, filesApi, executionApi, formattingApi } from '@/lib/api';
+import { projectsApi, filesApi, executionApi, dependenciesApi } from '@/lib/api';
 import { Project, CodeFile, ExecutionResult, ProgrammingLanguage } from '@/types';
 import * as signalR from '@microsoft/signalr';
 import { getMonacoLanguageFromFilename, getProgrammingLanguageFromFilename, getFileIcon } from '@/lib/utils';
@@ -39,18 +39,15 @@ import {
   Keyboard,
   Columns2,
   PanelRightClose,
-  Eye,
   Search,
   GitBranch,
-  Wand2,
 } from 'lucide-react';
 import CollaboratorsModal from '@/components/collaboration/CollaboratorsModal';
-import PackageManager from '@/components/packages/PackageManager';
 import MultiTerminal from '@/components/terminal/MultiTerminal';
-import PreviewPanel from '@/components/preview/PreviewPanel';
 import EnvManager from '@/components/environment/EnvManager';
 import SearchPanel from '@/components/search/SearchPanel';
 import GitPanel from '@/components/git/GitPanel';
+import QuickInstallPanel from '@/components/packages/QuickInstallPanel';
 import { ConfirmDialog, InputDialog, KeyboardShortcutsModal, ToastContainer, useToast, ThemeSwitcher, FontSizeControl, SettingsPanel, Breadcrumbs } from '@/components/ui';
 import { useThemeStore } from '@/stores/themeStore';
 import { useEditorStore } from '@/stores/editorStore';
@@ -85,7 +82,7 @@ export default function IDEPage() {
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   const [connectedUsers, setConnectedUsers] = useState<ConnectedUser[]>([]);
   const [showCollaborators, setShowCollaborators] = useState(false);
-  const [showPackages, setShowPackages] = useState(false);
+  const [showQuickInstall, setShowQuickInstall] = useState(false);
   const [showEnvManager, setShowEnvManager] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showTerminal, setShowTerminal] = useState(false);
@@ -95,10 +92,8 @@ export default function IDEPage() {
   const [showSettings, setShowSettings] = useState(false);
   const [isSplitView, setIsSplitView] = useState(false);
   const [splitActiveTabId, setSplitActiveTabId] = useState<string | null>(null);
-  const [showPreview, setShowPreview] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [showGit, setShowGit] = useState(false);
-  const [isFormatting, setIsFormatting] = useState(false);
 
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -346,26 +341,6 @@ export default function IDEPage() {
     },
     [openTabs]
   );
-
-  // Format the active file (Alt+Shift+F)
-  const handleFormat = useCallback(async () => {
-    if (!activeTab || isFormatting) return;
-    const language = getProgrammingLanguageFromFilename(activeTab.file.name) || 'javascript';
-    try {
-      setIsFormatting(true);
-      const res = await formattingApi.format(activeTab.content, language.toString().toLowerCase());
-      if (res.data.success) {
-        updateTabContent(activeTabId!, res.data.formattedCode);
-        toast.success('Code formaté');
-      } else {
-        toast.error(res.data.error || 'Formateur indisponible');
-      }
-    } catch {
-      toast.error('Erreur de formatage');
-    } finally {
-      setIsFormatting(false);
-    }
-  }, [activeTab, activeTabId, isFormatting, updateTabContent, toast]);
 
   // Navigate to search result
   const handleSearchResultClick = useCallback((fileId: string, lineNumber: number) => {
@@ -634,11 +609,6 @@ export default function IDEPage() {
         e.preventDefault();
         setShowTerminal(!showTerminal);
       }
-      // Ctrl+Shift+P - Toggle preview
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'P') {
-        e.preventDefault();
-        setShowPreview(!showPreview);
-      }
       // Ctrl+Shift+F - Toggle search
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'F') {
         e.preventDefault();
@@ -651,16 +621,11 @@ export default function IDEPage() {
         setShowGit(prev => !prev);
         setShowSearch(false);
       }
-      // Alt+Shift+F - Format code
-      if (e.altKey && e.shiftKey && e.key === 'F') {
-        e.preventDefault();
-        handleFormat();
-      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedFile, code, activeTabId, showOutput, showTerminal, showPreview, handleFormat]);
+  }, [selectedFile, code, activeTabId, showOutput, showTerminal]);
 
   // Cleanup auto-save timer and warn on page leave
   useEffect(() => {
@@ -819,19 +784,6 @@ export default function IDEPage() {
             {isSplitView ? <PanelRightClose className="w-4 h-4" /> : <Columns2 className="w-4 h-4" />}
           </button>
 
-          {/* Preview Toggle */}
-          <button
-            onClick={() => setShowPreview(!showPreview)}
-            className={`p-1.5 rounded transition ${
-              showPreview
-                ? 'text-green-400 bg-green-600/20 hover:bg-green-600/30'
-                : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
-            }`}
-            title={showPreview ? 'Fermer le preview (Ctrl+Shift+P)' : 'Ouvrir le preview (Ctrl+Shift+P)'}
-          >
-            <Eye className="w-4 h-4" />
-          </button>
-
           {/* Download project */}
           <button
             onClick={handleDownloadProject}
@@ -907,15 +859,6 @@ export default function IDEPage() {
             Exécuter
           </button>
 
-          <button
-            onClick={handleFormat}
-            disabled={!selectedFile || isFormatting}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg transition disabled:opacity-50"
-            title="Formater le code (Alt+Shift+F)"
-          >
-            {isFormatting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
-            Formater
-          </button>
         </div>
       </header>
 
@@ -943,13 +886,13 @@ export default function IDEPage() {
             </div>
           </div>
 
-          {/* Packages Button */}
+          {/* Quick Install Button */}
           <button
-            onClick={() => setShowPackages(true)}
+            onClick={() => setShowQuickInstall(true)}
             className="mx-3 mt-2 flex items-center gap-2 px-3 py-2 text-sm bg-gray-700/50 hover:bg-gray-700 text-gray-300 hover:text-white rounded-lg transition"
           >
             <Package className="w-4 h-4" />
-            <span>Packages</span>
+            <span>Dépendances</span>
           </button>
 
           {/* Environment Variables Button */}
@@ -1201,17 +1144,8 @@ export default function IDEPage() {
             />
           )}
 
-          {/* Preview Panel - Right Side */}
-          {showPreview && (
-            <PreviewPanel
-              projectId={projectId}
-              isVisible={showPreview}
-              onClose={() => setShowPreview(false)}
-            />
-          )}
-
           {/* Output Panel - Right Side */}
-          {showOutput && !showPreview && (
+          {showOutput && (
             <div className="w-96 bg-gray-850 border-l border-gray-700 flex flex-col flex-shrink-0">
               <div className="h-10 bg-gray-800 border-b border-gray-700 flex items-center justify-between px-3">
                 <div className="flex items-center gap-2">
@@ -1317,11 +1251,13 @@ export default function IDEPage() {
         />
       )}
 
-      {/* Package Manager Modal */}
-      <PackageManager
+      {/* Quick Install Modal */}
+      <QuickInstallPanel
         projectId={projectId}
-        isOpen={showPackages}
-        onClose={() => setShowPackages(false)}
+        files={files}
+        isOpen={showQuickInstall}
+        onClose={() => setShowQuickInstall(false)}
+        onOpenTerminal={() => { setShowQuickInstall(false); setShowTerminal(true); }}
       />
 
       {/* Environment Variables Manager Modal */}

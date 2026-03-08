@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CloudCode Challenge | Two Sum</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#3caff6",
+                        "background-light": "#f5f7f8",
+                        "background-dark": "#101b22",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .code-font { font-family: 'Fira Code', 'Courier New', monospace; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #315368; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col overflow-hidden">
+<!-- Top Navigation Bar -->
+<header class="flex items-center justify-between px-6 py-3 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-background-dark z-10">
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-2 text-primary">
+<span class="material-symbols-outlined text-3xl">terminal</span>
+<h1 class="text-xl font-bold tracking-tight">CloudCode</h1>
+</div>
+<nav class="flex items-center gap-2 text-sm">
+<a class="text-slate-500 hover:text-primary transition-colors" href="#">Challenges</a>
+<span class="text-slate-600">/</span>
+<span class="font-medium">Two Sum</span>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<!-- Timer Component -->
+<div class="flex items-center gap-3 px-4 py-1.5 bg-slate-100 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700">
+<span class="material-symbols-outlined text-sm text-primary">timer</span>
+<div class="flex items-baseline gap-1 font-mono">
+<span class="text-lg font-bold text-primary">15</span>
+<span class="text-[10px] uppercase text-slate-500">min</span>
+<span class="text-lg font-bold text-primary">42</span>
+<span class="text-[10px] uppercase text-slate-500">sec</span>
+</div>
+</div>
+<div class="h-8 w-px bg-slate-200 dark:border-slate-700"></div>
+<div class="flex items-center gap-3">
+<select class="bg-slate-100 dark:bg-slate-800 border-none rounded-lg text-sm font-medium py-2 pl-3 pr-10 focus:ring-2 focus:ring-primary/50 cursor-pointer">
+<option>Python 3.10</option>
+<option>JavaScript (ES6)</option>
+<option>C++ 20</option>
+</select>
+<button class="material-symbols-outlined p-2 text-slate-500 hover:text-primary transition-colors">settings</button>
+</div>
+<div class="flex gap-2">
+<button class="flex items-center gap-2 px-5 py-2 rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-sm font-bold transition-all">
+<span class="material-symbols-outlined text-sm">play_arrow</span>
+                    Run
+                </button>
+<button class="flex items-center gap-2 px-6 py-2 rounded-lg bg-primary hover:bg-primary/90 text-background-dark text-sm font-bold transition-all shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined text-sm">cloud_upload</span>
+                    Submit
+                </button>
+</div>
+</div>
+</header>
+<!-- Main IDE Layout -->
+<main class="flex flex-1 overflow-hidden">
+<!-- Left Pane: Description -->
+<section class="w-[40%] flex flex-col border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-background-dark">
+<!-- Tabs -->
+<div class="flex border-b border-slate-200 dark:border-slate-800 px-4">
+<button class="px-4 py-3 text-sm font-bold border-b-2 border-primary text-primary flex items-center gap-2">
+<span class="material-symbols-outlined text-base">description</span>
+                    Description
+                </button>
+<button class="px-4 py-3 text-sm font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-base">history</span>
+                    Submissions
+                </button>
+</div>
+<!-- Content -->
+<div class="flex-1 overflow-y-auto p-6 custom-scrollbar">
+<div class="space-y-6">
+<div>
+<h2 class="text-2xl font-bold mb-4">1. Two Sum</h2>
+<div class="flex gap-2 mb-6">
+<span class="px-2 py-1 text-xs font-bold bg-green-500/10 text-green-500 rounded border border-green-500/20 uppercase tracking-wider">Easy</span>
+<span class="px-2 py-1 text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 rounded border border-slate-200 dark:border-slate-700 uppercase tracking-wider">Array</span>
+<span class="px-2 py-1 text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 rounded border border-slate-200 dark:border-slate-700 uppercase tracking-wider">Hash Table</span>
+</div>
+<p class="leading-relaxed text-slate-600 dark:text-slate-400">
+                            Given an array of integers <code class="bg-slate-100 dark:bg-slate-800 px-1 rounded text-primary">nums</code> and an integer <code class="bg-slate-100 dark:bg-slate-800 px-1 rounded text-primary">target</code>, return <em>indices of the two numbers such that they add up to target</em>.
+                        </p>
+<p class="mt-4 leading-relaxed text-slate-600 dark:text-slate-400">
+                            You may assume that each input would have <strong>exactly one solution</strong>, and you may not use the same element twice.
+                        </p>
+</div>
+<div class="space-y-4">
+<h3 class="font-bold text-lg">Example 1:</h3>
+<div class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2">
+<div class="flex gap-2">
+<span class="text-slate-500 text-sm font-mono w-16">Input:</span>
+<code class="text-sm font-mono">nums = [2,7,11,15], target = 9</code>
+</div>
+<div class="flex gap-2">
+<span class="text-slate-500 text-sm font-mono w-16">Output:</span>
+<code class="text-sm font-mono">[0,1]</code>
+</div>
+<div class="flex gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+<span class="text-slate-500 text-sm italic">Explanation: Because nums[0] + nums[1] == 9, we return [0, 1].</span>
+</div>
+</div>
+</div>
+<div class="space-y-4">
+<h3 class="font-bold text-lg">Constraints:</h3>
+<ul class="list-disc list-inside space-y-2 text-sm text-slate-600 dark:text-slate-400">
+<li><code class="bg-slate-100 dark:bg-slate-800 px-1 rounded">2 &lt;= nums.length &lt;= 104</code></li>
+<li><code class="bg-slate-100 dark:bg-slate-800 px-1 rounded">-109 &lt;= nums[i] &lt;= 109</code></li>
+<li><code class="bg-slate-100 dark:bg-slate-800 px-1 rounded">-109 &lt;= target &lt;= 109</code></li>
+<li class="text-primary italic">Only one valid answer exists.</li>
+</ul>
+</div>
+<div class="pt-6 border-t border-slate-200 dark:border-slate-800">
+<div class="flex items-center justify-between text-xs text-slate-500">
+<span>Accepted: 12.4M</span>
+<span>Submissions: 24.8M</span>
+<span>Acceptance Rate: 50.1%</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Right Pane: Editor & Results -->
+<section class="flex-1 flex flex-col bg-slate-50 dark:bg-[#0d161c]">
+<!-- Editor -->
+<div class="flex-1 flex flex-col min-h-0">
+<div class="bg-white dark:bg-background-dark/50 px-4 py-2 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-sm text-yellow-500">code</span>
+<span class="text-xs font-bold text-slate-500 uppercase tracking-widest">solution.py</span>
+</div>
+<div class="flex gap-2">
+<button class="material-symbols-outlined text-lg text-slate-400 hover:text-slate-200">content_copy</button>
+<button class="material-symbols-outlined text-lg text-slate-400 hover:text-slate-200">refresh</button>
+</div>
+</div>
+<div class="flex-1 p-4 overflow-hidden relative group">
+<div class="absolute inset-0 bg-white dark:bg-[#0d161c] pointer-events-none"></div>
+<div class="relative flex h-full border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden shadow-inner">
+<div class="w-12 bg-slate-100 dark:bg-slate-900/50 flex flex-col items-center py-4 text-slate-500 font-mono text-xs gap-1 border-r border-slate-200 dark:border-slate-800">
+<span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
+</div>
+<div class="flex-1 p-4 code-font text-sm leading-relaxed overflow-auto bg-white dark:bg-slate-950/20">
+<span class="text-purple-400">class</span> <span class="text-yellow-400">Solution</span>:<br/>
+                                <span class="text-purple-400">def</span> <span class="text-blue-400">twoSum</span>(<span class="text-orange-300">self</span>, nums: <span class="text-blue-400">List</span>[<span class="text-green-400">int</span>], target: <span class="text-green-400">int</span>) -&gt; <span class="text-blue-400">List</span>[<span class="text-green-400">int</span>]:<br/>
+                                    <span class="text-slate-500"># Use a dictionary to store indices of numbers</span><br/>
+                                    prevMap = {} <span class="text-slate-500"># val : index</span><br/>
+<br/>
+                                    <span class="text-purple-400">for</span> i, n <span class="text-purple-400">in</span> <span class="text-blue-400">enumerate</span>(nums):<br/>
+                                        diff = target - n<br/>
+                                        <span class="text-purple-400">if</span> diff <span class="text-purple-400">in</span> prevMap:<br/>
+                                            <span class="text-purple-400">return</span> [prevMap[diff], i]<br/>
+                                        prevMap[n] = i<br/>
+                                    <span class="text-purple-400">return</span> []<br/>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom: Test Results Panel -->
+<div class="h-[300px] border-t-4 border-slate-200 dark:border-slate-800 bg-white dark:bg-background-dark flex flex-col">
+<div class="px-6 py-3 flex items-center justify-between border-b border-slate-200 dark:border-slate-800">
+<div class="flex items-center gap-4">
+<h3 class="text-sm font-bold uppercase tracking-wider flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-sm">checklist</span>
+                            Test Results
+                        </h3>
+<div class="flex items-center gap-2 px-3 py-1 bg-green-500/10 text-green-500 rounded-full text-[10px] font-bold">
+<span class="material-symbols-outlined text-xs">check_circle</span>
+                            2/3 PASSED
+                        </div>
+</div>
+<button class="material-symbols-outlined text-slate-400">keyboard_arrow_down</button>
+</div>
+<div class="flex-1 flex overflow-hidden">
+<!-- Sidebar for Test Cases -->
+<div class="w-64 border-r border-slate-200 dark:border-slate-800 overflow-y-auto">
+<div class="p-2 space-y-1">
+<button class="w-full text-left px-4 py-3 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-between group">
+<span class="text-sm font-medium">Test Case 1</span>
+<span class="material-symbols-outlined text-green-500 text-lg">check</span>
+</button>
+<button class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-between group">
+<span class="text-sm font-medium">Test Case 2</span>
+<span class="material-symbols-outlined text-green-500 text-lg">check</span>
+</button>
+<button class="w-full text-left px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-between group">
+<span class="text-sm font-medium text-red-500">Test Case 3</span>
+<span class="material-symbols-outlined text-red-500 text-lg">close</span>
+</button>
+</div>
+</div>
+<!-- Test Case Detail / Diff -->
+<div class="flex-1 p-6 overflow-y-auto custom-scrollbar bg-slate-50 dark:bg-background-dark/80">
+<div class="space-y-6">
+<div class="grid grid-cols-2 gap-6">
+<div class="space-y-2">
+<label class="text-[10px] font-bold text-slate-500 uppercase">Input</label>
+<div class="p-3 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 font-mono text-sm">
+                                        nums = [3,3], target = 6
+                                    </div>
+</div>
+<div class="space-y-2">
+<label class="text-[10px] font-bold text-slate-500 uppercase">Status</label>
+<div class="p-3 bg-red-500/10 text-red-500 rounded-lg border border-red-500/20 font-bold text-sm">
+                                        Wrong Answer
+                                    </div>
+</div>
+</div>
+<div class="space-y-3">
+<label class="text-[10px] font-bold text-slate-500 uppercase">Output Diff</label>
+<div class="grid grid-cols-2 gap-px bg-slate-200 dark:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden">
+<div class="bg-white dark:bg-slate-900 p-4">
+<div class="text-[10px] text-slate-400 mb-2 uppercase">Expected</div>
+<code class="text-green-500 font-mono text-lg">[0,1]</code>
+</div>
+<div class="bg-white dark:bg-slate-900 p-4">
+<div class="text-[10px] text-slate-400 mb-2 uppercase">Actual</div>
+<code class="text-red-500 font-mono text-lg">[0,0]</code>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer / Status Bar -->
+<footer class="h-8 bg-slate-100 dark:bg-background-dark border-t border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 text-[10px] font-medium text-slate-500 uppercase tracking-widest">
+<div class="flex gap-4">
+<span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-green-500"></span> Connected</span>
+<span>Line 12, Col 24</span>
+</div>
+<div class="flex gap-4">
+<a class="hover:text-primary" href="#">Docs</a>
+<a class="hover:text-primary" href="#">Feedback</a>
+<a class="hover:text-primary" href="#">Shortcuts</a>
+</div>
+</footer>
+</body></html>

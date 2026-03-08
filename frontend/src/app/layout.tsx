@@ -1,22 +1,22 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, Fira_Code } from "next/font/google";
 import "./globals.css";
 import Providers from "./Providers";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const firaCode = Fira_Code({
+  variable: "--font-fira-code",
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: "CloudCode - IDE Collaboratif en Ligne",
-  description: "Un IDE collaboratif en ligne pour coder ensemble en temps réel",
-  keywords: ["IDE", "code", "collaboration", "programming", "online"],
+  title: "CloudCode - Coding Challenges Platform",
+  description: "Resolve coding challenges in Python and JavaScript",
+  keywords: ["coding", "challenges", "leetcode", "python", "javascript"],
 };
 
 export default function RootLayout({
@@ -27,7 +27,7 @@ export default function RootLayout({
   return (
     <html lang="fr" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${inter.variable} ${firaCode.variable} antialiased`}
         style={{ backgroundColor: 'var(--bg-primary)' }}
       >
         <Providers>

@@ -1,6 +1,7 @@
 using CloudCode.Application;
 using CloudCode.Hubs;
 using CloudCode.Infrastructure;
+using CloudCode.Infrastructure.Data;
 using CloudCode.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -69,6 +70,9 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+// Seed challenges
+await ChallengeSeeder.SeedChallengesAsync(app.Services);
 
 // Global exception handler
 app.UseGlobalExceptionHandler();

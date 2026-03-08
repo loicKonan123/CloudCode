@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { projectsApi, filesApi } from '@/lib/api';
-import { ProgrammingLanguage, LanguageNames, CreateProjectDto } from '@/types';
+import { ProgrammingLanguage, LanguageNames, SupportedLanguages, CreateProjectDto } from '@/types';
 import { projectTemplates, ProjectTemplate, getTemplatesByLanguage } from '@/lib/templates';
 import { X, Loader2, FileCode, ChevronRight, Sparkles } from 'lucide-react';
 
@@ -286,9 +286,9 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
                     color: 'var(--text-primary)',
                   }}
                 >
-                  {Object.entries(LanguageNames).map(([value, label]) => (
-                    <option key={value} value={value}>
-                      {label}
+                  {SupportedLanguages.map((lang) => (
+                    <option key={lang} value={lang}>
+                      {LanguageNames[lang]}
                     </option>
                   ))}
                 </select>
