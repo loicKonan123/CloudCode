@@ -52,11 +52,16 @@ export default function ChallengePage() {
 
   useEffect(() => {
     checkAuth();
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      router.push('/login');
+      return;
+    }
     loadChallenge();
     // Start timer
     timerRef.current = setInterval(() => setElapsedSeconds(s => s + 1), 1000);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [slug, checkAuth]);
+  }, [slug, checkAuth, router]);
 
   const loadChallenge = async () => {
     try {
@@ -160,54 +165,54 @@ export default function ChallengePage() {
   return (
     <div className="h-screen flex flex-col overflow-hidden" style={{ backgroundColor: '#101b22', color: '#e2e8f0' }}>
       {/* Top Bar */}
-      <header className="flex items-center justify-between px-6 py-3 border-b border-slate-800 bg-[#101b22] z-10">
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-2 text-[#3caff6]">
+      <header className="flex flex-col md:flex-row md:items-center justify-between px-4 md:px-6 py-3 border-b border-slate-800 bg-[#101b22] z-10 gap-3">
+        <div className="flex items-center gap-4 md:gap-6 min-w-0">
+          <div className="flex items-center gap-2 text-[#3caff6] shrink-0">
             <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 48 48">
               <path d="M44 4H30.6666V17.3334H17.3334V30.6666H4V44H44V4Z" />
             </svg>
-            <h1 className="text-xl font-bold tracking-tight">CloudCode</h1>
+            <h1 className="text-xl font-bold tracking-tight hidden sm:block">CloudCode</h1>
           </div>
-          <nav className="flex items-center gap-2 text-sm">
-            <button onClick={() => router.push('/challenges')} className="text-slate-500 hover:text-[#3caff6] transition-colors">
+          <nav className="flex items-center gap-2 text-sm min-w-0">
+            <button onClick={() => router.push('/challenges')} className="text-slate-500 hover:text-[#3caff6] transition-colors shrink-0">
               Challenges
             </button>
-            <span className="text-slate-600">/</span>
-            <span className="font-medium text-white">{challenge.title}</span>
+            <span className="text-slate-600 shrink-0">/</span>
+            <span className="font-medium text-white truncate">{challenge.title}</span>
           </nav>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 md:gap-4 flex-wrap">
           {/* Timer */}
-          <div className="flex items-center gap-3 px-4 py-1.5 bg-slate-800/50 rounded-lg border border-slate-700">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-800/50 rounded-lg border border-slate-700">
             <svg className="w-4 h-4 text-[#3caff6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <div className="flex items-baseline gap-1 font-mono">
-              <span className="text-lg font-bold text-[#3caff6]">{time.min}</span>
+              <span className="text-base md:text-lg font-bold text-[#3caff6]">{time.min}</span>
               <span className="text-[10px] uppercase text-slate-500">min</span>
-              <span className="text-lg font-bold text-[#3caff6]">{time.sec}</span>
+              <span className="text-base md:text-lg font-bold text-[#3caff6]">{time.sec}</span>
               <span className="text-[10px] uppercase text-slate-500">sec</span>
             </div>
           </div>
 
-          <div className="h-8 w-px bg-slate-700" />
+          <div className="h-8 w-px bg-slate-700 hidden md:block" />
 
           {/* Language selector */}
           <select
             value={language}
             onChange={(e) => handleLanguageChange(Number(e.target.value) as ChallengeLanguage)}
-            className="bg-slate-800 border-none rounded-lg text-sm font-medium py-2 pl-3 pr-10 focus:ring-2 focus:ring-[#3caff6]/50 cursor-pointer text-white"
+            className="bg-slate-800 border-none rounded-lg text-xs md:text-sm font-medium py-2 pl-3 pr-8 focus:ring-2 focus:ring-[#3caff6]/50 cursor-pointer text-white"
           >
             {showPython && <option value={ChallengeLanguage.Python}>Python 3.10</option>}
             {showJS && <option value={ChallengeLanguage.JavaScript}>JavaScript (ES6)</option>}
           </select>
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 ml-auto md:ml-0">
             <button
               onClick={handleTest}
               disabled={isTesting || isSubmitting || !isAuthenticated}
-              className="flex items-center gap-2 px-5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-sm font-bold transition-all disabled:opacity-50"
+              className="flex items-center gap-2 px-3 md:px-5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-sm font-bold transition-all disabled:opacity-50"
             >
               {isTesting ? (
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -221,7 +226,7 @@ export default function ChallengePage() {
             <button
               onClick={handleSubmit}
               disabled={isTesting || isSubmitting || !isAuthenticated}
-              className="flex items-center gap-2 px-6 py-2 rounded-lg bg-[#3caff6] hover:bg-[#3caff6]/90 text-[#101b22] text-sm font-bold transition-all shadow-lg shadow-[#3caff6]/20 disabled:opacity-50"
+              className="flex items-center gap-2 px-4 md:px-6 py-2 rounded-lg bg-[#3caff6] hover:bg-[#3caff6]/90 text-[#101b22] text-sm font-bold transition-all shadow-lg shadow-[#3caff6]/20 disabled:opacity-50"
             >
               {isSubmitting ? (
                 <div className="w-4 h-4 border-2 border-[#101b22] border-t-transparent rounded-full animate-spin" />
@@ -237,9 +242,9 @@ export default function ChallengePage() {
       </header>
 
       {/* Main IDE Layout */}
-      <main className="flex flex-1 overflow-hidden">
+      <main className="flex flex-col md:flex-row flex-1 overflow-hidden">
         {/* Left Pane: Description */}
-        <section className="w-[40%] flex flex-col border-r border-slate-800 bg-[#101b22]">
+        <section className="w-full md:w-[40%] flex flex-col border-b md:border-b-0 md:border-r border-slate-800 bg-[#101b22] max-h-[40vh] md:max-h-none">
           {/* Tabs */}
           <div className="flex border-b border-slate-800 px-4">
             <button
@@ -391,7 +396,7 @@ export default function ChallengePage() {
 
           {/* Test Results Panel */}
           {testResults && (
-            <div className="h-[300px] border-t-4 border-slate-800 bg-[#101b22] flex flex-col">
+            <div className="h-[250px] md:h-[300px] border-t-4 border-slate-800 bg-[#101b22] flex flex-col">
               {/* Results header */}
               <div className="px-6 py-3 flex items-center justify-between border-b border-slate-800">
                 <div className="flex items-center gap-4">
@@ -421,7 +426,7 @@ export default function ChallengePage() {
 
               <div className="flex-1 flex overflow-hidden">
                 {/* Test case sidebar */}
-                <div className="w-56 border-r border-slate-800 overflow-y-auto">
+                <div className="w-36 md:w-56 border-r border-slate-800 overflow-y-auto shrink-0">
                   <div className="p-2 space-y-1">
                     {testResults.results.map((result, i) => (
                       <button
@@ -462,10 +467,10 @@ export default function ChallengePage() {
                         </div>
                       )}
 
-                      <div className="grid grid-cols-2 gap-6">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                         <div className="space-y-2">
                           <label className="text-[10px] font-bold text-slate-500 uppercase">Input</label>
-                          <div className="p-3 bg-slate-900 rounded-lg border border-slate-800 font-mono text-sm">
+                          <div className="p-3 bg-slate-900 rounded-lg border border-slate-800 font-mono text-sm break-all">
                             {selectedResult.input || '-'}
                           </div>
                         </div>
@@ -484,7 +489,7 @@ export default function ChallengePage() {
                       {/* Output diff */}
                       <div className="space-y-3">
                         <label className="text-[10px] font-bold text-slate-500 uppercase">Output Diff</label>
-                        <div className="grid grid-cols-2 gap-px bg-slate-800 border border-slate-800 rounded-lg overflow-hidden">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-slate-800 border border-slate-800 rounded-lg overflow-hidden">
                           <div className="bg-slate-900 p-4">
                             <div className="text-[10px] text-slate-400 mb-2 uppercase">Expected</div>
                             <code className="text-green-500 font-mono text-lg">{selectedResult.expectedOutput}</code>
@@ -514,7 +519,7 @@ export default function ChallengePage() {
             Connected
           </span>
         </div>
-        <div className="flex gap-4">
+        <div className="hidden sm:flex gap-4">
           <span>Ctrl+Enter: Run</span>
           <span>Ctrl+Shift+Enter: Submit</span>
         </div>

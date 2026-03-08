@@ -1,10 +1,6 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { AuthResponse, ApiError } from '@/types';
 
-// ===========================================
-// Configuration de l'API Client
-// ===========================================
-
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5072';
 
 export const api = axios.create({
@@ -12,7 +8,7 @@ export const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 30000, // 30 seconds timeout
+  timeout: 30000,
 });
 
 // Intercepteur pour ajouter le token JWT
@@ -33,7 +29,6 @@ api.interceptors.response.use(
   async (error: AxiosError<ApiError>) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
-    // Si erreur 401 et pas encore retry
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
@@ -54,8 +49,7 @@ api.interceptors.response.use(
           }
           return api(originalRequest);
         }
-      } catch (refreshError) {
-        // Refresh failed, logout
+      } catch {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
         window.location.href = '/login';
@@ -80,247 +74,6 @@ export const authApi = {
 
   refresh: (refreshToken: string) =>
     api.post<AuthResponse>('/auth/refresh', { refreshToken }),
-};
-
-// ===========================================
-// Projects API
-// ===========================================
-export const projectsApi = {
-  getMyProjects: () =>
-    api.get<import('@/types').ProjectListItem[]>('/projects'),
-
-  getPublicProjects: (page = 1, pageSize = 10) =>
-    api.get<import('@/types').PagedResult<import('@/types').ProjectListItem>>(
-      `/projects/public?page=${page}&pageSize=${pageSize}`
-    ),
-
-  getById: (id: string) =>
-    api.get<import('@/types').Project>(`/projects/${id}`),
-
-  create: (data: import('@/types').CreateProjectDto) =>
-    api.post<import('@/types').Project>('/projects', data),
-
-  update: (id: string, data: Partial<import('@/types').CreateProjectDto>) =>
-    api.put<import('@/types').Project>(`/projects/${id}`, data),
-
-  delete: (id: string) =>
-    api.delete(`/projects/${id}`),
-
-  duplicate: (id: string, newName?: string) =>
-    api.post<import('@/types').Project>(`/projects/${id}/duplicate`, { newName }),
-};
-
-// ===========================================
-// Files API
-// ===========================================
-export const filesApi = {
-  getProjectFiles: (projectId: string) =>
-    api.get<import('@/types').CodeFile[]>(`/Files/project/${projectId}/tree`),
-
-  getFile: (_projectId: string, fileId: string) =>
-    api.get<import('@/types').CodeFile>(`/Files/${fileId}`),
-
-  create: (projectId: string, data: import('@/types').CreateFileDto) =>
-    api.post<import('@/types').CodeFile>(`/Files/project/${projectId}`, data),
-
-  update: (_projectId: string, fileId: string, content: string) =>
-    api.put<import('@/types').CodeFile>(`/Files/${fileId}/content`, { content }),
-
-  rename: (_projectId: string, fileId: string, name: string) =>
-    api.put<import('@/types').CodeFile>(`/Files/${fileId}/rename`, { name }),
-
-  delete: (_projectId: string, fileId: string) =>
-    api.delete(`/Files/${fileId}`),
-
-  downloadProject: async (projectId: string, projectName: string) => {
-    const response = await api.get(`/Files/project/${projectId}/download`, {
-      responseType: 'blob',
-    });
-    // Create download link
-    const url = window.URL.createObjectURL(new Blob([response.data]));
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `${projectName}.zip`);
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.URL.revokeObjectURL(url);
-  },
-};
-
-// ===========================================
-// Execution API
-// ===========================================
-export const executionApi = {
-  run: (projectId: string, fileId: string, code: string, language: number, input?: string) =>
-    api.post<import('@/types').ExecutionResult>(`/execution/run`, {
-      projectId,
-      fileId,
-      code,
-      language,
-      input
-    }),
-};
-
-// ===========================================
-// Collaborations API
-// ===========================================
-export const collaborationsApi = {
-  getCollaborators: (projectId: string) =>
-    api.get<import('@/types').Collaborator[]>(`/collaborations/project/${projectId}`),
-
-  invite: (projectId: string, email: string, role: import('@/types').CollaboratorRole) =>
-    api.post<import('@/types').Collaborator>(`/collaborations/project/${projectId}/invite`, { email, role }),
-
-  updateRole: (projectId: string, userId: string, role: import('@/types').CollaboratorRole) =>
-    api.put<import('@/types').Collaborator>(`/collaborations/project/${projectId}/user/${userId}`, { role }),
-
-  remove: (projectId: string, userId: string) =>
-    api.delete(`/collaborations/project/${projectId}/user/${userId}`),
-
-  // Get pending invitations for current user
-  getPendingInvitations: () =>
-    api.get<import('@/types').Collaborator[]>(`/collaborations/invitations`),
-
-  // Accept invitation
-  acceptInvitation: (collaborationId: string) =>
-    api.post(`/collaborations/invitations/${collaborationId}/accept`),
-
-  // Decline invitation
-  declineInvitation: (collaborationId: string) =>
-    api.post(`/collaborations/invitations/${collaborationId}/decline`),
-
-  // Leave project
-  leaveProject: (projectId: string) =>
-    api.post(`/collaborations/project/${projectId}/leave`),
-};
-
-// ===========================================
-// Dependencies API
-// ===========================================
-export const dependenciesApi = {
-  getProjectDependencies: (projectId: string) =>
-    api.get<import('@/types').ProjectDependencies>(`/dependencies/project/${projectId}`),
-
-  add: (projectId: string, data: import('@/types').AddDependencyDto) =>
-    api.post<import('@/types').Dependency>(`/dependencies/project/${projectId}`, data),
-
-  remove: (projectId: string, dependencyId: string) =>
-    api.delete(`/dependencies/project/${projectId}/${dependencyId}`),
-
-  install: (projectId: string) =>
-    api.post<import('@/types').InstallResultDto>(`/dependencies/project/${projectId}/install`),
-
-  createVenv: (projectId: string) =>
-    api.post<{ message: string }>(`/dependencies/project/${projectId}/venv`),
-
-  initNode: (projectId: string) =>
-    api.post<{ message: string }>(`/dependencies/project/${projectId}/init`),
-
-  checkEnvironment: () =>
-    api.get<import('@/types').EnvironmentStatusDto>('/dependencies/environment'),
-
-  getProjectEnvironment: (projectId: string) =>
-    api.get<import('@/types').ProjectEnvironmentDto>(`/dependencies/project/${projectId}/environment`),
-
-  installFromFile: (projectId: string) =>
-    api.post<import('@/types').InstallResultDto>(`/dependencies/project/${projectId}/install-file`, {}, { timeout: 180000 }),
-};
-
-// ===========================================
-// Environment Variables API
-// ===========================================
-export const environmentApi = {
-  getAll: (projectId: string) =>
-    api.get<import('@/types').EnvironmentVariable[]>(`/environment/project/${projectId}`),
-
-  getById: (id: string) =>
-    api.get<import('@/types').EnvironmentVariable>(`/environment/${id}`),
-
-  create: (projectId: string, data: import('@/types').CreateEnvironmentVariableDto) =>
-    api.post<import('@/types').EnvironmentVariable>(`/environment/project/${projectId}`, data),
-
-  update: (id: string, data: import('@/types').UpdateEnvironmentVariableDto) =>
-    api.put<import('@/types').EnvironmentVariable>(`/environment/${id}`, data),
-
-  delete: (id: string) =>
-    api.delete(`/environment/${id}`),
-
-  getEnvFileContent: (projectId: string) =>
-    api.get<{ content: string }>(`/environment/project/${projectId}/file`),
-
-  syncEnvFile: (projectId: string) =>
-    api.post<{ message: string }>(`/environment/project/${projectId}/sync`),
-};
-
-// ===========================================
-// Search API
-// ===========================================
-export const searchApi = {
-  search: (projectId: string, query: string) =>
-    api.get<import('@/types').SearchResult[]>(`/files/project/${projectId}/search`, { params: { query } }),
-};
-
-// ===========================================
-// Formatting API
-// ===========================================
-export const formattingApi = {
-  format: (code: string, language: string) =>
-    api.post<import('@/types').FormattingResult>('/formatting/format', { code, language }),
-};
-
-// ===========================================
-// Git API
-// ===========================================
-export const gitApi = {
-  init: (projectId: string) =>
-    api.post<import('@/types').GitOperationResult>(`/projects/${projectId}/git/init`),
-
-  status: (projectId: string) =>
-    api.get<import('@/types').GitStatus>(`/projects/${projectId}/git/status`),
-
-  diff: (projectId: string, file?: string) =>
-    api.get<{ diff: string }>(`/projects/${projectId}/git/diff`, { params: file ? { file } : {} }),
-
-  stageAll: (projectId: string) =>
-    api.post<import('@/types').GitOperationResult>(`/projects/${projectId}/git/stage`),
-
-  stageFile: (projectId: string, filePath: string) =>
-    api.post<import('@/types').GitOperationResult>(`/projects/${projectId}/git/stage/${filePath}`),
-
-  unstageFile: (projectId: string, filePath: string) =>
-    api.post<import('@/types').GitOperationResult>(`/projects/${projectId}/git/unstage/${filePath}`),
-
-  commit: (projectId: string, message: string) =>
-    api.post<import('@/types').GitOperationResult>(`/projects/${projectId}/git/commit`, { message }),
-
-  push: (projectId: string, branch = 'main') =>
-    api.post<import('@/types').GitOperationResult>(`/projects/${projectId}/git/push`, { branch }),
-
-  pull: (projectId: string, branch = 'main') =>
-    api.post<import('@/types').GitOperationResult>(`/projects/${projectId}/git/pull`, { branch }),
-
-  branches: (projectId: string) =>
-    api.get<string[]>(`/projects/${projectId}/git/branches`),
-
-  checkout: (projectId: string, branch: string, create: boolean) =>
-    api.post<import('@/types').GitOperationResult>(`/projects/${projectId}/git/checkout`, { branch, create }),
-
-  log: (projectId: string, limit = 20) =>
-    api.get<import('@/types').GitCommit[]>(`/projects/${projectId}/git/log`, { params: { limit } }),
-
-  setRemote: (projectId: string, url: string) =>
-    api.post<import('@/types').GitOperationResult>(`/projects/${projectId}/git/remote`, { url }),
-
-  // Credentials
-  getCredentials: () =>
-    api.get<import('@/types').GitCredentialInfo | null>('/git/credentials'),
-
-  saveCredentials: (provider: string, token: string, username: string) =>
-    api.post('/git/credentials', { provider, token, username }),
-
-  deleteCredentials: () =>
-    api.delete('/git/credentials'),
 };
 
 // ===========================================

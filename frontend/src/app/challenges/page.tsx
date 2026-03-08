@@ -26,11 +26,17 @@ export default function ChallengesPage() {
   const [difficultyFilter, setDifficultyFilter] = useState<ChallengeDifficulty | null>(null);
   const [languageFilter, setLanguageFilter] = useState<ChallengeLanguage | null>(null);
   const [activeTag, setActiveTag] = useState<string | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     checkAuth();
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      router.push('/login');
+      return;
+    }
     loadChallenges();
-  }, [checkAuth]);
+  }, [checkAuth, router]);
 
   const loadChallenges = async () => {
     try {
@@ -79,27 +85,49 @@ export default function ChallengesPage() {
               <button onClick={() => router.push('/leaderboard')} className="text-slate-400 hover:text-[#3caff6] transition-colors text-sm font-medium">
                 Leaderboard
               </button>
-              {isAuthenticated && (
-                <button onClick={() => router.push('/dashboard')} className="text-slate-400 hover:text-[#3caff6] transition-colors text-sm font-medium">
-                  Profile
-                </button>
-              )}
             </nav>
 
-            <div className="flex items-center gap-4">
-              {isAuthenticated ? (
-                <div className="h-10 w-10 rounded-full bg-[#3caff6]/20 flex items-center justify-center border border-[#3caff6]/30 text-[#3caff6] font-bold text-sm">
+            <div className="flex items-center gap-3">
+              <div className="hidden md:flex items-center gap-3">
+                <span className="text-sm text-slate-400">{user?.username}</span>
+                <div className="h-9 w-9 rounded-full bg-[#3caff6]/20 flex items-center justify-center border border-[#3caff6]/30 text-[#3caff6] font-bold text-sm">
                   {user?.username?.charAt(0).toUpperCase()}
                 </div>
-              ) : (
-                <button onClick={() => router.push('/login')} className="px-4 py-2 bg-[#3caff6] hover:bg-[#3caff6]/90 text-[#101b22] text-sm font-bold rounded-lg transition">
-                  Se connecter
+                <button onClick={() => { logout(); router.push('/login'); }} className="p-2 text-slate-500 hover:text-red-400 transition-colors" title="Se déconnecter">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
                 </button>
-              )}
+              </div>
+              {/* Mobile hamburger */}
+              <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden p-2 text-slate-400 hover:text-white">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  {mobileMenuOpen ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  ) : (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  )}
+                </svg>
+              </button>
             </div>
           </div>
         </div>
       </header>
+
+      {/* Mobile Menu */}
+      {mobileMenuOpen && (
+        <div className="md:hidden border-b border-slate-800 bg-[#101b22] px-4 py-4 space-y-3">
+          <button onClick={() => { router.push('/challenges'); setMobileMenuOpen(false); }} className="block w-full text-left text-[#3caff6] font-semibold text-sm py-2">
+            Challenges
+          </button>
+          <button onClick={() => { router.push('/leaderboard'); setMobileMenuOpen(false); }} className="block w-full text-left text-slate-400 hover:text-[#3caff6] text-sm font-medium py-2">
+            Leaderboard
+          </button>
+          <button onClick={() => { logout(); router.push('/login'); setMobileMenuOpen(false); }} className="block w-full text-left text-red-400 hover:text-red-300 text-sm font-medium py-2">
+            Se déconnecter
+          </button>
+        </div>
+      )}
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Hero Featured Challenge */}

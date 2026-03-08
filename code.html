@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#3caff6",
+                        "background-light": "#f5f7f8",
+                        "background-dark": "#101b22",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 antialiased font-display">
+<div class="relative flex min-h-screen w-full flex-col overflow-x-hidden">
+<div class="layout-container flex h-full grow flex-col">
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-slate-200 dark:border-slate-800 px-6 py-4 lg:px-20">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-3 text-primary">
+<span class="material-symbols-outlined text-3xl">terminal</span>
+<h2 class="text-slate-900 dark:text-slate-100 text-xl font-bold leading-tight tracking-tight">CloudCode</h2>
+</div>
+<nav class="hidden md:flex items-center gap-8">
+<a class="text-slate-600 dark:text-slate-300 text-sm font-medium hover:text-primary transition-colors" href="#">Challenges</a>
+<a class="text-slate-600 dark:text-slate-300 text-sm font-medium hover:text-primary transition-colors" href="#">Leaderboard</a>
+<a class="text-slate-600 dark:text-slate-300 text-sm font-medium hover:text-primary transition-colors" href="#">Profile</a>
+</nav>
+</div>
+<div class="flex flex-1 justify-end gap-6 items-center">
+<label class="hidden sm:flex flex-col min-w-40 h-10 max-w-64">
+<div class="flex w-full flex-1 items-stretch rounded-lg h-full">
+<div class="text-slate-400 dark:text-slate-500 flex border-none bg-slate-100 dark:bg-slate-800 items-center justify-center pl-4 rounded-l-lg">
+<span class="material-symbols-outlined text-xl">search</span>
+</div>
+<input class="form-input flex w-full min-w-0 flex-1 border-none bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-0 h-full placeholder:text-slate-500 px-3 rounded-r-lg text-sm font-normal" placeholder="Search challenges..." value=""/>
+</div>
+</label>
+<button class="flex min-w-[100px] cursor-pointer items-center justify-center rounded-lg h-10 px-5 bg-primary text-background-dark text-sm font-bold hover:opacity-90 transition-opacity">
+                        Sign Up
+                    </button>
+</div>
+</header>
+<main class="flex flex-col flex-1 px-6 lg:px-20 py-10 max-w-[1280px] mx-auto w-full">
+<section class="flex flex-col lg:flex-row gap-12 items-center mb-16">
+<div class="flex flex-col gap-8 flex-1">
+<div class="flex flex-col gap-4">
+<span class="text-primary font-bold tracking-widest text-xs uppercase">Welcome to the future of coding</span>
+<h1 class="text-slate-900 dark:text-slate-100 text-4xl lg:text-6xl font-black leading-tight tracking-tight">
+                                Master the Art of <span class="text-primary">Coding</span> with CloudCode
+                            </h1>
+<p class="text-slate-600 dark:text-slate-400 text-lg lg:text-xl leading-relaxed max-w-xl">
+                                Join the elite community of developers solving complex problems in Python and JavaScript. Elevate your skills one challenge at a time.
+                            </p>
+</div>
+<div class="flex flex-wrap gap-4">
+<button class="flex min-w-[180px] cursor-pointer items-center justify-center rounded-lg h-14 px-8 bg-primary text-background-dark text-base font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] transition-transform">
+                                Start Coding Now
+                            </button>
+<button class="flex min-w-[180px] cursor-pointer items-center justify-center rounded-lg h-14 px-8 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-base font-bold border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                                View Leaderboard
+                            </button>
+</div>
+</div>
+<div class="flex-1 w-full">
+<div class="relative rounded-2xl overflow-hidden aspect-video shadow-2xl border border-slate-200 dark:border-slate-800">
+<div class="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent"></div>
+<img alt="Code Editor Screen" class="w-full h-full object-cover" data-alt="Modern dark mode code editor interface with syntax highlighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA8_wl2t_3GrKMD7RZwsTkt6YV-u7KeIMAgkGomQOQz6o9IQxe3lURVeZd9kJxpM0vqGWRfi1pAE4F9ctkYZzJc9ay_QH9PqN2YhX6-t0r-g3r34nlBtmJl7g10xE9_q7wQ968JAQnFny0OMXlGAPX0laKGOqPYiiXIocF-bYxv6AE53vR67dVYBTVwqoBcHDRc5BnpLN7mooM4_b0nhPGSSdjNQMMitHdQfj7qrPJutcloQf-v3pAY5HfLAvdIpZWTcBq4ZYCI"/>
+</div>
+</div>
+</section>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+<div class="flex flex-col gap-2 rounded-xl p-8 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 transition-all hover:border-primary/50">
+<span class="material-symbols-outlined text-primary text-3xl mb-2">groups</span>
+<p class="text-slate-600 dark:text-slate-400 text-sm font-medium uppercase tracking-wider">Developers</p>
+<p class="text-slate-900 dark:text-slate-100 text-3xl font-black">10k+</p>
+</div>
+<div class="flex flex-col gap-2 rounded-xl p-8 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 transition-all hover:border-primary/50">
+<span class="material-symbols-outlined text-primary text-3xl mb-2">code_blocks</span>
+<p class="text-slate-600 dark:text-slate-400 text-sm font-medium uppercase tracking-wider">Challenges</p>
+<p class="text-slate-900 dark:text-slate-100 text-3xl font-black">500+</p>
+</div>
+<div class="flex flex-col gap-2 rounded-xl p-8 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 transition-all hover:border-primary/50">
+<span class="material-symbols-outlined text-primary text-3xl mb-2">language</span>
+<p class="text-slate-600 dark:text-slate-400 text-sm font-medium uppercase tracking-wider">Languages</p>
+<p class="text-slate-900 dark:text-slate-100 text-3xl font-black">Python &amp; JS</p>
+</div>
+<div class="flex flex-col gap-2 rounded-xl p-8 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 transition-all hover:border-primary/50">
+<span class="material-symbols-outlined text-primary text-3xl mb-2">emoji_events</span>
+<p class="text-slate-600 dark:text-slate-400 text-sm font-medium uppercase tracking-wider">Daily Rewards</p>
+<p class="text-slate-900 dark:text-slate-100 text-3xl font-black">2.5k XP</p>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-12 mb-16">
+<div class="lg:col-span-2">
+<div class="flex items-center justify-between mb-8">
+<h2 class="text-slate-900 dark:text-slate-100 text-2xl font-bold flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">auto_awesome</span>
+                                Challenge of the Day
+                            </h2>
+<a class="text-primary text-sm font-bold hover:underline" href="#">View all</a>
+</div>
+<div class="flex flex-col md:flex-row items-stretch rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800/40 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors group">
+<div class="md:w-2/5 aspect-video md:aspect-auto overflow-hidden">
+<img alt="Code Snippet background" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Abstract code logic visual representation with blue neon lines" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBT2z918TEq5oHSeL9C5g5apHwDOwiLUijospjM0PIFu9VM5GuoQ-T0b3442UaAfFTb2UD47rZ7NqoqFxvM8Sc2bLPbSb_pMcnuOOiBdWr8hZx20mGidFHg8vsj49sZxhjPQdIwN4SJ8OiuzdDFbSlbCoIcOIKyblwftpwfv07tLzAlv5twLyP33v3r_Ud8P92wrgnEzyzWlg8C68y9dz3ZaT5_4HKMe8v54rs8vzFaTaZRpnbtAM0OESM1hcL8Cx3Culhf5HP2"/>
+</div>
+<div class="p-8 flex flex-col justify-between flex-1">
+<div>
+<div class="flex gap-2 mb-4">
+<span class="px-3 py-1 bg-green-500/10 text-green-500 text-xs font-bold rounded-full uppercase">Easy</span>
+<span class="px-3 py-1 bg-primary/10 text-primary text-xs font-bold rounded-full uppercase">150 Points</span>
+</div>
+<h3 class="text-slate-900 dark:text-slate-100 text-2xl font-bold mb-3">Two Sum</h3>
+<p class="text-slate-600 dark:text-slate-400 text-base leading-relaxed mb-6">
+                                        Given an array of integers <code class="bg-slate-200 dark:bg-slate-700 px-1 rounded">nums</code> and an integer <code class="bg-slate-200 dark:bg-slate-700 px-1 rounded">target</code>, return indices of the two numbers such that they add up to <code class="bg-slate-200 dark:bg-slate-700 px-1 rounded">target</code>.
+                                    </p>
+</div>
+<div class="flex items-center justify-between mt-auto">
+<div class="flex -space-x-2">
+<img alt="User" class="w-8 h-8 rounded-full border-2 border-slate-100 dark:border-slate-800" data-alt="Small round user avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBCKVbdGc8aopOLvjxrh0MJTCsm1f0d6VkXwIJcI-AaKdzfRLLclmDC0aqEUGSH6P2c1Gs950_xaFZCDDflOe5ILpYc9AsTrJxT63D-kxleg5vlnTxi_pPWQP8gd4CuIuyfgHB2lafPD7JMjHaWWLEUCKBHi1RkATFlD4RK1DNyISHlz_SOv3r0_2qBXdoCS5oRkUWymd3cF1vW4OHCryBCrw1Mz8V-AWWCa7Bs1mxeIsfrkSKsIHS59Rq3T0e_IgNFzwFENzOb"/>
+<img alt="User" class="w-8 h-8 rounded-full border-2 border-slate-100 dark:border-slate-800" data-alt="Small round user avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCfUUpEyMd9haV2Ru4ibkOq3-hLza3hcDKEBoJYpubx4DwXj5-6LkNh04oCnYypOPjkz8wwoRgHdENvX2R2V5fRUDMXUZ_cCdb2o2nEeVbw6AtsJL6zCIAEv9Bwms1JlAS2cmryLKJ9juLRe_IW-qIqFN2argWMjjyzRjsdLVEyUHAhWjpcpB_7D63coqdp4AhZi6Uo2_MIiw4JD0dRpWevcMmq5b9Jg5TWG9T0uENqNNGHmC1MhLtZXEiqYMfdJ9FS5leYtZzF"/>
+<img alt="User" class="w-8 h-8 rounded-full border-2 border-slate-100 dark:border-slate-800" data-alt="Small round user avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD6_nxIiLUfT6CjvEvD8zmaaSsLks3vrN_uWKh1vm1S4Ra_HEq8ifB_PDY7eN7v7Yffwqa8KzYxkqKaEg6dF_N38-scYloJUNVGtvTe7U9JzUDvjcnO5mgH6ebpR2u21Wgk0jMxGfr_KOo_PHC8AAjYT7KJmoPjH8BBouetmU50ySEHSv8AdEcwI-A7EaSKubhyYqSWWmazedpu4EzeYwcnw7rBLgu9SpGEZ3J6bcPLlckPyyxhP4U6sSFcj2jTDBZgXMFqb-RV"/>
+<div class="w-8 h-8 rounded-full border-2 border-slate-100 dark:border-slate-800 bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-[10px] font-bold">+12</div>
+</div>
+<button class="flex items-center gap-2 bg-primary text-background-dark px-6 py-2.5 rounded-lg font-bold text-sm hover:opacity-90 transition-opacity">
+                                        Solve Now <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<div class="lg:col-span-1">
+<div class="flex items-center justify-between mb-8">
+<h2 class="text-slate-900 dark:text-slate-100 text-2xl font-bold flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">leaderboard</span>
+                                Global Leaderboard
+                            </h2>
+</div>
+<div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800/40 p-2">
+<div class="flex flex-col">
+<div class="flex items-center gap-4 p-4 rounded-xl bg-primary/10 border border-primary/20 mb-2">
+<span class="text-primary font-black text-lg w-6">1</span>
+<img alt="Dev" class="w-10 h-10 rounded-full object-cover" data-alt="Avatar of top ranked developer" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDSQHyhB1RXTSfAqEe0LoLo1Kza5YZLGcZzay5hYpxB1pZnUC-519HAZQcuM2hA46XjZs6QClqSTqAGZ42dxvSPzh3h8kkdEso3QyTLy7Gmgf1jqsuKLouodrRpk5acqVxTL6ObP5TIlpKPrnsBxKPjjv6BxK-OKNzb0x8FFRvqgw9XZOgI8pIQ4Nx7aZqEapvs3YRTxZ3CrBM98P9VT7_zETPCpOD29HXs3mPFkCiNHfBsKfUiN-Zxbi9mJiiKiXCp6LNs79sa"/>
+<div class="flex-1">
+<p class="text-slate-900 dark:text-slate-100 font-bold text-sm">Alex Chen</p>
+<p class="text-slate-500 text-xs">4,850 points</p>
+</div>
+<span class="material-symbols-outlined text-yellow-500">workspace_premium</span>
+</div>
+<div class="flex items-center gap-4 p-4 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700/50 transition-colors">
+<span class="text-slate-400 dark:text-slate-500 font-black text-lg w-6 text-center">2</span>
+<img alt="Dev" class="w-10 h-10 rounded-full object-cover" data-alt="Avatar of developer ranked second" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDZJU_iiJEhoBYOrbvYb24PmEiIkcAg5nz4fWL7NozpGbK3hrkpYmKbltSBDRfYur7Do7EVXZqEYZHMjUaSb3l6C5NkFJLXxSCqV7Q0b_Bm8GptDAaf-h6DoLNmnpQxb1VwzB-pMI7MhsYwAetjPOqULTXbeNSMT7cRN2U1pGLt11zePn6eeLxeIkkiNVSK1oq9-EA01UEwWICqxVmfZh0JOpjoHc7vuZAHjjnfz6peohQ1gY6K4p8djg6jVusRljitVdLuo7aa"/>
+<div class="flex-1">
+<p class="text-slate-900 dark:text-slate-100 font-bold text-sm">Sarah Miller</p>
+<p class="text-slate-500 text-xs">4,210 points</p>
+</div>
+</div>
+<div class="flex items-center gap-4 p-4 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700/50 transition-colors">
+<span class="text-slate-400 dark:text-slate-500 font-black text-lg w-6 text-center">3</span>
+<img alt="Dev" class="w-10 h-10 rounded-full object-cover" data-alt="Avatar of developer ranked third" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBFRdFd_BfioWlj2UtWfRJP5hycr1OpOBdMdwzLhOdNuKtTXKmUSSbQuFtC03JXknHRL4j83az-OESTzoKaCj_6aJuobVJo0Iyya3EHcBBc1QNEC4Q8UNqMEM9pSl6L1Tgq-LnzLsy7Tl-5dilN_7BdGje36uxo-fa-wc6rgRQboDdWAlBXPcuNJjhyiX_RVi5ixHtySAhVMRXI0n5aeBfKwHft2J-hORLZPu-fS5WsvWLarJsX1cRjdTJJWLhoQJukkOYuH6jD"/>
+<div class="flex-1">
+<p class="text-slate-900 dark:text-slate-100 font-bold text-sm">Leo V.</p>
+<p class="text-slate-500 text-xs">3,980 points</p>
+</div>
+</div>
+<div class="flex items-center gap-4 p-4 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700/50 transition-colors">
+<span class="text-slate-400 dark:text-slate-500 font-black text-lg w-6 text-center">4</span>
+<img alt="Dev" class="w-10 h-10 rounded-full object-cover" data-alt="Avatar of developer ranked fourth" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBGhKJaRDJgccz9RBh3QMXqE4CRhJCkhA9pPfVTK5O4aOOpFEiiDFyvjlYYp0p7wh28aoL5vCnJYIpU6OWnumMGeMr-v0EHf-Xz11qnYE9i8u6LLdbG4D_PfDxSUtQvCGBC6uBScuK-2X0mF8cCz4AQhsbNW0yuhkxdmPVMxPqfDeXRQbiYQVBeBTaQr9Q22vGQwBjIBpdUlfvOMW3Mg2U-elrofCHSkis1-iUiRxXQEijID1JOWTJzVOwAOpY7dUZLhbABIn__"/>
+<div class="flex-1">
+<p class="text-slate-900 dark:text-slate-100 font-bold text-sm">Jordan Smith</p>
+<p class="text-slate-500 text-xs">3,750 points</p>
+</div>
+</div>
+</div>
+<div class="p-4 border-t border-slate-200 dark:border-slate-800 text-center">
+<a class="text-primary text-sm font-bold hover:underline" href="#">Full Leaderboard</a>
+</div>
+</div>
+</div>
+</div>
+<section class="py-12 border-t border-slate-200 dark:border-slate-800">
+<h2 class="text-slate-900 dark:text-slate-100 text-2xl font-bold mb-8 text-center uppercase tracking-widest text-sm">Supported Languages</h2>
+<div class="flex flex-wrap justify-center gap-12 items-center">
+<div class="flex flex-col items-center gap-4 grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all cursor-default group">
+<div class="w-16 h-16 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center border border-slate-200 dark:border-slate-700 group-hover:border-yellow-500/50">
+<svg class="w-10 h-10" fill="none" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M3 3H21V21H3V3Z" fill="#F7DF1E"></path>
+<path d="M21 15.6V18.1C21 19.3 20.3 20 19.1 20H17.4V15.5H21V15.6ZM13.1 14.1C13.1 13.1 13.9 12.3 14.9 12.3C15.9 12.3 16.7 13.1 16.7 14.1V15.1H13.1V14.1Z" fill="black"></path>
+</svg>
+</div>
+<span class="text-slate-900 dark:text-slate-100 font-bold text-sm">JavaScript</span>
+</div>
+<div class="flex flex-col items-center gap-4 grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all cursor-default group">
+<div class="w-16 h-16 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center border border-slate-200 dark:border-slate-700 group-hover:border-blue-500/50">
+<svg class="w-10 h-10" fill="none" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M11.9 2C6.4 2 6.5 4.3 6.5 4.3L6.5 6.6H12.1V7.3H4.1C4.1 7.3 2 7.1 2 12.1C2 17.1 3.8 16.9 3.8 16.9H6L6 14.1C6 14.1 6 11.2 8.9 11.2H14.4C14.4 11.2 17.1 11.1 17.1 8.5V4.6C17.1 4.6 17.5 2 11.9 2Z" fill="#3776AB"></path>
+<path d="M12.1 22C17.6 22 17.5 19.7 17.5 19.7L17.5 17.4H11.9V16.7H19.9C19.9 16.7 22 16.9 22 11.9C22 6.9 20.2 7.1 20.2 7.1H18L18 9.9C18 9.9 18 12.8 15.1 12.8H9.6C9.6 12.8 6.9 12.9 6.9 15.5V19.4C6.9 19.4 6.5 22 12.1 22Z" fill="#FFD43B"></path>
+</svg>
+</div>
+<span class="text-slate-900 dark:text-slate-100 font-bold text-sm">Python</span>
+</div>
+</div>
+</section>
+</main>
+<footer class="mt-auto border-t border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800/20 px-6 lg:px-20 py-12">
+<div class="max-w-[1280px] mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
+<div class="col-span-1 md:col-span-1">
+<div class="flex items-center gap-3 text-primary mb-6">
+<span class="material-symbols-outlined text-2xl">terminal</span>
+<h2 class="text-slate-900 dark:text-slate-100 text-lg font-bold">CloudCode</h2>
+</div>
+<p class="text-slate-500 text-sm leading-relaxed">
+                            Empowering developers to reach their full potential through competitive coding and collaboration.
+                        </p>
+</div>
+<div>
+<h4 class="text-slate-900 dark:text-slate-100 font-bold text-sm mb-6 uppercase tracking-wider">Explore</h4>
+<ul class="flex flex-col gap-4">
+<li><a class="text-slate-500 text-sm hover:text-primary transition-colors" href="#">All Challenges</a></li>
+<li><a class="text-slate-500 text-sm hover:text-primary transition-colors" href="#">Learning Paths</a></li>
+<li><a class="text-slate-500 text-sm hover:text-primary transition-colors" href="#">Algorithms</a></li>
+<li><a class="text-slate-500 text-sm hover:text-primary transition-colors" href="#">Data Structures</a></li>
+</ul>
+</div>
+<div>
+<h4 class="text-slate-900 dark:text-slate-100 font-bold text-sm mb-6 uppercase tracking-wider">Community</h4>
+<ul class="flex flex-col gap-4">
+<li><a class="text-slate-500 text-sm hover:text-primary transition-colors" href="#">Leaderboard</a></li>
+<li><a class="text-slate-500 text-sm hover:text-primary transition-colors" href="#">Discussions</a></li>
+<li><a class="text-slate-500 text-sm hover:text-primary transition-colors" href="#">Events</a></li>
+<li><a class="text-slate-500 text-sm hover:text-primary transition-colors" href="#">Discord Server</a></li>
+</ul>
+</div>
+<div>
+<h4 class="text-slate-900 dark:text-slate-100 font-bold text-sm mb-6 uppercase tracking-wider">Stay Connected</h4>
+<div class="flex flex-col gap-4">
+<p class="text-slate-500 text-sm">Join our newsletter for weekly challenges and coding tips.</p>
+<div class="flex gap-2">
+<input class="bg-slate-200 dark:bg-slate-800 border-none rounded-lg text-sm flex-1 focus:ring-1 focus:ring-primary" placeholder="Email" type="email"/>
+<button class="bg-primary text-background-dark p-2 rounded-lg">
+<span class="material-symbols-outlined text-sm">send</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<div class="max-w-[1280px] mx-auto mt-12 pt-8 border-t border-slate-200 dark:border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4">
+<p class="text-slate-500 text-xs">© 2024 CloudCode. All rights reserved.</p>
+<div class="flex gap-6">
+<a class="text-slate-500 hover:text-primary text-xs" href="#">Privacy Policy</a>
+<a class="text-slate-500 hover:text-primary text-xs" href="#">Terms of Service</a>
+<a class="text-slate-500 hover:text-primary text-xs" href="#">Cookies</a>
+</div>
+</div>
+</footer>
+</div>
+</div>
+</body></html>
