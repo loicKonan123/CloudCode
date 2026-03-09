@@ -110,7 +110,9 @@ public class VsService : IVsService
         if (match.Player1Id != userId && match.Player2Id != userId)
             throw new UnauthorizedAccessException("Not a participant");
 
-        var langEnum = language.ToLower() == "python" ? ChallengeLanguage.Python : ChallengeLanguage.JavaScript;
+        // Use the player's own language stored at match creation (ignore submitted language)
+        var playerLanguage = match.Player1Id == userId ? match.Player1Language : match.Player2Language;
+        var langEnum = playerLanguage.ToLower() == "python" ? ChallengeLanguage.Python : ChallengeLanguage.JavaScript;
 
         // Run judge with all test cases
         var judgeResult = await _judge.RunTestsAsync(match.ChallengeId, code, langEnum, visibleOnly: false);
@@ -152,7 +154,7 @@ public class VsService : IVsService
         };
     }
 
-    public async Task<VsMatchDto> CreateMatchAsync(Guid player1Id, Guid player2Id, string language)
+    public async Task<VsMatchDto> CreateMatchAsync(Guid player1Id, Guid player2Id, string player1Language, string player2Language)
     {
         // Pick a random published challenge
         var challenges = await _db.Challenges
@@ -169,7 +171,8 @@ public class VsService : IVsService
             Player1Id = player1Id,
             Player2Id = player2Id,
             ChallengeId = challenge.Id,
-            Language = language,
+            Player1Language = player1Language,
+            Player2Language = player2Language,
             Status = VsMatchStatus.InProgress,
             StartedAt = DateTime.UtcNow
         };
@@ -315,7 +318,8 @@ public class VsService : IVsService
             },
             ChallengeTitle = m.Challenge.Title,
             ChallengeSlug = m.Challenge.Slug,
-            Language = m.Language,
+            Player1Language = m.Player1Language,
+            Player2Language = m.Player2Language,
             Status = m.Status,
             WinnerId = m.WinnerId,
             StartedAt = m.StartedAt,

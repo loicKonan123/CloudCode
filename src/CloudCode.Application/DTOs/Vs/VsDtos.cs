@@ -27,7 +27,8 @@ public class VsMatchDto
     public VsPlayerDto Player2 { get; set; } = null!;
     public string ChallengeTitle { get; set; } = string.Empty;
     public string ChallengeSlug { get; set; } = string.Empty;
-    public string Language { get; set; } = string.Empty;
+    public string Player1Language { get; set; } = string.Empty;
+    public string Player2Language { get; set; } = string.Empty;
     public VsMatchStatus Status { get; set; }
     public Guid? WinnerId { get; set; }
     public DateTime? StartedAt { get; set; }
@@ -90,7 +91,9 @@ public class MatchFoundPayload
     public VsPlayerDto Opponent { get; set; } = null!;
     public string ChallengeSlug { get; set; } = string.Empty;
     public string ChallengeTitle { get; set; } = string.Empty;
-    public string Language { get; set; } = string.Empty;
+    /// <summary>The current player's own language (not the opponent's).</summary>
+    public string MyLanguage { get; set; } = string.Empty;
+    public string OpponentLanguage { get; set; } = string.Empty;
 }
 
 public class OpponentStatusPayload

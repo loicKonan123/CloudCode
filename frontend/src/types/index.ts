@@ -248,7 +248,8 @@ export interface VsMatch {
   player2: VsPlayer;
   challengeTitle: string;
   challengeSlug: string;
-  language: string;
+  player1Language: string;
+  player2Language: string;
   status: VsMatchStatus;
   winnerId?: string;
   startedAt?: string;
@@ -283,7 +284,8 @@ export interface MatchFoundPayload {
   opponent: VsPlayer;
   challengeSlug: string;
   challengeTitle: string;
-  language: string;
+  myLanguage: string;
+  opponentLanguage: string;
 }
 
 export interface MatchEndedPayload {

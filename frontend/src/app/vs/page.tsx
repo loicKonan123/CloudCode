@@ -1,5 +1,6 @@
 'use client';
 import AnimatedLogo from '@/components/AnimatedLogo';
+import SoundControl from '@/components/SoundControl';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -7,6 +8,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { vsApi } from '@/lib/api';
 import { VsRank, VsLeaderboardEntry, MatchFoundPayload, TierColors } from '@/types';
 import { HubConnectionBuilder, HubConnection, LogLevel } from '@microsoft/signalr';
+import { sounds } from '@/lib/sounds';
 import { Swords, Trophy, Zap, Shield, Clock, ChevronRight, Loader2, X } from 'lucide-react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5072';
@@ -62,11 +64,13 @@ export default function VsLobbyPage() {
       .build();
 
     conn.on('MatchFound', (payload: MatchFoundPayload) => {
+      sounds.matchFound();
       cleanup();
       router.push(`/vs/${payload.matchId}`);
     });
 
     conn.on('QueueJoined', () => {
+      sounds.queueJoined();
       startQueueTimer();
     });
 
@@ -88,6 +92,7 @@ export default function VsLobbyPage() {
 
   const handleJoinQueue = async () => {
     if (!connectionRef.current) return;
+    sounds.click();
     setIsQueuing(true);
     try {
       await connectionRef.current.invoke('JoinQueue', language);
@@ -97,6 +102,7 @@ export default function VsLobbyPage() {
   };
 
   const handleLeaveQueue = async () => {
+    sounds.click();
     if (queueTimerRef.current) clearInterval(queueTimerRef.current);
     setQueueTime(0);
     setIsQueuing(false);
@@ -125,6 +131,7 @@ export default function VsLobbyPage() {
               ))}
             </div>
             <div className="flex items-center gap-3">
+              <SoundControl />
               <span className="text-sm" style={{ color: '#8b949e' }}>{user?.username}</span>
               <button onClick={handleLogout} className="text-sm px-3 py-1.5 rounded-lg transition-colors"
                 style={{ color: '#8b949e', border: '1px solid #1e293b' }}>Logout</button>

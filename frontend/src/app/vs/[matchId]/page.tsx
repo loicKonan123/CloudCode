@@ -10,6 +10,8 @@ import {
 } from '@/types';
 import { HubConnectionBuilder, HubConnection, LogLevel } from '@microsoft/signalr';
 import dynamic from 'next/dynamic';
+import { sounds } from '@/lib/sounds';
+import SoundControl from '@/components/SoundControl';
 import {
   Swords, Clock, CheckCircle, XCircle, Loader2,
   AlertTriangle, Flag, ChevronRight, Shield, Eye, EyeOff,
@@ -49,12 +51,15 @@ export default function VsBattlePage() {
   const connectionRef = useRef<HubConnection | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const anticheatRef = useRef({ warnings: 0, hidden: false });
+  const myIdRef = useRef<string | undefined>(undefined);
 
   // ── Load match + challenge ────────────────────────────────────────────────
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
     if (!token) { router.push('/login'); return; }
 
+    sounds.loadPrefs();
+    myIdRef.current = user?.id;
     loadMatch();
     setupSignalR();
     setupAntiCheat();
@@ -80,8 +85,10 @@ export default function VsBattlePage() {
       const c = challengeRes.data;
       setChallenge(c);
 
-      // Set starter code based on language
-      const starter = m.language === 'python' ? c.starterCodePython : c.starterCodeJavaScript;
+      // Set starter code based on this player's own language
+      const isP1 = m.player1.id === user?.id;
+      const myLang = isP1 ? m.player1Language : m.player2Language;
+      const starter = myLang === 'python' ? c.starterCodePython : c.starterCodeJavaScript;
       setCode(starter || '');
 
       setPhase('battle');
@@ -91,12 +98,22 @@ export default function VsBattlePage() {
     }
   };
 
-  const startTimer = (startedAt?: string) => {
+  const startTimer = (startedAt?: string, limitSeconds = 1800) => {
     if (!startedAt) return;
     if (timerRef.current) clearInterval(timerRef.current);
     const start = new Date(startedAt).getTime();
     timerRef.current = setInterval(() => {
-      setElapsed(Math.floor((Date.now() - start) / 1000));
+      const secs = Math.floor((Date.now() - start) / 1000);
+      setElapsed(secs);
+      const remaining = limitSeconds - secs;
+      // Urgent beep at 30s, 20s, 10s, and every second below 10s
+      if (remaining === 30 || remaining === 20 || remaining === 10 || (remaining > 0 && remaining <= 10)) {
+        sounds.timerBeep();
+      }
+      // Auto-forfeit at time limit
+      if (remaining <= 0) {
+        stopTimer();
+      }
     }, 1000);
   };
 
@@ -116,9 +133,15 @@ export default function VsBattlePage() {
       .build();
 
     conn.on('OpponentStatus', (payload: OpponentStatusPayload) => {
-      if (payload.event === 'submitting') setOpponentEvent('Opponent is submitting...');
-      else if (payload.event === 'passed') setOpponentEvent('⚠️ Opponent submitted a correct solution!');
-      else if (payload.event === 'failed') setOpponentEvent('Opponent\'s submission failed');
+      if (payload.event === 'submitting') {
+        setOpponentEvent('Opponent is submitting...');
+        sounds.opponentSubmitted();
+      } else if (payload.event === 'passed') {
+        setOpponentEvent('⚠️ Opponent submitted a correct solution!');
+        sounds.anticheatWarning();
+      } else if (payload.event === 'failed') {
+        setOpponentEvent("Opponent's submission failed");
+      }
       setTimeout(() => setOpponentEvent(null), 4000);
     });
 
@@ -126,6 +149,12 @@ export default function VsBattlePage() {
       stopTimer();
       setMatchEnd(payload);
       setPhase('finished');
+      // Play win/lose/draw sound after short delay for drama
+      setTimeout(() => {
+        if (payload.isDraw) sounds.draw();
+        else if (payload.winnerId === myIdRef.current) sounds.win();
+        else sounds.lose();
+      }, 300);
     });
 
     connectionRef.current = conn;
@@ -160,6 +189,7 @@ export default function VsBattlePage() {
     if (document.hidden && phase === 'battle') {
       anticheatRef.current.warnings++;
       setAnticheatWarnings(anticheatRef.current.warnings);
+      sounds.anticheatWarning();
     }
   };
 
@@ -167,6 +197,7 @@ export default function VsBattlePage() {
     if (phase === 'battle') {
       anticheatRef.current.warnings++;
       setAnticheatWarnings(anticheatRef.current.warnings);
+      sounds.anticheatWarning();
     }
   };
 
@@ -181,6 +212,7 @@ export default function VsBattlePage() {
   // ── Submit ─────────────────────────────────────────────────────────────────
   const handleSubmit = async () => {
     if (!match || isSubmitting) return;
+    sounds.submit();
     setIsSubmitting(true);
     setSubmitError(null);
 
@@ -188,7 +220,7 @@ export default function VsBattlePage() {
     try { await connectionRef.current?.invoke('NotifySubmitting', matchId); } catch { /* ignore */ }
 
     try {
-      const res = await vsApi.submit(matchId, code, match.language);
+      const res = await vsApi.submit(matchId, code, myLanguage);
       setResult(res.data);
 
       if (res.data.passed) {
@@ -216,6 +248,8 @@ export default function VsBattlePage() {
   const isPlayer1 = match?.player1.id === myId;
   const me = isPlayer1 ? match?.player1 : match?.player2;
   const opponent = isPlayer1 ? match?.player2 : match?.player1;
+  const myLanguage = match ? (isPlayer1 ? match.player1Language : match.player2Language) : 'python';
+  const opponentLanguage = match ? (isPlayer1 ? match.player2Language : match.player1Language) : 'python';
   const myEloChange = matchEnd
     ? (isPlayer1 ? matchEnd.player1EloChange : matchEnd.player2EloChange)
     : null;
@@ -287,19 +321,27 @@ export default function VsBattlePage() {
             <span className="ml-1 text-xs" style={{ color: TierColors[me?.tier || ''] || '#8b949e' }}>{me?.tier}</span>
           </div>
           <span className="text-xs font-mono ml-1" style={{ color: '#3caff6' }}>{me?.elo} ELO</span>
+          <span className="text-xs px-1.5 py-0.5 rounded font-medium" style={{ backgroundColor: 'rgba(60,175,246,0.15)', color: '#3caff6', border: '1px solid rgba(60,175,246,0.3)' }}>
+            {myLanguage === 'python' ? '🐍' : '⚡'} {myLanguage}
+          </span>
         </div>
 
         {/* VS + timer */}
-        <div className="flex flex-col items-center">
+        <div className="flex flex-col items-center gap-0.5">
           <div className="flex items-center gap-2">
             <Swords size={16} style={{ color: '#3caff6' }} />
-            <span className="font-mono font-bold text-lg" style={{ color: '#f0f6fc' }}>{formatTime(elapsed)}</span>
+            <span className="font-mono font-bold text-lg" style={{
+              color: elapsed > 1770 ? '#ef4444' : elapsed > 1740 ? '#f59e0b' : '#f0f6fc'
+            }}>{formatTime(elapsed)}</span>
           </div>
-          <span className="text-xs" style={{ color: '#3caff6' }}>{match?.language.toUpperCase()}</span>
+          <SoundControl />
         </div>
 
         {/* Opponent */}
         <div className="flex items-center gap-2 flex-1 justify-end">
+          <span className="text-xs px-1.5 py-0.5 rounded font-medium" style={{ backgroundColor: 'rgba(139,148,158,0.15)', color: '#8b949e', border: '1px solid rgba(139,148,158,0.3)' }}>
+            {opponentLanguage === 'python' ? '🐍' : '⚡'} {opponentLanguage}
+          </span>
           <span className="text-xs font-mono mr-1" style={{ color: '#3caff6' }}>{opponent?.elo} ELO</span>
           <div className="text-right">
             <span className="font-semibold text-sm" style={{ color: '#f0f6fc' }}>{opponent?.username}</span>
@@ -377,7 +419,7 @@ export default function VsBattlePage() {
           )}
           <MonacoEditor
             height="100%"
-            language={match?.language === 'javascript' ? 'javascript' : 'python'}
+            language={myLanguage === 'javascript' ? 'javascript' : 'python'}
             value={code}
             onChange={(v) => setCode(v || '')}
             theme="vs-dark"
@@ -385,7 +427,7 @@ export default function VsBattlePage() {
               fontSize: 14,
               minimap: { enabled: false },
               scrollBeyondLastLine: false,
-              tabSize: match?.language === 'python' ? 4 : 2,
+              tabSize: myLanguage === 'python' ? 4 : 2,
               wordWrap: 'on',
               lineNumbers: 'on',
               renderLineHighlight: 'all',

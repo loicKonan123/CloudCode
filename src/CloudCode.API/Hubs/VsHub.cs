@@ -32,21 +32,27 @@ public class VsHub : Hub
         var userId = GetUserId();
         if (userId == Guid.Empty) return;
 
-        var (matched, opponentId) = _matchmaking.TryEnqueue(userId, language);
+        var (matched, opponentId, opponentLanguage) = _matchmaking.TryEnqueue(userId, language);
 
         if (matched && opponentId.HasValue)
         {
-            // Create match in DB
-            var match = await _vsService.CreateMatchAsync(userId, opponentId.Value, language);
+            // player1 = current caller (just joined), player2 = opponent (was waiting)
+            // Each player uses their own chosen language
+            var player1Language = language;
+            var player2Language = opponentLanguage ?? language;
 
-            // Build payloads for each player
+            // Create match in DB with both players' languages
+            var match = await _vsService.CreateMatchAsync(userId, opponentId.Value, player1Language, player2Language);
+
+            // Build payloads: each player gets their own language + opponent's language
             var payloadForPlayer1 = new MatchFoundPayload
             {
                 MatchId = match.Id,
                 Opponent = match.Player2,
                 ChallengeSlug = match.ChallengeSlug,
                 ChallengeTitle = match.ChallengeTitle,
-                Language = match.Language
+                MyLanguage = match.Player1Language,
+                OpponentLanguage = match.Player2Language
             };
             var payloadForPlayer2 = new MatchFoundPayload
             {
@@ -54,7 +60,8 @@ public class VsHub : Hub
                 Opponent = match.Player1,
                 ChallengeSlug = match.ChallengeSlug,
                 ChallengeTitle = match.ChallengeTitle,
-                Language = match.Language
+                MyLanguage = match.Player2Language,
+                OpponentLanguage = match.Player1Language
             };
 
             // Notify the caller (player1 = just joined)

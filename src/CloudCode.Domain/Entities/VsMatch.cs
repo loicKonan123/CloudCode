@@ -10,7 +10,8 @@ public class VsMatch : BaseEntity
     public Guid ChallengeId { get; set; }
     public Guid? WinnerId { get; set; }
     public VsMatchStatus Status { get; set; } = VsMatchStatus.Waiting;
-    public string Language { get; set; } = "python";
+    public string Player1Language { get; set; } = "python";
+    public string Player2Language { get; set; } = "python";
     public DateTime? StartedAt { get; set; }
     public DateTime? FinishedAt { get; set; }
     public int Player1EloChange { get; set; }

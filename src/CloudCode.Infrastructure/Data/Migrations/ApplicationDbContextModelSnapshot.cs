@@ -698,14 +698,14 @@ namespace CloudCode.Infrastructure.Data.Migrations
                     b.Property<DateTime?>("FinishedAt")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Language")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
                     b.Property<int>("Player1EloChange")
                         .HasColumnType("INTEGER");
 
                     b.Property<Guid>("Player1Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Player1Language")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("Player1Submitted")
@@ -715,6 +715,10 @@ namespace CloudCode.Infrastructure.Data.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<Guid>("Player2Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Player2Language")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("Player2Submitted")
