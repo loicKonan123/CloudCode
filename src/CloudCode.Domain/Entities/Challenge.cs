@@ -15,6 +15,11 @@ public class Challenge : BaseEntity
     public string Tags { get; set; } = string.Empty; // JSON array stored as string
     public bool IsPublished { get; set; }
 
+    // Function mode (LeetCode-style): user implements a function, hidden test runner calls it
+    public bool IsFunction { get; set; }
+    public string? TestRunnerPython { get; set; }
+    public string? TestRunnerJavaScript { get; set; }
+
     // Navigation properties
     public virtual ICollection<TestCase> TestCases { get; set; } = new List<TestCase>();
     public virtual ICollection<UserSubmission> Submissions { get; set; } = new List<UserSubmission>();

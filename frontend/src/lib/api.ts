@@ -115,6 +115,9 @@ export const challengesApi = {
 
   adminTogglePublish: (id: string) =>
     api.post<import('@/types').ChallengeDetail>(`/admin/challenges/${id}/publish`),
+
+  adminSeed: () =>
+    api.post<{ message: string }>('/admin/challenges/seed'),
 };
 
 // ===========================================
@@ -179,6 +182,14 @@ export const vsApi = {
 
   forfeit: (matchId: string) =>
     api.post(`/vs/matches/${matchId}/forfeit`),
+};
+
+// ===========================================
+// Formatting API
+// ===========================================
+export const formattingApi = {
+  format: (code: string, language: string) =>
+    api.post<{ formattedCode: string; success: boolean; error?: string }>('/format', { code, language }),
 };
 
 export default api;

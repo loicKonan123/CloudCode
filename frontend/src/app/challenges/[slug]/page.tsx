@@ -4,7 +4,7 @@ import AnimatedLogo from '@/components/AnimatedLogo';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
-import { challengesApi } from '@/lib/api';
+import { challengesApi, formattingApi } from '@/lib/api';
 import {
   ChallengeDetail,
   ChallengeLanguage,
@@ -17,6 +17,7 @@ import {
 } from '@/types';
 import dynamic from 'next/dynamic';
 import ReactMarkdown from 'react-markdown';
+import type * as Monaco from 'monaco-editor';
 
 const MonacoEditor = dynamic(() => import('@monaco-editor/react'), { ssr: false });
 
@@ -46,6 +47,11 @@ export default function ChallengePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [testResults, setTestResults] = useState<JudgeResult | null>(null);
   const [selectedTestIndex, setSelectedTestIndex] = useState(0);
+
+  // Editor settings
+  const [fontSize, setFontSize] = useState(14);
+  const [isFormatting, setIsFormatting] = useState(false);
+  const editorRef = useRef<Monaco.editor.IStandaloneCodeEditor | null>(null);
 
   // Timer
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -133,15 +139,31 @@ export default function ChallengePage() {
     } catch { /* ignore */ }
   };
 
+  const handleFormat = useCallback(async () => {
+    if (isFormatting) return;
+    setIsFormatting(true);
+    try {
+      const langName = language === ChallengeLanguage.Python ? 'python' : 'javascript';
+      const res = await formattingApi.format(code, langName);
+      if (res.data.success) setCode(res.data.formattedCode);
+    } catch { /* ignore if formatter unavailable */ } finally {
+      setIsFormatting(false);
+    }
+  }, [code, language, isFormatting]);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.ctrlKey && e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleTest(); }
       else if (e.ctrlKey && e.shiftKey && e.key === 'Enter') { e.preventDefault(); handleSubmit(); }
+      else if (e.ctrlKey && e.shiftKey && e.key === 'F') { e.preventDefault(); editorRef.current?.getAction('actions.find')?.run(); }
+      else if (e.altKey && e.shiftKey && e.key === 'F') { e.preventDefault(); handleFormat(); }
+      else if (e.ctrlKey && e.key === '+') { e.preventDefault(); setFontSize(s => Math.min(s + 1, 28)); }
+      else if (e.ctrlKey && e.key === '-') { e.preventDefault(); setFontSize(s => Math.max(s - 1, 10)); }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [handleTest, handleSubmit]);
+  }, [handleTest, handleSubmit, handleFormat]);
 
   const formatTime = (s: number) => {
     const m = Math.floor(s / 60);
@@ -370,6 +392,42 @@ export default function ChallengePage() {
                 solution.{language === ChallengeLanguage.Python ? 'py' : 'js'}
               </span>
             </div>
+            <div className="flex items-center gap-1">
+              {/* Format button */}
+              <button
+                onClick={handleFormat}
+                disabled={isFormatting}
+                title="Format code (Alt+Shift+F)"
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-colors disabled:opacity-50"
+                style={{ color: '#8b949e', backgroundColor: 'rgba(30,41,59,0.5)' }}
+              >
+                {isFormatting ? (
+                  <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                ) : (
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h10M4 18h7" />
+                  </svg>
+                )}
+                Format
+              </button>
+              {/* Font size */}
+              <div className="flex items-center gap-0.5 ml-1">
+                <button
+                  onClick={() => setFontSize(s => Math.max(s - 1, 10))}
+                  title="Decrease font size (Ctrl+-)"
+                  className="w-6 h-6 flex items-center justify-center rounded text-slate-400 hover:text-white hover:bg-slate-700 transition-colors text-sm font-bold"
+                >A−</button>
+                <span className="text-xs text-slate-500 w-6 text-center font-mono">{fontSize}</span>
+                <button
+                  onClick={() => setFontSize(s => Math.min(s + 1, 28))}
+                  title="Increase font size (Ctrl++)"
+                  className="w-6 h-6 flex items-center justify-center rounded text-slate-400 hover:text-white hover:bg-slate-700 transition-colors text-sm font-bold"
+                >A+</button>
+              </div>
+            </div>
           </div>
 
           {/* Monaco Editor */}
@@ -380,9 +438,10 @@ export default function ChallengePage() {
               theme="vs-dark"
               value={code}
               onChange={(v) => setCode(v || '')}
+              onMount={(editor) => { editorRef.current = editor; }}
               options={{
                 minimap: { enabled: false },
-                fontSize: 14,
+                fontSize: fontSize,
                 lineNumbers: 'on',
                 scrollBeyondLastLine: false,
                 automaticLayout: true,

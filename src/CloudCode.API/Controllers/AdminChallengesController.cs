@@ -1,5 +1,6 @@
 using CloudCode.Application.DTOs.Challenges;
 using CloudCode.Application.Interfaces;
+using CloudCode.Infrastructure.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -14,6 +15,13 @@ public class AdminChallengesController : BaseApiController
     public AdminChallengesController(IChallengeService challengeService)
     {
         _challengeService = challengeService;
+    }
+
+    [HttpPost("seed")]
+    public async Task<ActionResult> Seed()
+    {
+        await ChallengeSeeder.SeedChallengesAsync(HttpContext.RequestServices);
+        return Ok(new { message = "Challenges seeded successfully." });
     }
 
     [HttpGet]

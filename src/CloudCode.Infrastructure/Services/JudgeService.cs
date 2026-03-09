@@ -22,6 +22,7 @@ public class JudgeService : IJudgeService
 
     public async Task<JudgeResultDto> RunTestsAsync(Guid challengeId, string code, ChallengeLanguage language, bool visibleOnly)
     {
+        var challenge = await _db.Challenges.FindAsync(challengeId);
         var testCases = await _db.TestCases
             .Where(t => t.ChallengeId == challengeId)
             .OrderBy(t => t.OrderIndex)
@@ -30,17 +31,20 @@ public class JudgeService : IJudgeService
         if (visibleOnly)
             testCases = testCases.Where(t => !t.IsHidden).ToList();
 
-        return await ExecuteTests(testCases, code, language, visibleOnly);
+        var finalCode = BuildCode(code, language, challenge);
+        return await ExecuteTests(testCases, finalCode, language, visibleOnly);
     }
 
     public async Task<JudgeResultDto> SubmitAsync(Guid challengeId, Guid userId, string code, ChallengeLanguage language)
     {
+        var challenge = await _db.Challenges.FindAsync(challengeId);
         var testCases = await _db.TestCases
             .Where(t => t.ChallengeId == challengeId)
             .OrderBy(t => t.OrderIndex)
             .ToListAsync();
 
-        var result = await ExecuteTests(testCases, code, language, false);
+        var finalCode = BuildCode(code, language, challenge);
+        var result = await ExecuteTests(testCases, finalCode, language, false);
 
         // Save submission
         var submission = new UserSubmission
@@ -228,6 +232,21 @@ public class JudgeService : IJudgeService
         {
             try { File.Delete(tempFile); } catch { }
         }
+    }
+
+    private static string BuildCode(string userCode, ChallengeLanguage language, Challenge? challenge)
+    {
+        if (challenge == null || !challenge.IsFunction)
+            return userCode;
+
+        var runner = language == ChallengeLanguage.JavaScript
+            ? challenge.TestRunnerJavaScript
+            : challenge.TestRunnerPython;
+
+        if (string.IsNullOrWhiteSpace(runner))
+            return userCode;
+
+        return userCode + "\n\n" + runner;
     }
 
     private static (string Command, string Extension) GetExecutionCommand(ChallengeLanguage language)
