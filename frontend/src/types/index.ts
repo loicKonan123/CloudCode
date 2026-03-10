@@ -98,6 +98,48 @@ export interface ChallengeDetail {
   bestScore?: number;
 }
 
+// ===== Profile Types =====
+export interface UserProfile {
+  id: string;
+  email: string;
+  username: string;
+  avatar?: string;
+  bio?: string;
+  emailConfirmed: boolean;
+  createdAt: string;
+  // Challenge stats
+  challengesSolved: number;
+  totalScore: number;
+  totalSubmissions: number;
+  easySolved: number;
+  mediumSolved: number;
+  hardSolved: number;
+  pythonSubmissions: number;
+  javaScriptSubmissions: number;
+  // VS stats
+  elo: number;
+  tier: string;
+  vsWins: number;
+  vsLosses: number;
+  // Recent activity
+  recentSubmissions: RecentSubmission[];
+}
+
+export interface RecentSubmission {
+  challengeTitle: string;
+  challengeSlug: string;
+  passed: boolean;
+  score: number;
+  language: ChallengeLanguage;
+  submittedAt: string;
+}
+
+export interface UpdateProfileDto {
+  username?: string;
+  avatar?: string;
+  bio?: string;
+}
+
 export interface TestCaseInfo {
   id: string;
   input: string;

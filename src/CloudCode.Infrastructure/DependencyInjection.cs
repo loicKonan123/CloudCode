@@ -49,6 +49,7 @@ public static class DependencyInjection
         services.AddScoped<IFormattingService, FormattingService>();
         services.AddScoped<IGitService, GitService>();
         services.AddScoped<IGitCredentialService, GitCredentialService>();
+        services.AddScoped<IUserService, UserService>();
         services.AddScoped<IChallengeService, ChallengeService>();
         services.AddScoped<IJudgeService, JudgeService>();
         services.AddScoped<ICourseService, CourseService>();

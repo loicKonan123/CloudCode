@@ -19,8 +19,7 @@ public class MappingProfile : Profile
     {
         // User mappings
         CreateMap<User, UserInfoDto>();
-        CreateMap<User, UserProfileDto>()
-            .ForMember(dest => dest.ProjectCount, opt => opt.MapFrom(src => src.Projects.Count));
+        CreateMap<User, UserProfileDto>();
         CreateMap<User, PublicUserDto>()
             .ForMember(dest => dest.PublicProjectCount, opt => opt.MapFrom(src => src.Projects.Count(p => p.IsPublic)));
         CreateMap<User, ProjectOwnerDto>();

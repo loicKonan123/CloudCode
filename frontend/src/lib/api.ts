@@ -185,6 +185,17 @@ export const vsApi = {
 };
 
 // ===========================================
+// Profile API
+// ===========================================
+export const profileApi = {
+  getMyProfile: () =>
+    api.get<import('@/types').UserProfile>('/users/me/profile'),
+
+  updateMyProfile: (data: import('@/types').UpdateProfileDto) =>
+    api.put<import('@/types').UserProfile>('/users/me/profile', data),
+};
+
+// ===========================================
 // Formatting API
 // ===========================================
 export const formattingApi = {

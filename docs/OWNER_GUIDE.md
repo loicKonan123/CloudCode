@@ -16,9 +16,10 @@
 7. [Frontend — Pages et Composants](#7-frontend--pages-et-composants)
 8. [Fonctionnalités implémentées](#8-fonctionnalités-implémentées)
 9. [Fonctionnalités manquantes / À faire](#9-fonctionnalités-manquantes--à-faire)
-10. [Lancer le projet](#10-lancer-le-projet)
-11. [Configuration](#11-configuration)
-12. [Conventions et patterns](#12-conventions-et-patterns)
+10. [Plan de monétisation](#10-plan-de-monétisation)
+11. [Lancer le projet](#11-lancer-le-projet)
+12. [Configuration](#12-configuration)
+13. [Conventions et patterns](#13-conventions-et-patterns)
 
 ---
 
@@ -336,6 +337,8 @@ Challenge en mode IsFunction=true
 | POST | `/challenges/{slug}/test` | ✓ | Tester le code (test cases visibles seulement) |
 | POST | `/challenges/{slug}/submit` | ✓ | Soumettre (tous les test cases) |
 | GET | `/challenges/{slug}/submissions` | ✓ | Historique des soumissions du user |
+| GET | `/users/me/profile` | ✓ | Profil complet avec toutes les stats |
+| PUT | `/users/me/profile` | ✓ | Modifier username, bio, avatar |
 | GET | `/leaderboard` | ✓ | Classement global |
 
 ### Admin Challenges (`/api/admin/challenges`)
@@ -470,6 +473,7 @@ Challenge en mode IsFunction=true
 | `/admin/courses` | Admin courses | Tableau de bord cours |
 | `/admin/courses/new` | Admin courses | Créer cours |
 | `/admin/courses/[id]/edit` | Admin courses | Modifier cours |
+| `/profile` | `app/profile/page.tsx` | Profil utilisateur (stats, ELO VS, difficulty breakdown, langages, soumissions récentes, modifier bio/username) |
 | `/admin/users` | Admin users | Gérer utilisateurs |
 
 ### Composants
@@ -496,6 +500,7 @@ Persisté dans `localStorage` (accessToken, refreshToken).
 | `challengesApi` | getAll, getBySlug, test, submit, getSubmissions, getLeaderboard + admin CRUD |
 | `coursesApi` | getAll, getBySlug + admin CRUD |
 | `vsApi` | getMyRank, getRank, getLeaderboard, getMatch, getHistory, submit, forfeit |
+| `profileApi` | getMyProfile, updateMyProfile |
 | `formattingApi` | format(code, language) |
 | `adminUsersApi` | getAll, toggleAdmin |
 
@@ -581,6 +586,16 @@ Persisté dans `localStorage` (accessToken, refreshToken).
 - Git intégré (init, commit, push, pull)
 - Formatage du code (black, prettier, gofmt, rustfmt)
 
+### ✅ Page Profil (COMPLET)
+
+- Stats challenges : résolus, score total, Easy/Medium/Hard breakdown
+- Stats VS : ELO, Tier (Bronze→Grandmaster), Wins/Losses
+- Statistiques soumissions : total, Python vs JavaScript (barre visuelle)
+- 10 soumissions récentes cliquables (redirige vers le challenge)
+- Modifier username et bio inline
+- Avatar avec initiale + glow selon tier
+- Accessible via clic sur l'avatar dans le header `/challenges`
+
 ### ✅ Admin (COMPLET)
 
 - Tableau de bord challenges : créer, modifier, publier, supprimer
@@ -592,56 +607,167 @@ Persisté dans `localStorage` (accessToken, refreshToken).
 
 ## 9. Fonctionnalités manquantes / À faire
 
-### 🔴 Priorité haute
+### 🔴 Priorité haute — Produit
+
+| Feature | Description | Complexité | Lié monétisation |
+|---|---|---|---|
+| ~~**Page Profil utilisateur**~~ | ✅ Implémenté — `/profile` avec stats complètes | — | — |
+| **Streak journalier** | Compteur jours consécutifs + badge 🔥, reset à minuit | Faible | Oui — streak save = feature Premium |
+| **Solution officielle** | Champ `OfficialSolutionPython/JS` sur Challenge, visible après résolution (ou Premium) | Faible | Oui — mur Premium |
+| **Hints / indices** | 1-3 indices par challenge, débloquables un par un, pénalité score | Faible | Oui — hints illimités = Premium |
+| **Email de vérification** | Confirmer l'email à l'inscription (SMTP) | Moyenne | Oui — requis pour Stripe |
+| **Reset de mot de passe** | Lien envoyé par email | Moyenne | Oui — requis pour prod |
+| **Rate limiting soumissions** | Max X soumissions/minute pour éviter l'abus | Faible | Oui — free vs premium |
+| **Challenge aléatoire** | Bouton "Random" sur `/challenges` filtré par difficulté | Très faible | Non |
+
+### 🟡 Priorité moyenne — Engagement
 
 | Feature | Description | Complexité |
 |---|---|---|
-| **Email de vérification** | Confirmer l'email à l'inscription | Moyenne |
-| **Reset de mot de passe** | Envoyer email avec lien de reset | Moyenne |
-| **Profile utilisateur** | Page `/profile` avec stats, avatar, bio | Faible |
-| **Streak journalier** | Défi quotidien + streak de jours consécutifs | Faible |
-
-### 🟡 Priorité moyenne
-
-| Feature | Description | Complexité |
-|---|---|---|
-| **Hints / indices** | Indices débloquables sur les challenges | Faible |
-| **Discussion par challenge** | Forum/commentaires sous chaque challenge | Haute |
-| **Solution officielle** | Voir la solution après avoir résolu | Faible |
-| **Complexité algorithmique** | Afficher O(n) attendu sur les challenges | Faible |
+| **Complexité algorithmique** | Champs `TimeComplexity` + `SpaceComplexity` affichés sur les challenges | Faible |
+| **Graphique de progression** | Heatmap activité style GitHub sur profil | Moyenne |
+| **Notifications email** | Email si streak en danger, nouveau challenge, résultat VS | Moyenne |
 | **Pagination leaderboard** | Actuellement tout chargé d'un coup | Faible |
-| **Notifications** | Notif quand un adversaire VS soumet | Moyenne |
-| **Statistiques avancées** | Graphique de progression dans le temps | Moyenne |
-| **Challenge aléatoire** | Bouton "challenge surprise" selon niveau | Faible |
+| **Discussion par challenge** | Commentaires / forum sous chaque challenge | Haute |
+| **Partage challenge** | Lien partageable avec code pré-rempli (viral) | Faible |
+| **Challenge du jour officiel** | Un challenge par jour sélectionné, badge spécial si résolu | Faible |
+| **Profil public** | Voir le profil d'un autre user (`/u/{username}`) | Faible |
+| **Admin — Statistiques globales** | Dashboard : nb users, soumissions/jour, challenges populaires | Moyenne |
 
 ### 🟢 Priorité basse / Nice-to-have
 
 | Feature | Description | Complexité |
 |---|---|---|
-| **Dark/Light mode** | Toggle thème | Faible |
-| **Partage de challenge** | Lien partageable avec code pré-rempli | Faible |
-| **Badges et achievements** | Système de récompenses (first solve, streak, etc.) | Haute |
-| **Mobile app** | Version React Native | Très haute |
-| **Support Java/C++** | Ajouter d'autres langages aux challenges | Haute |
+| **Badges et achievements** | First solve, 10-day streak, all-easy solved, etc. | Haute |
+| **Boutique avatars / thèmes** | Items cosmétiques achetables (lié monétisation) | Haute |
+| **Contests** | Compétitions avec deadline et classement | Haute |
+| **Support Java / C++ / Go** | Ajouter langages aux challenges | Haute |
 | **Éditeur collaboratif** | Pair programming sur challenge | Haute |
-| **Contests** | Compétitions avec deadline | Haute |
-| **Subscription/Plan** | Challenges premium | Très haute |
+| **Certifications payantes** | Badge certifié CloudCode après examen | Haute |
+| **Mobile app** | React Native | Très haute |
 
-### 🔧 Dette technique
+### 🔧 Dette technique — À régler avant production
 
-| Problème | Solution suggérée |
-|---|---|
-| **SQLite en production** | Migrer vers PostgreSQL pour la concurrence |
-| **Exécution code non sandboxée** | Dockeriser les exécutions (sécurité) |
-| **Pas de rate limiting** | Limiter les soumissions (ex: 10/minute/user) |
-| **Tokens JWT dans localStorage** | httpOnly cookie plus sécurisé |
-| **Pas de tests automatisés** | Ajouter xUnit (backend) et Jest (frontend) |
-| **Emails non envoyés** | Configurer SMTP (Mailgun, SendGrid) |
-| **Logs en console** | Ajouter Serilog avec structured logging |
+| Problème | Impact | Solution |
+|---|---|---|
+| **SQLite en production** | Corruption possible en concurrence | Migrer vers PostgreSQL |
+| **Exécution code non sandboxée** | Risque sécurité (code malveillant) | Docker par exécution |
+| **Pas de rate limiting** | Abus possible (spam soumissions) | ASP.NET rate limiting middleware |
+| **JWT dans localStorage** | XSS vulnérabilité | httpOnly cookie |
+| **Pas de tests automatisés** | Régressions difficiles à détecter | xUnit (backend) + Jest (frontend) |
+| **Pas de SMTP configuré** | Email vérification impossible | Mailgun / SendGrid / Resend |
+| **Logs en console uniquement** | Difficile à déboguer en prod | Serilog + fichier / Datadog |
+| **Pas de backup DB** | Perte données possible | Cron backup SQLite → S3 ou local |
 
 ---
 
-## 10. Lancer le projet
+## 10. Plan de monétisation
+
+### Vue d'ensemble
+
+CloudCode est idéalement positionné pour un modèle **Freemium + Abonnement**, similaire à LeetCode (qui génère ~30-40M$/an). Le VS mode compétitif est le meilleur différenciateur.
+
+### Prérequis avant de monétiser
+
+| Prérequis | Pourquoi | Urgence |
+|---|---|---|
+| **Hébergement public** | Sans URL publique = 0 clients | ★★★★★ |
+| **Migration PostgreSQL** | SQLite ne supporte pas la concurrence | ★★★★★ |
+| **Système email (SMTP)** | Vérification compte + reçus Stripe | ★★★★★ |
+| **Page Profil** | Afficher badge Premium, stats | ★★★★ |
+| **HTTPS** | Obligatoire pour Stripe | ★★★★★ |
+
+### Modèles de monétisation classés par potentiel
+
+| Rang | Modèle | Revenu potentiel | Délai | Complexité |
+|---|---|---|---|---|
+| 1 | **Freemium + Abonnement Premium** | 5–40k$/mois (à 1k–5k users payants) | 1–3 mois | Moyenne |
+| 2 | **Cours approfondis payants** | 2–15k$/mois | 1–2 mois | Faible–Moyenne |
+| 3 | **VS Mode avec mise virtuelle (gems)** | 1–20k$/mois si viral | 2–4 mois | Moyenne–Haute |
+| 4 | **Partenariats entreprises / recruteurs** | 3–30k$/mois (B2B) | 4–8 mois | Haute |
+| 5 | **Boutique cosmétique** | 500–5k$/mois | 1 mois | Moyenne |
+| 6 | **Certifications payantes** | 1–10k$/mois | 3–6 mois | Moyenne |
+| 7 | **Affiliation** | 300–4k$/mois | 2 semaines | Faible |
+| 8 | **Publicités sponsorisées** | 500–8k$/mois | 1 mois | Faible |
+
+### Modèle #1 — Freemium + Premium (prioritaire)
+
+**Prix cible** : 4,99–9,99$/mois ou 49–89$/an
+
+| Feature | Gratuit | Premium |
+|---|---|---|
+| Challenges Easy | ✅ Tous | ✅ Tous |
+| Challenges Medium | ✅ Tous | ✅ Tous |
+| Challenges Hard | ❌ (3 max) | ✅ Illimités |
+| Challenges "Pro" (futurs) | ❌ | ✅ |
+| Soumissions par jour | 10 | Illimitées |
+| Hints / indices | 1 par challenge | Illimités |
+| Solution officielle | ❌ | ✅ |
+| Streak save | ❌ | ✅ (1x par semaine) |
+| VS Mode casual | ✅ | ✅ |
+| VS Mode ranked | ✅ (limité) | ✅ Illimité |
+| Badge Premium visible | — | ✅ |
+| Export statistiques PDF | ❌ | ✅ |
+| Publicités | Oui | Non |
+
+**Implémentation backend** :
+- Ajouter `IsPremium` (bool) + `PremiumExpiresAt` (DateTime?) sur `User`
+- Middleware `[RequirePremium]` sur endpoints premium
+- Webhook Stripe → met à jour `IsPremium` + `PremiumExpiresAt`
+
+### Modèle #5 — Boutique cosmétique (rapide à lancer)
+
+Items vendables (1,99–9,99$ pièce) :
+- Avatars custom (3D, vu que Three.js est déjà intégré)
+- Thèmes éditeur Monaco (dark blue, neon, etc.)
+- Badges rares sur le profil
+- Frames de profil animées
+
+### Roadmap de lancement (6 mois)
+
+```
+Mois 1 : Page Profil + Streak journalier + Solution officielle
+         → Fondation de l'expérience premium
+
+Mois 2 : Hébergement (Railway/Render) + PostgreSQL + SMTP (Resend/Mailgun)
+         → App accessible publiquement
+
+Mois 3 : Stripe intégration + Système Premium (IsPremium, paywalls)
+         → Premier dollar encaissé
+
+Mois 4 : Boutique cosmétique (badges, thèmes)
+         → Revenu impulsif
+
+Mois 5 : VS Mode "gems" (monnaie virtuelle achetable)
+         + Challenges "Pro" exclusifs Premium
+         → Engagement + rétention
+
+Mois 6 : Certifications + Partenariats recruteurs
+         → B2B, revenu plus élevé par client
+```
+
+### Estimation revenus réalistes (scénarios)
+
+| Scénario | Users actifs | % Premium | Prix/mois | Revenu mensuel |
+|---|---|---|---|---|
+| Conservateur | 500 | 5% | 7,99$ | ~200$/mois |
+| Modéré | 2 000 | 8% | 7,99$ | ~1 280$/mois |
+| Optimiste | 5 000 | 10% | 9,99$ | ~5 000$/mois |
+| Ambitieux | 20 000 | 7% | 9,99$ | ~14 000$/mois |
+
+### Stack de paiement recommandée
+
+| Outil | Usage | Coût |
+|---|---|---|
+| **Stripe** | Paiement carte, abonnements, webhooks | 2,9% + 0,30$ par transaction |
+| **Stripe Billing** | Gestion abonnements (relances, prorations) | Inclus Stripe |
+| **Resend** | Emails transactionnels (reçus, vérification) | Gratuit jusqu'à 3k/mois |
+| **Railway** | Hébergement backend .NET + PostgreSQL | ~5–20$/mois |
+| **Vercel** | Hébergement frontend Next.js | Gratuit (hobby) |
+
+---
+
+## 11. Lancer le projet
 
 ### Prérequis
 
@@ -703,7 +829,7 @@ NEXT_PUBLIC_API_URL=http://localhost:5072
 
 ---
 
-## 11. Configuration
+## 12. Configuration
 
 ### Durée des tokens JWT
 
@@ -735,7 +861,7 @@ Dans `appsettings.json` :
 
 ---
 
-## 12. Conventions et patterns
+## 13. Conventions et patterns
 
 ### Nommage Backend
 
