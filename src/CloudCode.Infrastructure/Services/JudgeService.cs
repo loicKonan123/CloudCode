@@ -95,6 +95,36 @@ public class JudgeService : IJudgeService
             }
         }
 
+        // Mise à jour du streak journalier si challenge réussi à 100%
+        if (result.Score == 100)
+        {
+            var user = await _db.Users.FindAsync(userId);
+            if (user != null)
+            {
+                var today = DateTime.UtcNow.Date;
+                var lastDate = user.LastChallengeSolvedDate?.Date;
+
+                if (lastDate == null || lastDate < today.AddDays(-1))
+                {
+                    // Streak cassé (ou première fois) → repart à 1
+                    user.ChallengeStreak = 1;
+                }
+                else if (lastDate == today.AddDays(-1))
+                {
+                    // Jour consécutif
+                    user.ChallengeStreak++;
+                }
+                // Si lastDate == today, on ne change pas (déjà compté aujourd'hui)
+
+                if (lastDate != today)
+                {
+                    user.LastChallengeSolvedDate = DateTime.UtcNow;
+                    if (user.ChallengeStreak > user.BestChallengeStreak)
+                        user.BestChallengeStreak = user.ChallengeStreak;
+                }
+            }
+        }
+
         await _db.SaveChangesAsync();
         return result;
     }

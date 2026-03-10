@@ -17,6 +17,11 @@ public class User : BaseEntity
     public DateTime? RefreshTokenExpiry { get; set; }
     public bool IsAdmin { get; set; }
 
+    // Streak journalier
+    public int ChallengeStreak { get; set; }
+    public int BestChallengeStreak { get; set; }
+    public DateTime? LastChallengeSolvedDate { get; set; }
+
     // Navigation properties
     public virtual ICollection<Project> Projects { get; set; } = new List<Project>();
     public virtual ICollection<Collaboration> Collaborations { get; set; } = new List<Collaboration>();

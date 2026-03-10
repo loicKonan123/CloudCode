@@ -18,6 +18,7 @@ import {
 import dynamic from 'next/dynamic';
 import ReactMarkdown from 'react-markdown';
 import type * as Monaco from 'monaco-editor';
+import { registerIntelliSense } from '@/lib/monacoIntelliSense';
 
 const MonacoEditor = dynamic(() => import('@monaco-editor/react'), { ssr: false });
 
@@ -27,7 +28,7 @@ const DifficultyBadgeStyles: Record<number, string> = {
   3: 'bg-rose-500/10 text-rose-500 border-rose-500/20',
 };
 
-type Tab = 'description' | 'submissions';
+type Tab = 'description' | 'submissions' | 'solution';
 
 export default function ChallengePage() {
   const router = useRouter();
@@ -41,12 +42,22 @@ export default function ChallengePage() {
   const [language, setLanguage] = useState<ChallengeLanguage>(ChallengeLanguage.Python);
   const [activeTab, setActiveTab] = useState<Tab>('description');
   const [submissions, setSubmissions] = useState<SubmissionInfo[]>([]);
+  const [hintsRevealed, setHintsRevealed] = useState(0); // nb hints débloqués
 
   // Execution
   const [isTesting, setIsTesting] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [testResults, setTestResults] = useState<JudgeResult | null>(null);
   const [selectedTestIndex, setSelectedTestIndex] = useState(0);
+
+  // Share
+  const [copied, setCopied] = useState(false);
+  const handleShare = () => {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
 
   // Editor settings
   const [fontSize, setFontSize] = useState(14);
@@ -119,9 +130,12 @@ export default function ChallengePage() {
       setTestResults(response.data);
       setSelectedTestIndex(0);
     } catch (error: any) {
+      const msg = error.response?.status === 429
+        ? 'Too many requests — slow down!'
+        : (error.response?.data?.message || 'Error');
       setTestResults({
         status: SubmissionStatus.Error, passedTests: 0, totalTests: 0, score: 0, totalExecutionTimeMs: 0,
-        results: [{ testIndex: 0, passed: false, error: error.response?.data?.message || 'Error', executionTimeMs: 0, isHidden: false }],
+        results: [{ testIndex: 0, passed: false, error: msg, executionTimeMs: 0, isHidden: false }],
       });
     } finally {
       setIsTesting(false);
@@ -138,7 +152,14 @@ export default function ChallengePage() {
       setSelectedTestIndex(0);
       const updated = await challengesApi.getBySlug(slug);
       setChallenge(updated.data);
-    } catch { /* ignore */ } finally {
+    } catch (error: any) {
+      if (error.response?.status === 429) {
+        setTestResults({
+          status: SubmissionStatus.Error, passedTests: 0, totalTests: 0, score: 0, totalExecutionTimeMs: 0,
+          results: [{ testIndex: 0, passed: false, error: 'Too many submissions — slow down!', executionTimeMs: 0, isHidden: false }],
+        });
+      }
+    } finally {
       setIsSubmitting(false);
     }
   }, [challenge, isAuthenticated, slug, code, language]);
@@ -306,6 +327,21 @@ export default function ChallengePage() {
               </svg>
               Submissions
             </button>
+            {challenge.isSolved && (challenge.officialSolutionPython || challenge.officialSolutionJS) && (
+              <button
+                onClick={() => setActiveTab('solution')}
+                className={`px-4 py-3 text-sm font-medium flex items-center gap-2 transition-colors ${
+                  activeTab === 'solution'
+                    ? 'border-b-2 border-emerald-500 text-emerald-400'
+                    : 'text-slate-500 hover:text-slate-300'
+                }`}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Solution
+              </button>
+            )}
           </div>
 
           {/* Content */}
@@ -313,7 +349,33 @@ export default function ChallengePage() {
             {activeTab === 'description' ? (
               <div className="space-y-6">
                 <div>
-                  <h2 className="text-2xl font-bold mb-4">{challenge.title}</h2>
+                  <div className="flex items-start justify-between gap-4 mb-4">
+                    <h2 className="text-2xl font-bold">{challenge.title}</h2>
+                    <button
+                      onClick={handleShare}
+                      title="Copy link"
+                      className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors"
+                      style={copied
+                        ? { color: '#22c55e', borderColor: '#22c55e40', backgroundColor: '#22c55e10' }
+                        : { color: '#8b949e', borderColor: '#1e293b', backgroundColor: 'rgba(30,41,59,0.5)' }}
+                    >
+                      {copied ? (
+                        <>
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          Copied!
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                          </svg>
+                          Share
+                        </>
+                      )}
+                    </button>
+                  </div>
                   <div className="flex gap-2 mb-6">
                     <span className={`px-2 py-1 text-xs font-bold rounded border uppercase tracking-wider ${DifficultyBadgeStyles[challenge.difficulty]}`}>
                       {DifficultyNames[challenge.difficulty]}
@@ -351,6 +413,31 @@ export default function ChallengePage() {
                   </div>
                 ))}
 
+                {/* Hints */}
+                {challenge.hints?.length > 0 && (
+                  <div className="pt-4 border-t border-slate-800">
+                    <h3 className="font-bold text-sm text-slate-400 uppercase tracking-wider mb-3">
+                      Hints
+                    </h3>
+                    <div className="space-y-2">
+                      {challenge.hints.slice(0, hintsRevealed).map((hint, i) => (
+                        <div key={i} className="bg-amber-500/5 border border-amber-500/20 rounded-lg px-4 py-3 text-sm text-amber-200">
+                          <span className="text-amber-500 font-bold text-xs uppercase mr-2">Hint {i + 1}</span>
+                          {hint}
+                        </div>
+                      ))}
+                      {hintsRevealed < challenge.hints.length && (
+                        <button
+                          onClick={() => setHintsRevealed(h => h + 1)}
+                          className="text-xs text-amber-500 hover:text-amber-400 border border-amber-500/30 hover:border-amber-500/60 px-3 py-1.5 rounded-lg transition"
+                        >
+                          {hintsRevealed === 0 ? 'Show first hint' : `Show hint ${hintsRevealed + 1} of ${challenge.hints.length}`}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {/* Stats */}
                 <div className="pt-6 border-t border-slate-800">
                   <div className="flex items-center justify-between text-xs text-slate-500">
@@ -359,6 +446,8 @@ export default function ChallengePage() {
                   </div>
                 </div>
               </div>
+            ) : activeTab === 'solution' ? (
+              <SolutionTab challenge={challenge} language={language} />
             ) : (
               <div className="space-y-3">
                 {submissions.length === 0 ? (
@@ -474,6 +563,7 @@ export default function ChallengePage() {
                 setCode(newCode);
                 localStorage.setItem(storageKey(language), newCode);
               }}
+              beforeMount={(monaco) => { registerIntelliSense(monaco); }}
               onMount={(editor) => { editorRef.current = editor; }}
               options={{
                 minimap: { enabled: false },
@@ -618,6 +708,55 @@ export default function ChallengePage() {
           <span>Ctrl+Shift+Enter: Submit</span>
         </div>
       </footer>
+    </div>
+  );
+}
+
+function SolutionTab({ challenge, language }: { challenge: ChallengeDetail; language: ChallengeLanguage }) {
+  const [solutionLang, setSolutionLang] = useState<'python' | 'js'>(
+    language === ChallengeLanguage.Python && challenge.officialSolutionPython ? 'python' : 'js'
+  );
+
+  const solution = solutionLang === 'python' ? challenge.officialSolutionPython : challenge.officialSolutionJS;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <span className="text-emerald-400 font-bold text-sm uppercase tracking-wider">Official Solution</span>
+        <span className="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded">Unlocked after solving</span>
+      </div>
+
+      {/* Language selector */}
+      <div className="flex gap-2">
+        {challenge.officialSolutionPython && (
+          <button
+            onClick={() => setSolutionLang('python')}
+            className={`px-3 py-1 text-xs font-bold rounded transition ${
+              solutionLang === 'python' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+            }`}
+          >
+            Python
+          </button>
+        )}
+        {challenge.officialSolutionJS && (
+          <button
+            onClick={() => setSolutionLang('js')}
+            className={`px-3 py-1 text-xs font-bold rounded transition ${
+              solutionLang === 'js' ? 'bg-yellow-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+            }`}
+          >
+            JavaScript
+          </button>
+        )}
+      </div>
+
+      {solution ? (
+        <pre className="bg-slate-900 border border-slate-800 rounded-xl p-4 text-sm font-mono text-slate-200 overflow-x-auto whitespace-pre-wrap">
+          {solution}
+        </pre>
+      ) : (
+        <p className="text-slate-500 text-sm">No solution available for this language.</p>
+      )}
     </div>
   );
 }

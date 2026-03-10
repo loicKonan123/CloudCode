@@ -17,12 +17,7 @@ export default function LeaderboardPage() {
 
   useEffect(() => {
     checkAuth();
-    const token = localStorage.getItem('accessToken');
-    if (!token) {
-      router.push('/login');
-      return;
-    }
-  }, [checkAuth, router]);
+  }, [checkAuth]);
 
   useEffect(() => {
     loadLeaderboard();
@@ -42,6 +37,32 @@ export default function LeaderboardPage() {
 
   return (
     <div className="min-h-screen flex flex-col font-(--font-inter) app-grid" style={{ backgroundColor: '#101b22', color: '#e2e8f0' }}>
+      <style>{`
+        @keyframes bgDrift {
+          0%, 100% { transform: translateX(-50%) translateY(0) scale(1); opacity: 0.5; }
+          50% { transform: translateX(-50%) translateY(-24px) scale(1.06); opacity: 0.85; }
+        }
+        @keyframes bgDriftB {
+          0%, 100% { transform: translateY(0) scale(1); opacity: 0.3; }
+          50% { transform: translateY(20px) scale(1.08); opacity: 0.55; }
+        }
+      `}</style>
+
+      {/* Animated background glows */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
+        <div style={{
+          position: 'absolute', top: '-8%', left: '50%',
+          width: 700, height: 450,
+          background: 'radial-gradient(ellipse, rgba(60,175,246,0.07) 0%, transparent 70%)',
+          animation: 'bgDrift 9s ease-in-out infinite',
+        }} />
+        <div style={{
+          position: 'absolute', bottom: '8%', right: '8%',
+          width: 500, height: 400,
+          background: 'radial-gradient(ellipse, rgba(251,191,36,0.04) 0%, transparent 70%)',
+          animation: 'bgDriftB 13s ease-in-out infinite',
+        }} />
+      </div>
       {/* Header */}
       <header className="border-b border-slate-800 bg-[#101b22] sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -123,7 +144,7 @@ export default function LeaderboardPage() {
         </div>
       )}
 
-      <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="relative z-10 flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Title + Period Filter */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
           <div className="flex items-center gap-3">
@@ -204,10 +225,13 @@ export default function LeaderboardPage() {
                       }`}>
                         {entry.username.charAt(0).toUpperCase()}
                       </div>
-                      <span className={`font-medium text-sm ${isMe ? 'text-[#3caff6]' : 'text-white'}`}>
+                      <button
+                        onClick={() => router.push(`/u/${entry.username}`)}
+                        className={`font-medium text-sm hover:underline ${isMe ? 'text-[#3caff6]' : 'text-white'}`}
+                      >
                         {entry.username}
                         {isMe && <span className="text-[10px] text-[#3caff6]/70 ml-2 uppercase font-bold">(you)</span>}
-                      </span>
+                      </button>
                     </div>
                     <div className="text-center">
                       <span className="text-sm font-semibold text-slate-300">{entry.challengesSolved}</span>
@@ -237,10 +261,13 @@ export default function LeaderboardPage() {
                       }`}>
                         {entry.username.charAt(0).toUpperCase()}
                       </div>
-                      <span className={`font-medium text-sm truncate ${isMe ? 'text-[#3caff6]' : 'text-white'}`}>
+                      <button
+                        onClick={() => router.push(`/u/${entry.username}`)}
+                        className={`font-medium text-sm truncate hover:underline ${isMe ? 'text-[#3caff6]' : 'text-white'}`}
+                      >
                         {entry.username}
                         {isMe && <span className="text-[10px] text-[#3caff6]/70 ml-1">(you)</span>}
-                      </span>
+                      </button>
                       <span className={`ml-auto text-lg font-bold shrink-0 ${isTop3 ? 'text-amber-400' : 'text-white'}`}>
                         {entry.totalScore}
                       </span>

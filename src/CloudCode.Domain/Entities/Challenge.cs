@@ -20,6 +20,11 @@ public class Challenge : BaseEntity
     public string? TestRunnerPython { get; set; }
     public string? TestRunnerJavaScript { get; set; }
 
+    // Solution officielle et hints
+    public string? OfficialSolutionPython { get; set; }
+    public string? OfficialSolutionJS { get; set; }
+    public string? Hints { get; set; } // JSON array de strings
+
     // Navigation properties
     public virtual ICollection<TestCase> TestCases { get; set; } = new List<TestCase>();
     public virtual ICollection<UserSubmission> Submissions { get; set; } = new List<UserSubmission>();

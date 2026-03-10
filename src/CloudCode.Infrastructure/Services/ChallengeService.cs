@@ -5,7 +5,6 @@ using CloudCode.Domain.Entities;
 using CloudCode.Domain.Enums;
 using CloudCode.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
-
 namespace CloudCode.Infrastructure.Services;
 
 public class ChallengeService : IChallengeService
@@ -75,6 +74,49 @@ public class ChallengeService : IChallengeService
         }).ToList();
     }
 
+    public async Task<ChallengeListItemDto?> GetDailyChallengeAsync(Guid? userId)
+    {
+        var challenges = await _db.Challenges
+            .Where(c => c.IsPublished)
+            .OrderBy(c => c.Id)
+            .ToListAsync();
+
+        if (challenges.Count == 0) return null;
+
+        var epoch = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        var dayIndex = (int)(DateTime.UtcNow.Date - epoch).TotalDays % challenges.Count;
+        var challenge = challenges[dayIndex];
+
+        UserProgress? progress = null;
+        if (userId.HasValue)
+            progress = await _db.UserProgress.FirstOrDefaultAsync(p => p.UserId == userId.Value && p.ChallengeId == challenge.Id);
+
+        var stats = await _db.UserSubmissions
+            .Where(s => s.ChallengeId == challenge.Id)
+            .GroupBy(_ => 1)
+            .Select(g => new
+            {
+                TotalUsers = g.Select(s => s.UserId).Distinct().Count(),
+                SolvedUsers = g.Where(s => s.Score == 100).Select(s => s.UserId).Distinct().Count()
+            })
+            .FirstOrDefaultAsync();
+
+        return new ChallengeListItemDto
+        {
+            Id = challenge.Id,
+            Title = challenge.Title,
+            Slug = challenge.Slug,
+            Difficulty = challenge.Difficulty,
+            SupportedLanguages = challenge.SupportedLanguages,
+            Tags = DeserializeTags(challenge.Tags),
+            IsPublished = challenge.IsPublished,
+            SuccessRate = stats != null && stats.TotalUsers > 0
+                ? Math.Round((double)stats.SolvedUsers / stats.TotalUsers * 100, 1) : 0,
+            IsSolved = progress?.IsSolved,
+            BestScore = progress?.BestScore
+        };
+    }
+
     public async Task<ChallengeDetailDto?> GetBySlugAsync(string slug, Guid? userId)
     {
         var challenge = await _db.Challenges
@@ -113,7 +155,11 @@ public class ChallengeService : IChallengeService
                 }).ToList(),
             TotalTestCases = challenge.TestCases.Count,
             IsSolved = progress?.IsSolved,
-            BestScore = progress?.BestScore
+            BestScore = progress?.BestScore,
+            Hints = DeserializeHints(challenge.Hints),
+            // Solution officielle uniquement si l'user a résolu le challenge (score 100)
+            OfficialSolutionPython = (progress?.IsSolved == true) ? challenge.OfficialSolutionPython : null,
+            OfficialSolutionJS = (progress?.IsSolved == true) ? challenge.OfficialSolutionJS : null,
         };
     }
 
@@ -181,7 +227,10 @@ public class ChallengeService : IChallengeService
             StarterCodePython = dto.StarterCodePython,
             StarterCodeJavaScript = dto.StarterCodeJavaScript,
             Tags = JsonSerializer.Serialize(dto.Tags),
-            IsPublished = false
+            IsPublished = false,
+            OfficialSolutionPython = dto.OfficialSolutionPython,
+            OfficialSolutionJS = dto.OfficialSolutionJS,
+            Hints = dto.Hints != null ? JsonSerializer.Serialize(dto.Hints) : null
         };
 
         foreach (var tc in dto.TestCases)
@@ -220,6 +269,9 @@ public class ChallengeService : IChallengeService
         if (dto.StarterCodePython != null) challenge.StarterCodePython = dto.StarterCodePython;
         if (dto.StarterCodeJavaScript != null) challenge.StarterCodeJavaScript = dto.StarterCodeJavaScript;
         if (dto.Tags != null) challenge.Tags = JsonSerializer.Serialize(dto.Tags);
+        if (dto.OfficialSolutionPython != null) challenge.OfficialSolutionPython = dto.OfficialSolutionPython;
+        if (dto.OfficialSolutionJS != null) challenge.OfficialSolutionJS = dto.OfficialSolutionJS;
+        if (dto.Hints != null) challenge.Hints = JsonSerializer.Serialize(dto.Hints);
 
         if (dto.TestCases != null)
         {
@@ -330,7 +382,10 @@ public class ChallengeService : IChallengeService
                     OrderIndex = t.OrderIndex,
                     Description = t.Description
                 }).ToList(),
-            TotalTestCases = challenge.TestCases.Count
+            TotalTestCases = challenge.TestCases.Count,
+            Hints = DeserializeHints(challenge.Hints),
+            OfficialSolutionPython = challenge.OfficialSolutionPython,
+            OfficialSolutionJS = challenge.OfficialSolutionJS,
         };
     }
 
@@ -348,6 +403,13 @@ public class ChallengeService : IChallengeService
     {
         if (string.IsNullOrEmpty(tags)) return [];
         try { return JsonSerializer.Deserialize<string[]>(tags) ?? []; }
+        catch { return []; }
+    }
+
+    private static string[] DeserializeHints(string? hints)
+    {
+        if (string.IsNullOrEmpty(hints)) return [];
+        try { return JsonSerializer.Deserialize<string[]>(hints) ?? []; }
         catch { return []; }
     }
 }

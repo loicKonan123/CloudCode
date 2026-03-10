@@ -96,6 +96,9 @@ export interface ChallengeDetail {
   totalTestCases: number;
   isSolved?: boolean;
   bestScore?: number;
+  hints: string[];
+  officialSolutionPython?: string;
+  officialSolutionJS?: string;
 }
 
 // ===== Profile Types =====
@@ -116,6 +119,9 @@ export interface UserProfile {
   hardSolved: number;
   pythonSubmissions: number;
   javaScriptSubmissions: number;
+  // Streak
+  challengeStreak: number;
+  bestChallengeStreak: number;
   // VS stats
   elo: number;
   tier: string;
@@ -138,6 +144,23 @@ export interface UpdateProfileDto {
   username?: string;
   avatar?: string;
   bio?: string;
+}
+
+export interface PublicProfile {
+  id: string;
+  username: string;
+  avatar?: string;
+  bio?: string;
+  createdAt: string;
+  publicProjectCount: number;
+  challengesSolved: number;
+  totalScore: number;
+  easySolved: number;
+  mediumSolved: number;
+  hardSolved: number;
+  challengeStreak: number;
+  bestChallengeStreak: number;
+  recentSubmissions: RecentSubmission[];
 }
 
 export interface TestCaseInfo {

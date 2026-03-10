@@ -23,6 +23,10 @@ public class UserProfileDto
     public int PythonSubmissions { get; set; }
     public int JavaScriptSubmissions { get; set; }
 
+    // Streak
+    public int ChallengeStreak { get; set; }
+    public int BestChallengeStreak { get; set; }
+
     // VS stats
     public int Elo { get; set; } = 1000;
     public string Tier { get; set; } = "Bronze";
@@ -62,5 +66,15 @@ public class PublicUserDto
     public string Username { get; set; } = string.Empty;
     public string? Avatar { get; set; }
     public string? Bio { get; set; }
+    public DateTime CreatedAt { get; set; }
     public int PublicProjectCount { get; set; }
+    // Challenge stats
+    public int ChallengesSolved { get; set; }
+    public int TotalScore { get; set; }
+    public int EasySolved { get; set; }
+    public int MediumSolved { get; set; }
+    public int HardSolved { get; set; }
+    public int ChallengeStreak { get; set; }
+    public int BestChallengeStreak { get; set; }
+    public List<RecentSubmissionDto> RecentSubmissions { get; set; } = new();
 }

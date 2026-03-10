@@ -287,10 +287,19 @@ export default function VsBattlePage() {
           )}
           {matchEnd?.winnerUsername && !isDraw && (
             <p className="mb-6" style={{ color: '#8b949e' }}>
-              {iWon ? 'Congratulations!' : `${matchEnd.winnerUsername} solved it first.`}
+              {iWon ? 'Congratulations!' : (
+                <>
+                  <button
+                    onClick={() => router.push(`/u/${matchEnd.winnerUsername}`)}
+                    className="font-semibold hover:underline"
+                    style={{ color: '#f0f6fc' }}
+                  >{matchEnd.winnerUsername}</button>
+                  {' solved it first.'}
+                </>
+              )}
             </p>
           )}
-          <div className="flex gap-3">
+          <div className="flex gap-3 mb-3">
             <button onClick={() => router.push('/vs')}
               className="flex-1 py-3 rounded-xl font-semibold transition-all"
               style={{ backgroundColor: '#3caff6', color: '#101b22' }}>
@@ -302,6 +311,15 @@ export default function VsBattlePage() {
               Challenges
             </button>
           </div>
+          {opponent && (
+            <button
+              onClick={() => router.push(`/u/${opponent.username}`)}
+              className="w-full py-2 rounded-xl text-sm font-medium transition-all"
+              style={{ border: '1px solid #1e293b', color: '#8b949e' }}
+            >
+              View {opponent.username}&apos;s profile
+            </button>
+          )}
         </div>
       </div>
     );
@@ -344,7 +362,11 @@ export default function VsBattlePage() {
           </span>
           <span className="text-xs font-mono mr-1" style={{ color: '#3caff6' }}>{opponent?.elo} ELO</span>
           <div className="text-right">
-            <span className="font-semibold text-sm" style={{ color: '#f0f6fc' }}>{opponent?.username}</span>
+            <button
+              onClick={() => opponent && router.push(`/u/${opponent.username}`)}
+              className="font-semibold text-sm hover:underline"
+              style={{ color: '#f0f6fc' }}
+            >{opponent?.username}</button>
             <span className="ml-1 text-xs" style={{ color: TierColors[opponent?.tier || ''] || '#8b949e' }}>{opponent?.tier}</span>
           </div>
           <span className="text-lg">{opponent && TIER_ICONS[opponent.tier]}</span>

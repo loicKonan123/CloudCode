@@ -100,6 +100,9 @@ export const challengesApi = {
   getLeaderboard: (period = 'all') =>
     api.get<import('@/types').LeaderboardEntry[]>('/leaderboard', { params: { period } }),
 
+  getDaily: () =>
+    api.get<import('@/types').ChallengeListItem>('/challenges/daily'),
+
   // Admin
   adminGetAll: () =>
     api.get<import('@/types').ChallengeListItem[]>('/admin/challenges'),
@@ -193,6 +196,9 @@ export const profileApi = {
 
   updateMyProfile: (data: import('@/types').UpdateProfileDto) =>
     api.put<import('@/types').UserProfile>('/users/me/profile', data),
+
+  getPublicProfile: (username: string) =>
+    api.get<import('@/types').PublicProfile>(`/users/public/${username}`),
 };
 
 // ===========================================

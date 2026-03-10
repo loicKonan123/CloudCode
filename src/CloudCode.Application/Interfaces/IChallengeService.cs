@@ -8,6 +8,7 @@ public interface IChallengeService
     // Public
     Task<List<ChallengeListItemDto>> GetPublishedChallengesAsync(
         Guid? userId, ChallengeDifficulty? difficulty = null, ChallengeLanguage? language = null);
+    Task<ChallengeListItemDto?> GetDailyChallengeAsync(Guid? userId);
     Task<ChallengeDetailDto?> GetBySlugAsync(string slug, Guid? userId);
     Task<List<SubmissionDto>> GetUserSubmissionsAsync(string slug, Guid userId);
 

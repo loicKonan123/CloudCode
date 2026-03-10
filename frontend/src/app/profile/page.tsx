@@ -193,6 +193,28 @@ export default function ProfilePage() {
           ))}
         </div>
 
+        {/* Streak Card */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="bg-slate-800/40 border border-slate-800 rounded-xl p-4 flex items-center gap-4">
+            <div className="text-4xl">🔥</div>
+            <div>
+              <div className={`text-2xl font-bold ${profile.challengeStreak >= 3 ? 'text-orange-400' : 'text-slate-300'}`}>
+                {profile.challengeStreak} day{profile.challengeStreak !== 1 ? 's' : ''}
+              </div>
+              <div className="text-xs text-slate-500 uppercase tracking-widest">Current Streak</div>
+            </div>
+          </div>
+          <div className="bg-slate-800/40 border border-slate-800 rounded-xl p-4 flex items-center gap-4">
+            <div className="text-4xl">🏆</div>
+            <div>
+              <div className="text-2xl font-bold text-yellow-400">
+                {profile.bestChallengeStreak} day{profile.bestChallengeStreak !== 1 ? 's' : ''}
+              </div>
+              <div className="text-xs text-slate-500 uppercase tracking-widest">Best Streak</div>
+            </div>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Difficulty Breakdown */}
           <div className="bg-slate-800/40 border border-slate-800 rounded-xl p-5">

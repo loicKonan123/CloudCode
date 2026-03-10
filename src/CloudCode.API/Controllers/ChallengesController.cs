@@ -3,6 +3,7 @@ using CloudCode.Application.Interfaces;
 using CloudCode.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace CloudCode.Controllers;
 
@@ -32,6 +33,18 @@ public class ChallengesController : BaseApiController
     }
 
     /// <summary>
+    /// Get today's daily challenge.
+    /// </summary>
+    [HttpGet("daily")]
+    [AllowAnonymous]
+    public async Task<ActionResult<ChallengeListItemDto>> GetDaily()
+    {
+        var daily = await _challengeService.GetDailyChallengeAsync(CurrentUserId);
+        if (daily == null) return NotFound();
+        return Ok(daily);
+    }
+
+    /// <summary>
     /// Get challenge detail by slug.
     /// </summary>
     [HttpGet("{slug}")]
@@ -47,6 +60,7 @@ public class ChallengesController : BaseApiController
     /// Test code against visible test cases only.
     /// </summary>
     [HttpPost("{slug}/test")]
+    [EnableRateLimiting("test")]
     public async Task<ActionResult<JudgeResultDto>> TestCode(string slug, [FromBody] SubmitCodeDto dto)
     {
         var challenge = await _challengeService.GetBySlugAsync(slug, null);
@@ -60,6 +74,7 @@ public class ChallengesController : BaseApiController
     /// Submit code — runs all test cases and saves score.
     /// </summary>
     [HttpPost("{slug}/submit")]
+    [EnableRateLimiting("submit")]
     public async Task<ActionResult<JudgeResultDto>> SubmitCode(string slug, [FromBody] SubmitCodeDto dto)
     {
         var userId = GetRequiredUserId();

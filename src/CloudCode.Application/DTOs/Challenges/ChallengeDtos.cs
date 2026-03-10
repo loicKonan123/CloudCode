@@ -35,6 +35,11 @@ public class ChallengeDetailDto
     // Per-user
     public bool? IsSolved { get; set; }
     public int? BestScore { get; set; }
+    // Hints (toujours visibles, 1 par 1)
+    public string[] Hints { get; set; } = [];
+    // Solution officielle — visible uniquement si l'user a résolu (score 100)
+    public string? OfficialSolutionPython { get; set; }
+    public string? OfficialSolutionJS { get; set; }
 }
 
 public class TestCaseDto
@@ -58,6 +63,9 @@ public class CreateChallengeDto
     public string? StarterCodeJavaScript { get; set; }
     public string[] Tags { get; set; } = [];
     public List<CreateTestCaseDto> TestCases { get; set; } = [];
+    public string? OfficialSolutionPython { get; set; }
+    public string? OfficialSolutionJS { get; set; }
+    public string[]? Hints { get; set; }
 }
 
 public class UpdateChallengeDto
@@ -70,6 +78,9 @@ public class UpdateChallengeDto
     public string? StarterCodeJavaScript { get; set; }
     public string[]? Tags { get; set; }
     public List<CreateTestCaseDto>? TestCases { get; set; }
+    public string? OfficialSolutionPython { get; set; }
+    public string? OfficialSolutionJS { get; set; }
+    public string[]? Hints { get; set; }
 }
 
 public class CreateTestCaseDto

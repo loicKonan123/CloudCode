@@ -65,6 +65,8 @@ public class UserService : IUserService
             HardSolved = progress.Count(p => p.Challenge?.Difficulty == ChallengeDifficulty.Hard),
             PythonSubmissions = submissions.Count(s => s.Language == ChallengeLanguage.Python),
             JavaScriptSubmissions = submissions.Count(s => s.Language == ChallengeLanguage.JavaScript),
+            ChallengeStreak = user.ChallengeStreak,
+            BestChallengeStreak = user.BestChallengeStreak,
             Elo = vsRank?.Elo ?? 1000,
             Tier = vsRank?.GetTier() ?? "Bronze",
             VsWins = vsRank?.Wins ?? 0,
@@ -98,7 +100,44 @@ public class UserService : IUserService
         if (user == null) return null;
 
         var publicProjects = await _db.Projects.CountAsync(p => p.OwnerId == user.Id && p.IsPublic, cancellationToken);
-        return new PublicUserDto { Id = user.Id, Username = user.Username, Avatar = user.Avatar, Bio = user.Bio, PublicProjectCount = publicProjects };
+
+        var progress = await _db.UserProgress
+            .Where(p => p.UserId == user.Id && p.IsSolved)
+            .Include(p => p.Challenge)
+            .ToListAsync(cancellationToken);
+
+        var recentSubmissions = await _db.UserSubmissions
+            .Where(s => s.UserId == user.Id)
+            .Include(s => s.Challenge)
+            .OrderByDescending(s => s.SubmittedAt)
+            .Take(10)
+            .ToListAsync(cancellationToken);
+
+        return new PublicUserDto
+        {
+            Id = user.Id,
+            Username = user.Username,
+            Avatar = user.Avatar,
+            Bio = user.Bio,
+            CreatedAt = user.CreatedAt,
+            PublicProjectCount = publicProjects,
+            ChallengesSolved = progress.Count,
+            TotalScore = progress.Sum(p => p.BestScore),
+            EasySolved = progress.Count(p => p.Challenge?.Difficulty == ChallengeDifficulty.Easy),
+            MediumSolved = progress.Count(p => p.Challenge?.Difficulty == ChallengeDifficulty.Medium),
+            HardSolved = progress.Count(p => p.Challenge?.Difficulty == ChallengeDifficulty.Hard),
+            ChallengeStreak = user.ChallengeStreak,
+            BestChallengeStreak = user.BestChallengeStreak,
+            RecentSubmissions = recentSubmissions.Select(s => new RecentSubmissionDto
+            {
+                ChallengeTitle = s.Challenge?.Title ?? "",
+                ChallengeSlug = s.Challenge?.Slug ?? "",
+                Passed = s.Status == SubmissionStatus.Passed,
+                Score = s.Score,
+                Language = (int)s.Language,
+                SubmittedAt = s.SubmittedAt,
+            }).ToList()
+        };
     }
 
     public async Task<IEnumerable<PublicUserDto>> SearchUsersAsync(string searchTerm, int limit = 10, CancellationToken cancellationToken = default)

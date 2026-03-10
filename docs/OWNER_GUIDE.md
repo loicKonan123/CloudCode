@@ -237,6 +237,7 @@ GitCredentials
 | `20260109051158_AddProjectDependencies` | Table ProjectDependencies |
 | `20260307021701_AddChallengeEntities` | Tables Challenges, TestCases, UserSubmissions, UserProgress |
 | `20260309100000_AddChallengeFunctionMode` | Colonnes IsFunction, TestRunnerPython/JS sur Challenges |
+| `20260310051932_AddStreakAndOfficialSolution` | Streak (ChallengeStreak, BestChallengeStreak, LastChallengeSolvedDate) sur User + OfficialSolutionPython/JS + Hints sur Challenge |
 
 ---
 
@@ -333,13 +334,15 @@ Challenge en mode IsFunction=true
 | Méthode | Route | Auth | Description |
 |---|---|---|---|
 | GET | `/challenges` | ✓ | Liste tous les challenges publiés (+ isSolved par user) |
-| GET | `/challenges/{slug}` | ✓ | Détail d'un challenge |
-| POST | `/challenges/{slug}/test` | ✓ | Tester le code (test cases visibles seulement) |
-| POST | `/challenges/{slug}/submit` | ✓ | Soumettre (tous les test cases) |
+| GET | `/challenges/daily` | public | Challenge du jour (hash-based, change à minuit UTC) |
+| GET | `/challenges/{slug}` | public | Détail d'un challenge |
+| POST | `/challenges/{slug}/test` | ✓ | Tester le code (test cases visibles seulement, rate limit 30/min) |
+| POST | `/challenges/{slug}/submit` | ✓ | Soumettre (tous les test cases, rate limit 15/min) |
 | GET | `/challenges/{slug}/submissions` | ✓ | Historique des soumissions du user |
 | GET | `/users/me/profile` | ✓ | Profil complet avec toutes les stats |
 | PUT | `/users/me/profile` | ✓ | Modifier username, bio, avatar |
-| GET | `/leaderboard` | ✓ | Classement global |
+| GET | `/users/public/{username}` | public | Profil public d'un user (stats, streak, soumissions récentes) |
+| GET | `/leaderboard` | public | Classement global |
 
 ### Admin Challenges (`/api/admin/challenges`)
 
@@ -474,6 +477,7 @@ Challenge en mode IsFunction=true
 | `/admin/courses/new` | Admin courses | Créer cours |
 | `/admin/courses/[id]/edit` | Admin courses | Modifier cours |
 | `/profile` | `app/profile/page.tsx` | Profil utilisateur (stats, ELO VS, difficulty breakdown, langages, soumissions récentes, modifier bio/username) |
+| `/u/[username]` | `app/u/[username]/page.tsx` | Profil public read-only d'un utilisateur |
 | `/admin/users` | Admin users | Gérer utilisateurs |
 
 ### Composants
@@ -497,10 +501,10 @@ Persisté dans `localStorage` (accessToken, refreshToken).
 | Client | Endpoints exposés |
 |---|---|
 | `authApi` | login, register, logout, refresh |
-| `challengesApi` | getAll, getBySlug, test, submit, getSubmissions, getLeaderboard + admin CRUD |
+| `challengesApi` | getAll, getDaily, getBySlug, test, submit, getSubmissions, getLeaderboard + admin CRUD |
 | `coursesApi` | getAll, getBySlug + admin CRUD |
 | `vsApi` | getMyRank, getRank, getLeaderboard, getMatch, getHistory, submit, forfeit |
-| `profileApi` | getMyProfile, updateMyProfile |
+| `profileApi` | getMyProfile, updateMyProfile, getPublicProfile(username) |
 | `formattingApi` | format(code, language) |
 | `adminUsersApi` | getAll, toggleAdmin |
 
@@ -526,6 +530,9 @@ Persisté dans `localStorage` (accessToken, refreshToken).
 - Format code (Alt+Shift+F) — Python via black
 - Reset au starter code
 - Raccourcis clavier : Ctrl+Enter (Run), Ctrl+Shift+Enter (Submit)
+- **Bouton Random** : navigue vers un challenge aléatoire parmi les challenges filtrés
+- **Hints** : jusqu'à 3 indices débloquables un par un (stockés en JSON dans `Challenge.Hints`)
+- **Solution officielle** : tab "Solution" visible uniquement après résolution complète (score 100), affiche Python et/ou JS
 
 ### ✅ Challenges — Catégories couvertes
 
@@ -595,6 +602,16 @@ Persisté dans `localStorage` (accessToken, refreshToken).
 - Modifier username et bio inline
 - Avatar avec initiale + glow selon tier
 - Accessible via clic sur l'avatar dans le header `/challenges`
+- **Streak journalier** : Current Streak 🔥 + Best Streak 🏆 (calculé dans JudgeService au moment du solve)
+
+### ✅ Phase Engagement (COMPLET)
+
+- **Rate limiting** : 30 tests/min, 15 soumissions/min par IP (ASP.NET Sliding Window)
+- **IntelliSense Monaco** : autocomplétion avancée Python + JavaScript (50+ builtins, méthodes, snippets algorithmiques)
+- **Challenge du jour** : banner sur `/challenges` avec countdown avant réinitialisation, sélection déterministe par hash du jour UTC
+- **Profil public `/u/{username}`** : page read-only avec stats, difficulty breakdown, streak, soumissions récentes
+- **Partage challenge** : bouton Share dans l'onglet Description → copie l'URL → feedback "Copied!" 2s
+- **Usernames cliquables** dans le leaderboard → redirige vers le profil public
 
 ### ✅ Admin (COMPLET)
 
@@ -612,9 +629,10 @@ Persisté dans `localStorage` (accessToken, refreshToken).
 | Feature | Description | Complexité | Lié monétisation |
 |---|---|---|---|
 | ~~**Page Profil utilisateur**~~ | ✅ Implémenté — `/profile` avec stats complètes | — | — |
-| **Streak journalier** | Compteur jours consécutifs + badge 🔥, reset à minuit | Faible | Oui — streak save = feature Premium |
-| **Solution officielle** | Champ `OfficialSolutionPython/JS` sur Challenge, visible après résolution (ou Premium) | Faible | Oui — mur Premium |
-| **Hints / indices** | 1-3 indices par challenge, débloquables un par un, pénalité score | Faible | Oui — hints illimités = Premium |
+| ~~**Streak journalier**~~ | ✅ Implémenté — champs `ChallengeStreak` + `BestChallengeStreak` sur User, calculé dans JudgeService | — | — |
+| ~~**Solution officielle**~~ | ✅ Implémenté — tab "Solution" visible après résolution (score 100), Python + JS | — | — |
+| ~~**Hints / indices**~~ | ✅ Implémenté — débloquables un par un dans l'onglet Description | — | — |
+| ~~**Challenge aléatoire**~~ | ✅ Implémenté — bouton Random dans la liste, respecte les filtres actifs | — | — |
 | **Email de vérification** | Confirmer l'email à l'inscription (SMTP) | Moyenne | Oui — requis pour Stripe |
 | **Reset de mot de passe** | Lien envoyé par email | Moyenne | Oui — requis pour prod |
 | **Rate limiting soumissions** | Max X soumissions/minute pour éviter l'abus | Faible | Oui — free vs premium |
@@ -624,14 +642,13 @@ Persisté dans `localStorage` (accessToken, refreshToken).
 
 | Feature | Description | Complexité |
 |---|---|---|
-| **Complexité algorithmique** | Champs `TimeComplexity` + `SpaceComplexity` affichés sur les challenges | Faible |
 | **Graphique de progression** | Heatmap activité style GitHub sur profil | Moyenne |
 | **Notifications email** | Email si streak en danger, nouveau challenge, résultat VS | Moyenne |
 | **Pagination leaderboard** | Actuellement tout chargé d'un coup | Faible |
 | **Discussion par challenge** | Commentaires / forum sous chaque challenge | Haute |
-| **Partage challenge** | Lien partageable avec code pré-rempli (viral) | Faible |
-| **Challenge du jour officiel** | Un challenge par jour sélectionné, badge spécial si résolu | Faible |
-| **Profil public** | Voir le profil d'un autre user (`/u/{username}`) | Faible |
+| ~~**Partage challenge**~~ | ✅ Implémenté — bouton Share dans l'onglet Description | — |
+| ~~**Challenge du jour**~~ | ✅ Implémenté — banner avec countdown, hash déterministe | — |
+| ~~**Profil public**~~ | ✅ Implémenté — `/u/{username}` avec stats complètes | — |
 | **Admin — Statistiques globales** | Dashboard : nb users, soumissions/jour, challenges populaires | Moyenne |
 
 ### 🟢 Priorité basse / Nice-to-have
@@ -652,7 +669,7 @@ Persisté dans `localStorage` (accessToken, refreshToken).
 |---|---|---|
 | **SQLite en production** | Corruption possible en concurrence | Migrer vers PostgreSQL |
 | **Exécution code non sandboxée** | Risque sécurité (code malveillant) | Docker par exécution |
-| **Pas de rate limiting** | Abus possible (spam soumissions) | ASP.NET rate limiting middleware |
+| ~~**Pas de rate limiting**~~ | ✅ Implémenté — sliding window 15/min (submit) + 30/min (test) | — |
 | **JWT dans localStorage** | XSS vulnérabilité | httpOnly cookie |
 | **Pas de tests automatisés** | Régressions difficiles à détecter | xUnit (backend) + Jest (frontend) |
 | **Pas de SMTP configuré** | Email vérification impossible | Mailgun / SendGrid / Resend |
@@ -913,4 +930,4 @@ const data = require('fs').readFileSync(0, 'utf8').trim().split('\n');
 
 ---
 
-*Ce guide couvre l'état de l'application au 9 mars 2026. Mettre à jour après chaque feature importante.*
+*Ce guide couvre l'état de l'application au 10 mars 2026. Mettre à jour après chaque feature importante.*

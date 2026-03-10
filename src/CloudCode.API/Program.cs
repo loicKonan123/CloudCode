@@ -3,6 +3,8 @@ using CloudCode.Hubs;
 using CloudCode.Infrastructure;
 using CloudCode.Infrastructure.Data;
 using CloudCode.Middleware;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -54,6 +56,26 @@ builder.Services.AddHttpClient();
 // Health Checks
 builder.Services.AddHealthChecks();
 
+// Rate Limiting — 15 soumissions/minute par user, 5 tests/minute
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddSlidingWindowLimiter("submit", opt =>
+    {
+        opt.PermitLimit = 15;
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.SegmentsPerWindow = 3;
+        opt.QueueLimit = 0;
+    });
+    options.AddSlidingWindowLimiter("test", opt =>
+    {
+        opt.PermitLimit = 30;
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.SegmentsPerWindow = 3;
+        opt.QueueLimit = 0;
+    });
+    options.RejectionStatusCode = 429;
+});
+
 // CORS
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
     ?? new[] { "http://localhost:3000" };
@@ -93,6 +115,7 @@ app.UseCors("CorsPolicy");
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 
 // Reverse proxy for user applications (after auth)
 app.UseReverseProxy();

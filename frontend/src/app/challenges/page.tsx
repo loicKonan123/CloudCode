@@ -12,6 +12,26 @@ import {
   ChallengeLanguage,
 } from '@/types';
 
+function useCountdownToMidnight() {
+  const [timeLeft, setTimeLeft] = useState('');
+  useEffect(() => {
+    const update = () => {
+      const now = new Date();
+      const midnight = new Date();
+      midnight.setUTCHours(24, 0, 0, 0);
+      const diff = midnight.getTime() - now.getTime();
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      setTimeLeft(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`);
+    };
+    update();
+    const id = setInterval(update, 1000);
+    return () => clearInterval(id);
+  }, []);
+  return timeLeft;
+}
+
 const DifficultyBadgeStyles: Record<ChallengeDifficulty, string> = {
   [ChallengeDifficulty.Easy]: 'bg-emerald-500/10 text-emerald-500',
   [ChallengeDifficulty.Medium]: 'bg-amber-500/10 text-amber-500',
@@ -28,6 +48,8 @@ export default function ChallengesPage() {
   const [languageFilter, setLanguageFilter] = useState<ChallengeLanguage | null>(null);
   const [activeTag, setActiveTag] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [daily, setDaily] = useState<ChallengeListItem | null>(null);
+  const countdown = useCountdownToMidnight();
 
   useEffect(() => {
     checkAuth();
@@ -37,6 +59,7 @@ export default function ChallengesPage() {
       return;
     }
     loadChallenges();
+    challengesApi.getDaily().then(r => setDaily(r.data)).catch(() => {});
   }, [checkAuth, router]);
 
   const loadChallenges = async () => {
@@ -63,8 +86,7 @@ export default function ChallengesPage() {
     return true;
   });
 
-  // Featured challenge = first one
-  const featured = challenges[0];
+  const featured = daily;
 
   return (
     <div className="min-h-screen flex flex-col font-[var(--font-inter)] app-grid" style={{ backgroundColor: '#101b22', color: '#e2e8f0' }}>
@@ -172,10 +194,15 @@ export default function ChallengesPage() {
                   </svg>
                 </div>
                 <div className="flex-1 p-6 lg:p-8 flex flex-col justify-center">
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex items-center gap-3 mb-2">
                     <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-[#3caff6]/20 text-[#3caff6] rounded">
                       Daily Challenge
                     </span>
+                    {countdown && (
+                      <span className="text-[10px] text-slate-500 font-mono">
+                        Resets in {countdown}
+                      </span>
+                    )}
                   </div>
                   <h2 className="text-2xl font-bold text-white mb-3">{featured.title}</h2>
                   <p className="text-slate-400 text-sm max-w-2xl mb-6">
@@ -239,6 +266,23 @@ export default function ChallengesPage() {
                 <option value={ChallengeLanguage.Python}>Python</option>
                 <option value={ChallengeLanguage.JavaScript}>JavaScript</option>
               </select>
+
+              {/* Random challenge button */}
+              <button
+                onClick={() => {
+                  const pool = filteredChallenges.length > 0 ? filteredChallenges : challenges;
+                  if (pool.length === 0) return;
+                  const pick = pool[Math.floor(Math.random() * pool.length)];
+                  router.push(`/challenges/${pick.slug}`);
+                }}
+                title="Random challenge"
+                className="px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs font-bold hover:border-[#3caff6] hover:text-[#3caff6] transition-colors text-slate-400 flex items-center gap-1.5"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Random
+              </button>
             </div>
           </div>
 

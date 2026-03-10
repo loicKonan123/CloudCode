@@ -28,6 +28,18 @@ public class UsersController : BaseApiController
     }
 
     /// <summary>
+    /// Récupère le profil public d'un utilisateur par son username.
+    /// </summary>
+    [HttpGet("public/{username}")]
+    [AllowAnonymous]
+    public async Task<ActionResult<PublicUserDto>> GetPublicProfile(string username)
+    {
+        var profile = await _userService.GetPublicProfileAsync(username);
+        if (profile == null) return NotFound();
+        return Ok(profile);
+    }
+
+    /// <summary>
     /// Met à jour le profil de l'utilisateur connecté (username, bio, avatar).
     /// </summary>
     [HttpPut("me/profile")]
