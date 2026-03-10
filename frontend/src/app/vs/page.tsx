@@ -1,5 +1,5 @@
 'use client';
-import AnimatedLogo from '@/components/AnimatedLogo';
+import Navbar from '@/components/Navbar';
 import SoundControl from '@/components/SoundControl';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
@@ -115,30 +115,7 @@ export default function VsLobbyPage() {
 
   return (
     <div className="min-h-screen flex flex-col app-grid" style={{ backgroundColor: '#101b22', color: '#f0f6fc' }}>
-      {/* NAV */}
-      <nav style={{ borderBottom: '1px solid #1e293b', backgroundColor: 'rgba(16,27,34,0.95)' }} className="sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-3 cursor-pointer" onClick={() => router.push('/')}>
-              <AnimatedLogo size={28} />
-              <span className="font-bold text-lg" style={{ color: '#3caff6' }}>CloudCode</span>
-            </div>
-            <div className="hidden md:flex items-center gap-6">
-              {[['/', 'Home'], ['/challenges', 'Challenges'], ['/courses', 'Courses'], ['/leaderboard', 'Leaderboard'], ['/vs', 'VS Mode']].map(([href, label]) => (
-                <span key={href} onClick={() => router.push(href)}
-                  className="cursor-pointer text-sm font-medium transition-colors"
-                  style={{ color: href === '/vs' ? '#3caff6' : '#8b949e' }}>{label}</span>
-              ))}
-            </div>
-            <div className="flex items-center gap-3">
-              <SoundControl />
-              <span className="text-sm" style={{ color: '#8b949e' }}>{user?.username}</span>
-              <button onClick={handleLogout} className="text-sm px-3 py-1.5 rounded-lg transition-colors"
-                style={{ color: '#8b949e', border: '1px solid #1e293b' }}>Logout</button>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <Navbar extra={<SoundControl />} />
 
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full">
         {/* Header */}

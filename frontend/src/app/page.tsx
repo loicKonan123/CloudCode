@@ -80,6 +80,7 @@ export default function HomePage() {
             <button onClick={() => router.push('/challenges')} className="text-slate-300 text-sm font-medium hover:text-[#3caff6] transition-colors">Challenges</button>
             <button onClick={() => router.push('/courses')} className="text-slate-300 text-sm font-medium hover:text-[#3caff6] transition-colors">Courses</button>
             <button onClick={() => router.push('/leaderboard')} className="text-slate-300 text-sm font-medium hover:text-[#3caff6] transition-colors">Leaderboard</button>
+            <button onClick={() => router.push('/vs')} className="text-slate-300 text-sm font-medium hover:text-[#3caff6] transition-colors">VS Mode</button>
           </nav>
         </div>
         <div className="flex items-center gap-4">

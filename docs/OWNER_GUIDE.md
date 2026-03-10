@@ -485,6 +485,7 @@ Challenge en mode IsFunction=true
 | Composant | Description |
 |---|---|
 | `AnimatedLogo` | Logo CloudCode animé |
+| `Navbar` | Barre de navigation partagée (Challenges/Courses/Leaderboard/VS Mode/Admin, avatar, logout, mobile menu) |
 | `SoundControl` | Bouton on/off effets sonores |
 | `three/HeroScene` | Scène Three.js pour la landing page |
 
@@ -609,9 +610,12 @@ Persisté dans `localStorage` (accessToken, refreshToken).
 - **Rate limiting** : 30 tests/min, 15 soumissions/min par IP (ASP.NET Sliding Window)
 - **IntelliSense Monaco** : autocomplétion avancée Python + JavaScript (50+ builtins, méthodes, snippets algorithmiques)
 - **Challenge du jour** : banner sur `/challenges` avec countdown avant réinitialisation, sélection déterministe par hash du jour UTC
-- **Profil public `/u/{username}`** : page read-only avec stats, difficulty breakdown, streak, soumissions récentes
+- **Profil public `/u/{username}`** : page read-only avec stats, difficulty breakdown, streak, soumissions récentes — accessible sans connexion
 - **Partage challenge** : bouton Share dans l'onglet Description → copie l'URL → feedback "Copied!" 2s
 - **Usernames cliquables** dans le leaderboard → redirige vers le profil public
+- **Leaderboard public** : accessible sans connexion
+- **Navbar partagée** : composant `Navbar.tsx` unique utilisé sur Challenges, Courses, Leaderboard, VS Mode — active state, mobile menu, logout, avatar
+- **Animations background** : orbes animés (radial gradient, ease-in-out) sur Leaderboard et profil public
 
 ### ✅ Admin (COMPLET)
 

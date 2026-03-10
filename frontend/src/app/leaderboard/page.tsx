@@ -1,6 +1,5 @@
 'use client';
-import AnimatedLogo from '@/components/AnimatedLogo';
-
+import Navbar from '@/components/Navbar';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
@@ -9,11 +8,10 @@ import { LeaderboardEntry } from '@/types';
 
 export default function LeaderboardPage() {
   const router = useRouter();
-  const { user, isAuthenticated, logout, checkAuth } = useAuthStore();
+  const { user, checkAuth } = useAuthStore(); // user needed for isMe highlight
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [period, setPeriod] = useState('all');
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -63,86 +61,7 @@ export default function LeaderboardPage() {
           animation: 'bgDriftB 13s ease-in-out infinite',
         }} />
       </div>
-      {/* Header */}
-      <header className="border-b border-slate-800 bg-[#101b22] sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-2">
-              <AnimatedLogo size={28} />
-              <span className="text-xl font-bold tracking-tight text-white">CloudCode</span>
-            </div>
-
-            <nav className="hidden md:flex items-center gap-8">
-              <button onClick={() => router.push('/courses')} className="text-slate-400 hover:text-[#3caff6] transition-colors text-sm font-medium">
-                Courses
-              </button>
-              <button onClick={() => router.push('/challenges')} className="text-slate-400 hover:text-[#3caff6] transition-colors text-sm font-medium">
-                Challenges
-              </button>
-              <button onClick={() => router.push('/leaderboard')} className="text-[#3caff6] font-semibold text-sm">
-                Leaderboard
-              </button>
-              <button onClick={() => router.push('/vs')} className="text-slate-400 hover:text-[#3caff6] transition-colors text-sm font-medium">
-                VS Mode
-              </button>
-              {user?.isAdmin && (
-                <button onClick={() => router.push('/admin/challenges')} className="text-slate-400 hover:text-[#3caff6] transition-colors text-sm font-medium">
-                  Admin
-                </button>
-              )}
-            </nav>
-
-            <div className="flex items-center gap-3">
-              <div className="hidden md:flex items-center gap-3">
-                <span className="text-sm text-slate-400">{user?.username}</span>
-                <div className="h-9 w-9 rounded-full bg-[#3caff6]/20 flex items-center justify-center border border-[#3caff6]/30 text-[#3caff6] font-bold text-sm">
-                  {user?.username?.charAt(0).toUpperCase()}
-                </div>
-                <button onClick={() => { logout(); router.push('/login'); }} className="p-2 text-slate-500 hover:text-red-400 transition-colors" title="Sign out">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                  </svg>
-                </button>
-              </div>
-              <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden p-2 text-slate-400 hover:text-white">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  {mobileMenuOpen ? (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  ) : (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                  )}
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Mobile Menu */}
-      {mobileMenuOpen && (
-        <div className="md:hidden border-b border-slate-800 bg-[#101b22] px-4 py-4 space-y-3">
-          <button onClick={() => { router.push('/challenges'); setMobileMenuOpen(false); }} className="block w-full text-left text-slate-400 hover:text-[#3caff6] text-sm font-medium py-2">
-            Challenges
-          </button>
-          <button onClick={() => { router.push('/leaderboard'); setMobileMenuOpen(false); }} className="block w-full text-left text-[#3caff6] font-semibold text-sm py-2">
-            Leaderboard
-          </button>
-          <button onClick={() => { router.push('/vs'); setMobileMenuOpen(false); }} className="block w-full text-left text-slate-400 hover:text-[#3caff6] text-sm font-medium py-2">
-            VS Mode
-          </button>
-              <button onClick={() => router.push('/vs')} className="text-slate-400 hover:text-[#3caff6] transition-colors text-sm font-medium">
-                VS Mode
-              </button>
-          {user?.isAdmin && (
-            <button onClick={() => { router.push('/admin/challenges'); setMobileMenuOpen(false); }} className="block w-full text-left text-slate-400 hover:text-[#3caff6] text-sm font-medium py-2">
-              Admin
-            </button>
-          )}
-          <button onClick={() => { logout(); router.push('/login'); setMobileMenuOpen(false); }} className="block w-full text-left text-red-400 hover:text-red-300 text-sm font-medium py-2">
-            Sign out
-          </button>
-        </div>
-      )}
+      <Navbar />
 
       <main className="relative z-10 flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Title + Period Filter */}
@@ -286,12 +205,8 @@ export default function LeaderboardPage() {
 
       {/* Footer */}
       <footer className="bg-slate-900 border-t border-slate-800 py-8 mt-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-2 grayscale opacity-50">
-            <AnimatedLogo size={20} />
-            <span className="font-bold text-lg">CloudCode</span>
-          </div>
-          <p className="text-xs text-slate-500">2026 CloudCode. All rights reserved.</p>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <p className="text-xs text-slate-500">© 2026 CloudCode. All rights reserved.</p>
         </div>
       </footer>
     </div>
