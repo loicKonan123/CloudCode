@@ -33,7 +33,7 @@ export default function ChallengePage() {
   const router = useRouter();
   const params = useParams();
   const slug = params.slug as string;
-  const { isAuthenticated, checkAuth } = useAuthStore();
+  const { user, isAuthenticated, checkAuth } = useAuthStore();
 
   const [challenge, setChallenge] = useState<ChallengeDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -70,19 +70,26 @@ export default function ChallengePage() {
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [slug, checkAuth, router]);
 
+  const storageKey = (lang: ChallengeLanguage) =>
+    `cc_code_${user?.id ?? 'guest'}_${slug}_${lang === ChallengeLanguage.Python ? 'py' : 'js'}`;
+
   const loadChallenge = async () => {
     try {
       setIsLoading(true);
       const response = await challengesApi.getBySlug(slug);
       setChallenge(response.data);
       const c = response.data;
-      if (c.supportedLanguages === ChallengeLanguage.JavaScript) {
-        setLanguage(ChallengeLanguage.JavaScript);
-        setCode(c.starterCodeJavaScript || '');
-      } else {
-        setLanguage(ChallengeLanguage.Python);
-        setCode(c.starterCodePython || '');
-      }
+      const defaultLang =
+        c.supportedLanguages === ChallengeLanguage.JavaScript
+          ? ChallengeLanguage.JavaScript
+          : ChallengeLanguage.Python;
+      setLanguage(defaultLang);
+      const saved = localStorage.getItem(storageKey(defaultLang));
+      const starter =
+        defaultLang === ChallengeLanguage.Python
+          ? c.starterCodePython || ''
+          : c.starterCodeJavaScript || '';
+      setCode(saved ?? starter);
     } catch {
       router.push('/challenges');
     } finally {
@@ -93,7 +100,12 @@ export default function ChallengePage() {
   const handleLanguageChange = (lang: ChallengeLanguage) => {
     setLanguage(lang);
     if (challenge) {
-      setCode(lang === ChallengeLanguage.Python ? challenge.starterCodePython || '' : challenge.starterCodeJavaScript || '');
+      const saved = localStorage.getItem(storageKey(lang));
+      const starter =
+        lang === ChallengeLanguage.Python
+          ? challenge.starterCodePython || ''
+          : challenge.starterCodeJavaScript || '';
+      setCode(saved ?? starter);
     }
     setTestResults(null);
   };
@@ -413,6 +425,26 @@ export default function ChallengePage() {
                 )}
                 Format
               </button>
+              {/* Reset to starter */}
+              <button
+                onClick={() => {
+                  if (!challenge) return;
+                  const starter =
+                    language === ChallengeLanguage.Python
+                      ? challenge.starterCodePython || ''
+                      : challenge.starterCodeJavaScript || '';
+                  setCode(starter);
+                  localStorage.removeItem(storageKey(language));
+                }}
+                title="Reset to starter code"
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-colors"
+                style={{ color: '#8b949e', backgroundColor: 'rgba(30,41,59,0.5)' }}
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Reset
+              </button>
               {/* Font size */}
               <div className="flex items-center gap-0.5 ml-1">
                 <button
@@ -437,7 +469,11 @@ export default function ChallengePage() {
               language={monacoLang}
               theme="vs-dark"
               value={code}
-              onChange={(v) => setCode(v || '')}
+              onChange={(v) => {
+                const newCode = v || '';
+                setCode(newCode);
+                localStorage.setItem(storageKey(language), newCode);
+              }}
               onMount={(editor) => { editorRef.current = editor; }}
               options={{
                 minimap: { enabled: false },
