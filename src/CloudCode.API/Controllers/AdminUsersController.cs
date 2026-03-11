@@ -75,18 +75,30 @@ public class AdminUsersController : BaseApiController
         if (user.Id == currentUserId)
             return BadRequest(new { message = "Vous ne pouvez pas supprimer votre propre compte." });
 
-        // Supprimer les données liées avant le user
-        var submissions = _db.UserSubmissions.Where(s => s.UserId == id);
-        _db.UserSubmissions.RemoveRange(submissions);
-
-        var progress = _db.UserProgress.Where(p => p.UserId == id);
-        _db.UserProgress.RemoveRange(progress);
-
-        var vsRanks = _db.VsRanks.Where(r => r.UserId == id);
-        _db.VsRanks.RemoveRange(vsRanks);
-
-        _db.Users.Remove(user);
-        await _db.SaveChangesAsync();
+        // Désactiver les FK SQLite, tout supprimer en raw SQL, réactiver
+        var uid = id.ToString();
+        await _db.Database.ExecuteSqlRawAsync("PRAGMA foreign_keys = OFF");
+        try
+        {
+            await _db.Database.ExecuteSqlRawAsync("DELETE FROM UserSubmissions WHERE UserId = {0}", uid);
+            await _db.Database.ExecuteSqlRawAsync("DELETE FROM UserProgress WHERE UserId = {0}", uid);
+            await _db.Database.ExecuteSqlRawAsync("DELETE FROM VsRanks WHERE UserId = {0}", uid);
+            await _db.Database.ExecuteSqlRawAsync("DELETE FROM AuditLogs WHERE UserId = {0}", uid);
+            await _db.Database.ExecuteSqlRawAsync("DELETE FROM Collaborations WHERE UserId = {0}", uid);
+            await _db.Database.ExecuteSqlRawAsync("DELETE FROM GitCredentials WHERE UserId = {0}", uid);
+            await _db.Database.ExecuteSqlRawAsync("DELETE FROM VsMatches WHERE Player1Id = {0} OR Player2Id = {0}", uid);
+            await _db.Database.ExecuteSqlRawAsync("DELETE FROM ExecutionResults WHERE UserId = {0}", uid);
+            await _db.Database.ExecuteSqlRawAsync("DELETE FROM ExecutionResults WHERE ProjectId IN (SELECT Id FROM Projects WHERE OwnerId = {0})", uid);
+            await _db.Database.ExecuteSqlRawAsync("DELETE FROM ProjectDependencies WHERE ProjectId IN (SELECT Id FROM Projects WHERE OwnerId = {0})", uid);
+            await _db.Database.ExecuteSqlRawAsync("DELETE FROM EnvironmentVariables WHERE ProjectId IN (SELECT Id FROM Projects WHERE OwnerId = {0})", uid);
+            await _db.Database.ExecuteSqlRawAsync("DELETE FROM CodeFiles WHERE ProjectId IN (SELECT Id FROM Projects WHERE OwnerId = {0})", uid);
+            await _db.Database.ExecuteSqlRawAsync("DELETE FROM Projects WHERE OwnerId = {0}", uid);
+            await _db.Database.ExecuteSqlRawAsync("DELETE FROM Users WHERE Id = {0}", uid);
+        }
+        finally
+        {
+            await _db.Database.ExecuteSqlRawAsync("PRAGMA foreign_keys = ON");
+        }
 
         return Ok(new { message = "Utilisateur supprimé." });
     }
