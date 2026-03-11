@@ -13,6 +13,7 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     checkAuth();
@@ -49,6 +50,20 @@ export default function AdminUsersPage() {
       alert('Error while changing role.');
     } finally {
       setTogglingId(null);
+    }
+  };
+
+  const handleDelete = async (u: AdminUser) => {
+    if (u.id === user?.id) { alert('You cannot delete your own account.'); return; }
+    if (!confirm(`Delete "${u.username}" permanently? This cannot be undone.`)) return;
+    setDeletingId(u.id);
+    try {
+      await adminUsersApi.deleteUser(u.id);
+      setUsers(prev => prev.filter(x => x.id !== u.id));
+    } catch {
+      alert('Error while deleting user.');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -105,11 +120,11 @@ export default function AdminUsersPage() {
         ) : (
           <div className="rounded-xl border border-slate-800 overflow-hidden">
             {/* Table header */}
-            <div className="hidden md:grid grid-cols-[2fr_2fr_1fr_120px] gap-4 px-6 py-3 bg-slate-800/50 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-800">
+            <div className="hidden md:grid grid-cols-[2fr_2fr_1fr_180px] gap-4 px-6 py-3 bg-slate-800/50 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-800">
               <span>User</span>
               <span>Email</span>
               <span>Role</span>
-              <span className="text-right">Action</span>
+              <span className="text-right">Actions</span>
             </div>
 
             {users.length === 0 ? (
@@ -118,7 +133,7 @@ export default function AdminUsersPage() {
               users.map((u, i) => (
                 <div
                   key={u.id}
-                  className={`grid grid-cols-1 md:grid-cols-[2fr_2fr_1fr_120px] gap-4 px-6 py-4 items-center transition-colors hover:bg-slate-800/30 ${
+                  className={`grid grid-cols-1 md:grid-cols-[2fr_2fr_1fr_180px] gap-4 px-6 py-4 items-center transition-colors hover:bg-slate-800/30 ${
                     i !== users.length - 1 ? 'border-b border-slate-800' : ''
                   } ${u.id === user?.id ? 'bg-[#3caff6]/5' : ''}`}
                 >
@@ -149,40 +164,40 @@ export default function AdminUsersPage() {
                     </span>
                   </div>
 
-                  {/* Toggle button */}
-                  <div className="flex justify-start md:justify-end">
+                  {/* Actions */}
+                  <div className="flex items-center gap-2 justify-start md:justify-end">
+                    {/* Promote / Demote */}
                     <button
                       onClick={() => handleToggleAdmin(u)}
                       disabled={togglingId === u.id || (u.id === user?.id && u.isAdmin)}
-                      title={
-                        u.id === user?.id && u.isAdmin
-                          ? 'Cannot remove your own rights'
-                          : u.isAdmin ? 'Demote to member' : 'Promote to admin'
-                      }
+                      title={u.id === user?.id && u.isAdmin ? 'Cannot remove your own rights' : u.isAdmin ? 'Demote to member' : 'Promote to admin'}
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors disabled:opacity-40 ${
-                        u.isAdmin
-                          ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20'
-                          : 'bg-[#3caff6]/10 text-[#3caff6] hover:bg-[#3caff6]/20'
+                        u.isAdmin ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20' : 'bg-[#3caff6]/10 text-[#3caff6] hover:bg-[#3caff6]/20'
                       }`}
                     >
                       {togglingId === u.id ? (
                         <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                      ) : u.isAdmin ? (
-                        <>
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                          </svg>
-                          Demote
-                        </>
-                      ) : (
-                        <>
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 11l7-7 7 7M5 19l7-7 7 7" />
-                          </svg>
-                          Promote
-                        </>
-                      )}
+                      ) : u.isAdmin ? 'Demote' : 'Promote'}
                     </button>
+
+                    {/* Delete */}
+                    {u.id !== user?.id && (
+                      <button
+                        onClick={() => handleDelete(u)}
+                        disabled={deletingId === u.id}
+                        title="Delete user"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors disabled:opacity-40"
+                      >
+                        {deletingId === u.id ? (
+                          <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        )}
+                        Delete
+                      </button>
+                    )}
                   </div>
                 </div>
               ))

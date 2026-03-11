@@ -35,7 +35,7 @@ export default function HomePage() {
       if (challengesRes.status === 'fulfilled' && challengesRes.value.data.length > 0)
         setFeaturedChallenge(challengesRes.value.data[0]);
       if (leaderboardRes.status === 'fulfilled')
-        setLeaderboard(leaderboardRes.value.data.slice(0, 4));
+        setLeaderboard(leaderboardRes.value.data.items.slice(0, 4));
     } catch {}
   };
 

@@ -70,10 +70,19 @@ export const authApi = {
   register: (email: string, username: string, password: string) =>
     api.post<AuthResponse>('/auth/register', { email, username, password }),
 
+  firebaseLogin: (firebaseToken: string, username?: string) =>
+    api.post<AuthResponse>('/auth/firebase', { firebaseToken, username }),
+
   logout: () => api.post('/auth/logout'),
 
   refresh: (refreshToken: string) =>
     api.post<AuthResponse>('/auth/refresh', { refreshToken }),
+
+  forgotPassword: (email: string) =>
+    api.post('/auth/forgot-password', { email }),
+
+  resetPassword: (email: string, token: string, newPassword: string, confirmPassword: string) =>
+    api.post('/auth/reset-password', { email, token, newPassword, confirmPassword }),
 };
 
 // ===========================================
@@ -97,8 +106,8 @@ export const challengesApi = {
   getSubmissions: (slug: string) =>
     api.get<import('@/types').SubmissionInfo[]>(`/challenges/${slug}/submissions`),
 
-  getLeaderboard: (period = 'all') =>
-    api.get<import('@/types').LeaderboardEntry[]>('/leaderboard', { params: { period } }),
+  getLeaderboard: (period = 'all', page = 1, pageSize = 20) =>
+    api.get<import('@/types').LeaderboardPage>('/leaderboard', { params: { period, page, pageSize } }),
 
   getDaily: () =>
     api.get<import('@/types').ChallengeListItem>('/challenges/daily'),
@@ -159,6 +168,9 @@ export const adminUsersApi = {
 
   toggleAdmin: (id: string) =>
     api.post<import('@/types').AdminUser>(`/admin/users/${id}/toggle-admin`),
+
+  deleteUser: (id: string) =>
+    api.delete(`/admin/users/${id}`),
 };
 
 // ===========================================

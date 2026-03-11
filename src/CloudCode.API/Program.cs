@@ -3,6 +3,8 @@ using CloudCode.Hubs;
 using CloudCode.Infrastructure;
 using CloudCode.Infrastructure.Data;
 using CloudCode.Middleware;
+using FirebaseAdmin;
+using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
 
@@ -90,6 +92,38 @@ builder.Services.AddCors(options =>
               .AllowCredentials();
     });
 });
+
+// Firebase Admin SDK
+try
+{
+    var firebaseCredentialPath = builder.Configuration["Firebase:ServiceAccountPath"];
+    if (!string.IsNullOrEmpty(firebaseCredentialPath) && File.Exists(firebaseCredentialPath))
+    {
+        FirebaseApp.Create(new AppOptions
+        {
+            Credential = GoogleCredential.FromFile(firebaseCredentialPath)
+        });
+    }
+    else
+    {
+        var firebaseJson = builder.Configuration["Firebase:ServiceAccountJson"];
+        if (!string.IsNullOrEmpty(firebaseJson))
+        {
+            FirebaseApp.Create(new AppOptions
+            {
+                Credential = GoogleCredential.FromJson(firebaseJson)
+            });
+        }
+        else
+        {
+            Console.WriteLine("[Firebase] Aucune clé trouvée — Google Sign-In désactivé.");
+        }
+    }
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"[Firebase] Erreur init : {ex.Message} — Google Sign-In désactivé.");
+}
 
 var app = builder.Build();
 

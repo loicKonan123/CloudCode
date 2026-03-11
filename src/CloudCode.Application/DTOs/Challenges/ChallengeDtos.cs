@@ -148,3 +148,11 @@ public class LeaderboardEntryDto
     public int ChallengesSolved { get; set; }
     public int PerfectScores { get; set; }
 }
+
+public class LeaderboardPageDto
+{
+    public List<LeaderboardEntryDto> Items { get; set; } = [];
+    public int Total { get; set; }
+    public int Page { get; set; }
+    public int PageSize { get; set; }
+}

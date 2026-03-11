@@ -44,6 +44,7 @@ public static class DependencyInjection
         services.AddScoped<IDependencyService, DependencyService>();
         services.AddScoped<IEnvironmentService, EnvironmentService>();
         services.AddHttpClient<IAIService, AIService>();
+        services.AddHttpClient<IEmailService, EmailService>();
         services.AddSingleton<PasswordHasher>();
         services.AddSingleton<IPortDetectionService, PortDetectionService>();
         services.AddScoped<IFormattingService, FormattingService>();

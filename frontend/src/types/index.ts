@@ -129,6 +129,8 @@ export interface UserProfile {
   vsLosses: number;
   // Recent activity
   recentSubmissions: RecentSubmission[];
+  // Heatmap
+  activityByDay: Record<string, number>;
 }
 
 export interface RecentSubmission {
@@ -212,6 +214,13 @@ export interface LeaderboardEntry {
   totalScore: number;
   challengesSolved: number;
   perfectScores: number;
+}
+
+export interface LeaderboardPage {
+  items: LeaderboardEntry[];
+  total: number;
+  page: number;
+  pageSize: number;
 }
 
 export interface CreateChallengeDto {

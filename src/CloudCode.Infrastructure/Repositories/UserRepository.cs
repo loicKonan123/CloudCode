@@ -29,6 +29,12 @@ public class UserRepository : Repository<User>, IUserRepository
             .FirstOrDefaultAsync(u => u.RefreshToken == refreshToken, cancellationToken);
     }
 
+    public async Task<User?> GetByFirebaseUidAsync(string firebaseUid, CancellationToken cancellationToken = default)
+    {
+        return await _dbSet
+            .FirstOrDefaultAsync(u => u.FirebaseUid == firebaseUid, cancellationToken);
+    }
+
     public async Task<bool> EmailExistsAsync(string email, CancellationToken cancellationToken = default)
     {
         return await _dbSet

@@ -1,5 +1,7 @@
 'use client';
 import AnimatedLogo from '@/components/AnimatedLogo';
+import ActivityHeatmap from '@/components/ActivityHeatmap';
+import BadgesSection from '@/components/BadgesSection';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
@@ -276,6 +278,15 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
+
+        {/* Badges */}
+        <BadgesSection profile={profile} />
+
+        {/* Activity Heatmap */}
+        <ActivityHeatmap
+          activityByDay={profile.activityByDay ?? {}}
+          totalSubmissions={profile.totalSubmissions}
+        />
 
         {/* Recent Submissions */}
         {profile.recentSubmissions.length > 0 && (

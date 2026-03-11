@@ -314,7 +314,7 @@ public class ChallengeService : IChallengeService
 
     // --- Leaderboard ---
 
-    public async Task<List<LeaderboardEntryDto>> GetLeaderboardAsync(string period = "all")
+    public async Task<LeaderboardPageDto> GetLeaderboardAsync(string period = "all", int page = 1, int pageSize = 20)
     {
         var query = _db.UserProgress.AsQueryable();
 
@@ -323,7 +323,7 @@ public class ChallengeService : IChallengeService
         else if (period == "week")
             query = query.Where(p => p.LastAttemptAt >= DateTime.UtcNow.AddDays(-7));
 
-        var leaderboard = await query
+        var grouped = await query
             .GroupBy(p => p.UserId)
             .Select(g => new
             {
@@ -334,24 +334,28 @@ public class ChallengeService : IChallengeService
             })
             .OrderByDescending(x => x.TotalScore)
             .ThenByDescending(x => x.PerfectScores)
-            .Take(100)
             .ToListAsync();
 
-        // Get usernames
-        var userIds = leaderboard.Select(l => l.UserId).ToList();
+        var total = grouped.Count;
+        var skip = (page - 1) * pageSize;
+        var paged = grouped.Skip(skip).Take(pageSize).ToList();
+
+        var userIds = paged.Select(l => l.UserId).ToList();
         var users = await _db.Users
             .Where(u => userIds.Contains(u.Id))
             .ToDictionaryAsync(u => u.Id, u => u.Username);
 
-        return leaderboard.Select((entry, index) => new LeaderboardEntryDto
+        var items = paged.Select((entry, index) => new LeaderboardEntryDto
         {
-            Rank = index + 1,
+            Rank = skip + index + 1,
             UserId = entry.UserId,
             Username = users.GetValueOrDefault(entry.UserId, "Unknown"),
             TotalScore = entry.TotalScore,
             ChallengesSolved = entry.ChallengesSolved,
             PerfectScores = entry.PerfectScores
         }).ToList();
+
+        return new LeaderboardPageDto { Items = items, Total = total, Page = page, PageSize = pageSize };
     }
 
     // --- Helpers ---

@@ -35,6 +35,9 @@ public class UserProfileDto
 
     // Recent activity
     public List<RecentSubmissionDto> RecentSubmissions { get; set; } = new();
+
+    // Heatmap — clé "yyyy-MM-dd", valeur = nb soumissions ce jour (365 derniers jours)
+    public Dictionary<string, int> ActivityByDay { get; set; } = new();
 }
 
 public class RecentSubmissionDto

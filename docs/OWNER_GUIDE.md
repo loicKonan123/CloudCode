@@ -238,6 +238,7 @@ GitCredentials
 | `20260307021701_AddChallengeEntities` | Tables Challenges, TestCases, UserSubmissions, UserProgress |
 | `20260309100000_AddChallengeFunctionMode` | Colonnes IsFunction, TestRunnerPython/JS sur Challenges |
 | `20260310051932_AddStreakAndOfficialSolution` | Streak (ChallengeStreak, BestChallengeStreak, LastChallengeSolvedDate) sur User + OfficialSolutionPython/JS + Hints sur Challenge |
+| `20260310130000_AddFirebaseUid` | Colonne `FirebaseUid` (nullable) sur Users + index unique |
 
 ---
 
@@ -574,6 +575,12 @@ Persisté dans `localStorage` (accessToken, refreshToken).
 - Refresh automatique côté frontend (intercepteur Axios)
 - Hashage bcrypt des mots de passe
 - Rôles : User et Admin
+- **Firebase Auth** : email verification automatique à l'inscription, password reset par email, Google Sign-In
+  - Backend : `POST /api/auth/firebase` — vérifie Firebase ID token, crée/lie le compte, émet JWT custom
+  - Frontend : `lib/firebase.ts`, authStore mis à jour (login, register, loginWithGoogle, sendPasswordReset)
+  - Page `/forgot-password` avec formulaire de reset
+  - Google Sign-In via popup — username auto-dérivé du displayName Google (suffixe aléatoire si déjà pris)
+  - Config : `firebase_key.json` à la racine du projet (service account), `.env.local` pour les clés web
 
 ### ✅ Leaderboard (COMPLET)
 
@@ -604,6 +611,8 @@ Persisté dans `localStorage` (accessToken, refreshToken).
 - Avatar avec initiale + glow selon tier
 - Accessible via clic sur l'avatar dans le header `/challenges`
 - **Streak journalier** : Current Streak 🔥 + Best Streak 🏆 (calculé dans JudgeService au moment du solve)
+- **Heatmap d'activité** : grille GitHub-style 365 jours, intensité colorée selon le nombre de soumissions
+- **Badges & Achievements** : 16 badges (common/rare/epic/legendary), calculés depuis les stats existantes, earned + locked
 
 ### ✅ Phase Engagement (COMPLET)
 
@@ -637,8 +646,9 @@ Persisté dans `localStorage` (accessToken, refreshToken).
 | ~~**Solution officielle**~~ | ✅ Implémenté — tab "Solution" visible après résolution (score 100), Python + JS | — | — |
 | ~~**Hints / indices**~~ | ✅ Implémenté — débloquables un par un dans l'onglet Description | — | — |
 | ~~**Challenge aléatoire**~~ | ✅ Implémenté — bouton Random dans la liste, respecte les filtres actifs | — | — |
-| **Email de vérification** | Confirmer l'email à l'inscription (SMTP) | Moyenne | Oui — requis pour Stripe |
-| **Reset de mot de passe** | Lien envoyé par email | Moyenne | Oui — requis pour prod |
+| ~~**Email de vérification**~~ | ✅ Implémenté — Firebase Auth envoie l'email automatiquement à l'inscription | — | — |
+| ~~**Reset de mot de passe**~~ | ✅ Implémenté — page `/forgot-password`, Firebase sendPasswordResetEmail | — | — |
+| ~~**Google Sign-In**~~ | ✅ Implémenté — Firebase signInWithPopup, username auto-dérivé, bouton sur login + register | — | — |
 | **Rate limiting soumissions** | Max X soumissions/minute pour éviter l'abus | Faible | Oui — free vs premium |
 | **Challenge aléatoire** | Bouton "Random" sur `/challenges` filtré par difficulté | Très faible | Non |
 
@@ -646,20 +656,20 @@ Persisté dans `localStorage` (accessToken, refreshToken).
 
 | Feature | Description | Complexité |
 |---|---|---|
-| **Graphique de progression** | Heatmap activité style GitHub sur profil | Moyenne |
+| ~~**Graphique de progression**~~ | ✅ Implémenté — Heatmap GitHub-style sur `/profile`, 365 cases colorées par intensité | — |
 | **Notifications email** | Email si streak en danger, nouveau challenge, résultat VS | Moyenne |
-| **Pagination leaderboard** | Actuellement tout chargé d'un coup | Faible |
+| ~~**Pagination leaderboard**~~ | ✅ Implémenté — 20 par page, boutons Prev/Next + numéros avec ellipsis | — |
 | **Discussion par challenge** | Commentaires / forum sous chaque challenge | Haute |
 | ~~**Partage challenge**~~ | ✅ Implémenté — bouton Share dans l'onglet Description | — |
 | ~~**Challenge du jour**~~ | ✅ Implémenté — banner avec countdown, hash déterministe | — |
 | ~~**Profil public**~~ | ✅ Implémenté — `/u/{username}` avec stats complètes | — |
-| **Admin — Statistiques globales** | Dashboard : nb users, soumissions/jour, challenges populaires | Moyenne |
+| ~~**Admin — Statistiques globales**~~ | ✅ Implémenté — `/admin` dashboard : KPIs, graphique 14 jours, top challenges, raccourcis | — |
 
 ### 🟢 Priorité basse / Nice-to-have
 
 | Feature | Description | Complexité |
 |---|---|---|
-| **Badges et achievements** | First solve, 10-day streak, all-easy solved, etc. | Haute |
+| ~~**Badges et achievements**~~ | ✅ Implémenté — 16 badges calculés côté frontend depuis les stats existantes (common/rare/epic/legendary), section sur `/profile` | — |
 | **Boutique avatars / thèmes** | Items cosmétiques achetables (lié monétisation) | Haute |
 | **Contests** | Compétitions avec deadline et classement | Haute |
 | **Support Java / C++ / Go** | Ajouter langages aux challenges | Haute |

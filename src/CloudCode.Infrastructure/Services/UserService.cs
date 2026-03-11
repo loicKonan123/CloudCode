@@ -48,6 +48,12 @@ public class UserService : IUserService
             SubmittedAt = s.SubmittedAt,
         }).ToList();
 
+        var cutoff = DateTime.UtcNow.Date.AddDays(-364);
+        var activityByDay = submissions
+            .Where(s => s.SubmittedAt.Date >= cutoff)
+            .GroupBy(s => s.SubmittedAt.Date.ToString("yyyy-MM-dd"))
+            .ToDictionary(g => g.Key, g => g.Count());
+
         return new UserProfileDto
         {
             Id = user.Id,
@@ -72,6 +78,7 @@ public class UserService : IUserService
             VsWins = vsRank?.Wins ?? 0,
             VsLosses = vsRank?.Losses ?? 0,
             RecentSubmissions = recent,
+            ActivityByDay = activityByDay,
         };
     }
 

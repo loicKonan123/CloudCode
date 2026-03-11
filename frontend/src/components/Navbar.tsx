@@ -57,7 +57,7 @@ export default function Navbar({ extra }: NavbarProps) {
                 ))}
                 {user?.isAdmin && (
                   <button
-                    onClick={() => router.push('/admin/challenges')}
+                    onClick={() => router.push('/admin')}
                     className="text-slate-400 hover:text-[#3caff6] text-sm font-medium transition-colors"
                   >
                     Admin
@@ -143,7 +143,7 @@ export default function Navbar({ extra }: NavbarProps) {
           ))}
           {user?.isAdmin && (
             <button
-              onClick={() => { router.push('/admin/challenges'); setMobileMenuOpen(false); }}
+              onClick={() => { router.push('/admin'); setMobileMenuOpen(false); }}
               className="block w-full text-left text-slate-400 hover:text-[#3caff6] text-sm font-medium py-2"
             >
               Admin

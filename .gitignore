@@ -35,6 +35,11 @@ artifacts/
 *.db-shm
 *.db-wal
 
+# Firebase service account (NE JAMAIS COMMITTER)
+firebase_key.json
+*-service-account.json
+*serviceAccount*.json
+
 # User-specific files
 *.rsuser
 *.suo

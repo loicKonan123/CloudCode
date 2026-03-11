@@ -6,10 +6,14 @@ import { useAuthStore } from '@/stores/authStore';
 import { challengesApi } from '@/lib/api';
 import { LeaderboardEntry } from '@/types';
 
+const PAGE_SIZE = 20;
+
 export default function LeaderboardPage() {
   const router = useRouter();
   const { user, checkAuth } = useAuthStore(); // user needed for isMe highlight
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [period, setPeriod] = useState('all');
 
@@ -18,20 +22,27 @@ export default function LeaderboardPage() {
   }, [checkAuth]);
 
   useEffect(() => {
-    loadLeaderboard();
+    setPage(1);
   }, [period]);
+
+  useEffect(() => {
+    loadLeaderboard();
+  }, [period, page]);
 
   const loadLeaderboard = async () => {
     try {
       setIsLoading(true);
-      const response = await challengesApi.getLeaderboard(period);
-      setEntries(response.data);
+      const response = await challengesApi.getLeaderboard(period, page, PAGE_SIZE);
+      setEntries(response.data.items);
+      setTotal(response.data.total);
     } catch (error) {
       console.error('Error loading leaderboard:', error);
     } finally {
       setIsLoading(false);
     }
   };
+
+  const totalPages = Math.ceil(total / PAGE_SIZE);
 
   return (
     <div className="min-h-screen flex flex-col font-(--font-inter) app-grid" style={{ backgroundColor: '#101b22', color: '#e2e8f0' }}>
@@ -201,6 +212,56 @@ export default function LeaderboardPage() {
             })}
           </div>
         )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-3 mt-8">
+            <button
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="px-4 py-2 text-sm font-medium rounded-lg border border-slate-700 text-slate-400 hover:border-[#3caff6] hover:text-[#3caff6] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              ← Prev
+            </button>
+
+            <div className="flex items-center gap-1">
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter(p => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
+                .reduce<(number | '...')[]>((acc, p, idx, arr) => {
+                  if (idx > 0 && p - (arr[idx - 1] as number) > 1) acc.push('...');
+                  acc.push(p);
+                  return acc;
+                }, [])
+                .map((p, i) =>
+                  p === '...' ? (
+                    <span key={`ellipsis-${i}`} className="text-slate-600 px-1">…</span>
+                  ) : (
+                    <button
+                      key={p}
+                      onClick={() => setPage(p as number)}
+                      className={`w-9 h-9 text-sm font-semibold rounded-lg transition-colors ${
+                        page === p
+                          ? 'bg-[#3caff6] text-[#101b22]'
+                          : 'border border-slate-700 text-slate-400 hover:border-[#3caff6] hover:text-[#3caff6]'
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  )
+                )}
+            </div>
+
+            <button
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              className="px-4 py-2 text-sm font-medium rounded-lg border border-slate-700 text-slate-400 hover:border-[#3caff6] hover:text-[#3caff6] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              Next →
+            </button>
+          </div>
+        )}
+
+        <p className="text-center text-xs text-slate-600 mt-3">{total} players ranked</p>
       </main>
 
       {/* Footer */}

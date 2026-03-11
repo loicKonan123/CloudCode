@@ -5,6 +5,7 @@ using CloudCode.Domain.Entities;
 using CloudCode.Domain.Exceptions;
 using CloudCode.Domain.Interfaces;
 using CloudCode.Infrastructure.Services;
+using FirebaseAdmin.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -20,19 +21,22 @@ public class AuthController : BaseApiController
     private readonly PasswordHasher _passwordHasher;
     private readonly IMapper _mapper;
     private readonly IConfiguration _configuration;
+    private readonly IEmailService _emailService;
 
     public AuthController(
         IUnitOfWork unitOfWork,
         ITokenService tokenService,
         PasswordHasher passwordHasher,
         IMapper mapper,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IEmailService emailService)
     {
         _unitOfWork = unitOfWork;
         _tokenService = tokenService;
         _passwordHasher = passwordHasher;
         _mapper = mapper;
         _configuration = configuration;
+        _emailService = emailService;
     }
 
     /// <summary>
@@ -197,6 +201,90 @@ public class AuthController : BaseApiController
     }
 
     /// <summary>
+    /// Connexion via Firebase (email verification + password reset gérés par Firebase).
+    /// Le client envoie le Firebase ID token ; on vérifie et on émet notre JWT custom.
+    /// </summary>
+    [HttpPost("firebase")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(AuthResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<AuthResponseDto>> FirebaseLogin([FromBody] FirebaseLoginDto dto)
+    {
+        // 1. Vérifier le token Firebase
+        FirebaseToken firebaseToken;
+        try
+        {
+            firebaseToken = await FirebaseAuth.DefaultInstance.VerifyIdTokenAsync(dto.FirebaseToken);
+        }
+        catch
+        {
+            return Unauthorized(new { message = "Firebase token invalide ou expiré" });
+        }
+
+        var firebaseUid = firebaseToken.Uid;
+        var email = firebaseToken.Claims.TryGetValue("email", out var emailClaim)
+            ? emailClaim.ToString()!.ToLower().Trim()
+            : string.Empty;
+
+        if (string.IsNullOrEmpty(email))
+            return BadRequest(new { message = "Email introuvable dans le token Firebase" });
+
+        // 2. Chercher l'utilisateur par FirebaseUid, puis par email (migration comptes existants)
+        var user = await _unitOfWork.Users.GetByFirebaseUidAsync(firebaseUid)
+                ?? await _unitOfWork.Users.GetByEmailAsync(email);
+
+        var isNewUser = user == null;
+
+        if (isNewUser)
+        {
+            // Nouveau compte — username obligatoire
+            if (string.IsNullOrWhiteSpace(dto.Username))
+                return BadRequest(new { message = "Username requis pour créer un compte", needsUsername = true });
+
+            if (await _unitOfWork.Users.UsernameExistsAsync(dto.Username.Trim()))
+                return Conflict(new { message = "Ce nom d'utilisateur est déjà pris" });
+
+            user = new User
+            {
+                Email = email,
+                Username = dto.Username.Trim(),
+                PasswordHash = string.Empty,
+                FirebaseUid = firebaseUid,
+                EmailConfirmed = true,
+            };
+        }
+        else if (user!.FirebaseUid != firebaseUid)
+        {
+            // Lier le compte existant au Firebase UID si ce n'est pas fait
+            user.FirebaseUid = firebaseUid;
+            user.EmailConfirmed = true;
+        }
+
+        // 3. Émettre notre JWT custom
+        var accessToken = _tokenService.GenerateAccessToken(user);
+        var refreshToken = _tokenService.GenerateRefreshToken();
+        user.RefreshToken = refreshToken;
+        user.RefreshTokenExpiry = DateTime.UtcNow.AddDays(
+            int.Parse(_configuration["Jwt:RefreshTokenExpiryDays"] ?? "7"));
+
+        if (isNewUser)
+            await _unitOfWork.Users.AddAsync(user);
+        else
+            _unitOfWork.Users.Update(user);
+
+        await _unitOfWork.SaveChangesAsync();
+
+        return Ok(new AuthResponseDto
+        {
+            AccessToken = accessToken,
+            RefreshToken = refreshToken,
+            ExpiresAt = _tokenService.GetAccessTokenExpiry(),
+            User = _mapper.Map<UserInfoDto>(user)
+        });
+    }
+
+    /// <summary>
     /// Changer le mot de passe.
     /// </summary>
     [Authorize]
@@ -226,5 +314,68 @@ public class AuthController : BaseApiController
         await _unitOfWork.SaveChangesAsync();
 
         return Ok(new { message = "Mot de passe modifié avec succès" });
+    }
+
+    /// <summary>
+    /// Demande de reset de mot de passe — génère un token et envoie un email.
+    /// </summary>
+    [HttpPost("forgot-password")]
+    [AllowAnonymous]
+    public async Task<ActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto)
+    {
+        var user = await _unitOfWork.Users.GetByEmailAsync(dto.Email.ToLower().Trim());
+
+        // On répond toujours OK pour ne pas révéler si l'email existe
+        if (user == null)
+            return Ok(new { message = "Si cet email est enregistré, un lien de réinitialisation a été envoyé." });
+
+        var token = Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N");
+        user.PasswordResetToken = token;
+        user.PasswordResetTokenExpiry = DateTime.UtcNow.AddHours(1);
+
+        _unitOfWork.Users.Update(user);
+        await _unitOfWork.SaveChangesAsync();
+
+        var frontendUrl = _configuration["App:FrontendUrl"] ?? "http://localhost:3000";
+        var resetLink = $"{frontendUrl}/reset-password?token={token}";
+
+        await _emailService.SendPasswordResetAsync(user.Email, resetLink);
+
+        return Ok(new { message = "Si cet email est enregistré, un lien de réinitialisation a été envoyé." });
+    }
+
+    /// <summary>
+    /// Réinitialisation effective du mot de passe via le token reçu par email.
+    /// </summary>
+    [HttpPost("reset-password")]
+    [AllowAnonymous]
+    public async Task<ActionResult> ResetPassword([FromBody] ResetPasswordDto dto)
+    {
+        if (dto.NewPassword != dto.ConfirmPassword)
+            return BadRequest(new { message = "Les mots de passe ne correspondent pas." });
+
+        if (dto.NewPassword.Length < 6)
+            return BadRequest(new { message = "Le mot de passe doit faire au moins 6 caractères." });
+
+        var user = await _unitOfWork.Users.GetByEmailAsync(dto.Email.ToLower().Trim());
+
+        if (user == null
+            || user.PasswordResetToken != dto.Token
+            || user.PasswordResetTokenExpiry == null
+            || user.PasswordResetTokenExpiry < DateTime.UtcNow)
+        {
+            return BadRequest(new { message = "Lien invalide ou expiré." });
+        }
+
+        user.PasswordHash = _passwordHasher.HashPassword(dto.NewPassword);
+        user.PasswordResetToken = null;
+        user.PasswordResetTokenExpiry = null;
+        user.RefreshToken = null;
+        user.RefreshTokenExpiry = null;
+
+        _unitOfWork.Users.Update(user);
+        await _unitOfWork.SaveChangesAsync();
+
+        return Ok(new { message = "Mot de passe réinitialisé avec succès." });
     }
 }

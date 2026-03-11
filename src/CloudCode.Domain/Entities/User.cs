@@ -13,8 +13,11 @@ public class User : BaseEntity
     public string? Avatar { get; set; }
     public string? Bio { get; set; }
     public bool EmailConfirmed { get; set; }
+    public string? FirebaseUid { get; set; }
     public string? RefreshToken { get; set; }
     public DateTime? RefreshTokenExpiry { get; set; }
+    public string? PasswordResetToken { get; set; }
+    public DateTime? PasswordResetTokenExpiry { get; set; }
     public bool IsAdmin { get; set; }
 
     // Streak journalier

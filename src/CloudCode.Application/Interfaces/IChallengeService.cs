@@ -20,5 +20,5 @@ public interface IChallengeService
     Task<ChallengeDetailDto> TogglePublishAsync(Guid id);
 
     // Leaderboard
-    Task<List<LeaderboardEntryDto>> GetLeaderboardAsync(string period = "all");
+    Task<LeaderboardPageDto> GetLeaderboardAsync(string period = "all", int page = 1, int pageSize = 20);
 }

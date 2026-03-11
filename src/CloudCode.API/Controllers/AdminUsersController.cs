@@ -64,6 +64,33 @@ public class AdminUsersController : BaseApiController
         });
     }
 
+    [HttpDelete("{id:guid}")]
+    public async Task<ActionResult> DeleteUser(Guid id)
+    {
+        var currentUserId = GetCurrentUserId();
+
+        var user = await _db.Users.FindAsync(id);
+        if (user == null) return NotFound();
+
+        if (user.Id == currentUserId)
+            return BadRequest(new { message = "Vous ne pouvez pas supprimer votre propre compte." });
+
+        // Supprimer les données liées avant le user
+        var submissions = _db.UserSubmissions.Where(s => s.UserId == id);
+        _db.UserSubmissions.RemoveRange(submissions);
+
+        var progress = _db.UserProgress.Where(p => p.UserId == id);
+        _db.UserProgress.RemoveRange(progress);
+
+        var vsRanks = _db.VsRanks.Where(r => r.UserId == id);
+        _db.VsRanks.RemoveRange(vsRanks);
+
+        _db.Users.Remove(user);
+        await _db.SaveChangesAsync();
+
+        return Ok(new { message = "Utilisateur supprimé." });
+    }
+
     private Guid? GetCurrentUserId()
     {
         var claim = User.Claims.FirstOrDefault(c => c.Type == "userId");

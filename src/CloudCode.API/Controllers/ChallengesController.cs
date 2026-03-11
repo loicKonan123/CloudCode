@@ -101,9 +101,12 @@ public class ChallengesController : BaseApiController
     /// </summary>
     [HttpGet("/api/leaderboard")]
     [AllowAnonymous]
-    public async Task<ActionResult<List<LeaderboardEntryDto>>> GetLeaderboard([FromQuery] string period = "all")
+    public async Task<ActionResult<LeaderboardPageDto>> GetLeaderboard(
+        [FromQuery] string period = "all",
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20)
     {
-        var leaderboard = await _challengeService.GetLeaderboardAsync(period);
-        return Ok(leaderboard);
+        var result = await _challengeService.GetLeaderboardAsync(period, page, pageSize);
+        return Ok(result);
     }
 }
