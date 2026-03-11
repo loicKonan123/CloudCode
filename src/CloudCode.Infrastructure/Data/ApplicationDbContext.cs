@@ -26,6 +26,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<TestCase> TestCases => Set<TestCase>();
     public DbSet<UserSubmission> UserSubmissions => Set<UserSubmission>();
     public DbSet<UserProgress> UserProgress => Set<UserProgress>();
+    public DbSet<ChallengeComment> ChallengeComments => Set<ChallengeComment>();
     public DbSet<Course> Courses => Set<Course>();
     public DbSet<CourseChallenge> CourseChallenges => Set<CourseChallenge>();
     public DbSet<VsMatch> VsMatches => Set<VsMatch>();

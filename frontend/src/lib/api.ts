@@ -214,6 +214,20 @@ export const profileApi = {
 };
 
 // ===========================================
+// Comments API
+// ===========================================
+export const commentsApi = {
+  getComments: (slug: string) =>
+    api.get<import('@/types').ChallengeComment[]>(`/challenges/${slug}/comments`),
+
+  postComment: (slug: string, content: string, parentId?: string) =>
+    api.post<import('@/types').ChallengeComment>(`/challenges/${slug}/comments`, { content, parentId }),
+
+  deleteComment: (slug: string, id: string) =>
+    api.delete(`/challenges/${slug}/comments/${id}`),
+};
+
+// ===========================================
 // Formatting API
 // ===========================================
 export const formattingApi = {

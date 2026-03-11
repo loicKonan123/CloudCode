@@ -405,6 +405,22 @@ export interface AdminUser {
   createdAt: string;
 }
 
+// ===== Discussion Types =====
+export interface CommentAuthor {
+  id: string;
+  username: string;
+  avatar?: string;
+}
+
+export interface ChallengeComment {
+  id: string;
+  content: string;
+  createdAt: string;
+  parentId?: string;
+  author: CommentAuthor;
+  replies: ChallengeComment[];
+}
+
 // ===== API Types =====
 export interface ApiError {
   code: string;

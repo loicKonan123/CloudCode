@@ -17,6 +17,43 @@ namespace CloudCode.Infrastructure.Data.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.11");
 
+            modelBuilder.Entity("CloudCode.Domain.Entities.ChallengeComment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ChallengeId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("ParentId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChallengeId");
+
+                    b.HasIndex("ParentId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("ChallengeComments");
+                });
+
             modelBuilder.Entity("CloudCode.Domain.Entities.AuditLog", b =>
                 {
                     b.Property<Guid>("Id")
@@ -823,6 +860,32 @@ namespace CloudCode.Infrastructure.Data.Migrations
                     b.ToTable("VsRanks");
                 });
 
+            modelBuilder.Entity("CloudCode.Domain.Entities.ChallengeComment", b =>
+                {
+                    b.HasOne("CloudCode.Domain.Entities.Challenge", "Challenge")
+                        .WithMany("Comments")
+                        .HasForeignKey("ChallengeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CloudCode.Domain.Entities.ChallengeComment", "Parent")
+                        .WithMany("Replies")
+                        .HasForeignKey("ParentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("CloudCode.Domain.Entities.User", "User")
+                        .WithMany("Comments")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Challenge");
+
+                    b.Navigation("Parent");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("CloudCode.Domain.Entities.AuditLog", b =>
                 {
                     b.HasOne("CloudCode.Domain.Entities.Project", "Project")
@@ -1057,9 +1120,16 @@ namespace CloudCode.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("CloudCode.Domain.Entities.Challenge", b =>
                 {
+                    b.Navigation("Comments");
+
                     b.Navigation("Submissions");
 
                     b.Navigation("TestCases");
+                });
+
+            modelBuilder.Entity("CloudCode.Domain.Entities.ChallengeComment", b =>
+                {
+                    b.Navigation("Replies");
                 });
 
             modelBuilder.Entity("CloudCode.Domain.Entities.CodeFile", b =>
@@ -1088,6 +1158,8 @@ namespace CloudCode.Infrastructure.Data.Migrations
             modelBuilder.Entity("CloudCode.Domain.Entities.User", b =>
                 {
                     b.Navigation("Collaborations");
+
+                    b.Navigation("Comments");
 
                     b.Navigation("Projects");
                 });

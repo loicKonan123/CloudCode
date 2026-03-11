@@ -28,4 +28,5 @@ public class Challenge : BaseEntity
     // Navigation properties
     public virtual ICollection<TestCase> TestCases { get; set; } = new List<TestCase>();
     public virtual ICollection<UserSubmission> Submissions { get; set; } = new List<UserSubmission>();
+    public virtual ICollection<ChallengeComment> Comments { get; set; } = new List<ChallengeComment>();
 }

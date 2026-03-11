@@ -4,7 +4,7 @@ import AnimatedLogo from '@/components/AnimatedLogo';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
-import { challengesApi, formattingApi } from '@/lib/api';
+import { challengesApi, formattingApi, commentsApi } from '@/lib/api';
 import {
   ChallengeDetail,
   ChallengeLanguage,
@@ -14,6 +14,7 @@ import {
   TestResult,
   SubmissionInfo,
   SubmissionStatus,
+  ChallengeComment,
 } from '@/types';
 import dynamic from 'next/dynamic';
 import ReactMarkdown from 'react-markdown';
@@ -28,7 +29,7 @@ const DifficultyBadgeStyles: Record<number, string> = {
   3: 'bg-rose-500/10 text-rose-500 border-rose-500/20',
 };
 
-type Tab = 'description' | 'submissions' | 'solution';
+type Tab = 'description' | 'submissions' | 'solution' | 'discussion';
 
 export default function ChallengePage() {
   const router = useRouter();
@@ -342,11 +343,26 @@ export default function ChallengePage() {
                 Solution
               </button>
             )}
+            <button
+              onClick={() => setActiveTab('discussion')}
+              className={`px-4 py-3 text-sm font-medium flex items-center gap-2 transition-colors ${
+                activeTab === 'discussion'
+                  ? 'border-b-2 border-violet-500 text-violet-400'
+                  : 'text-slate-500 hover:text-slate-300'
+              }`}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+              Discussion
+            </button>
           </div>
 
           {/* Content */}
           <div className="flex-1 overflow-y-auto p-6" style={{ scrollbarWidth: 'thin', scrollbarColor: '#315368 transparent' }}>
-            {activeTab === 'description' ? (
+            {activeTab === 'discussion' ? (
+              <DiscussionTab slug={slug} currentUser={user} />
+            ) : activeTab === 'description' ? (
               <div className="space-y-6">
                 <div>
                   <div className="flex items-start justify-between gap-4 mb-4">
@@ -708,6 +724,211 @@ export default function ChallengePage() {
           <span>Ctrl+Shift+Enter: Submit</span>
         </div>
       </footer>
+    </div>
+  );
+}
+
+function DiscussionTab({ slug, currentUser }: { slug: string; currentUser: { id: string; username: string } | null }) {
+  const [comments, setComments] = useState<ChallengeComment[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [newComment, setNewComment] = useState('');
+  const [isPosting, setIsPosting] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyContent, setReplyContent] = useState('');
+  const [isPostingReply, setIsPostingReply] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    commentsApi.getComments(slug)
+      .then(r => setComments(r.data))
+      .catch(() => {})
+      .finally(() => setIsLoading(false));
+  }, [slug]);
+
+  const handlePost = async () => {
+    if (!newComment.trim() || isPosting) return;
+    setIsPosting(true);
+    try {
+      const res = await commentsApi.postComment(slug, newComment.trim());
+      setComments(prev => [res.data, ...prev]);
+      setNewComment('');
+    } catch { /* ignore */ } finally {
+      setIsPosting(false);
+    }
+  };
+
+  const handleReply = async (parentId: string) => {
+    if (!replyContent.trim() || isPostingReply) return;
+    setIsPostingReply(true);
+    try {
+      const res = await commentsApi.postComment(slug, replyContent.trim(), parentId);
+      setComments(prev => prev.map(c =>
+        c.id === parentId ? { ...c, replies: [...c.replies, res.data] } : c
+      ));
+      setReplyingTo(null);
+      setReplyContent('');
+    } catch { /* ignore */ } finally {
+      setIsPostingReply(false);
+    }
+  };
+
+  const handleDelete = async (id: string, parentId?: string) => {
+    setDeletingId(id);
+    try {
+      await commentsApi.deleteComment(slug, id);
+      if (parentId) {
+        setComments(prev => prev.map(c =>
+          c.id === parentId ? { ...c, replies: c.replies.filter(r => r.id !== id) } : c
+        ));
+      } else {
+        setComments(prev => prev.filter(c => c.id !== id));
+      }
+    } catch { /* ignore */ } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const timeAgo = (dateStr: string) => {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const m = Math.floor(diff / 60000);
+    if (m < 1) return 'just now';
+    if (m < 60) return `${m}m ago`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h}h ago`;
+    return `${Math.floor(h / 24)}d ago`;
+  };
+
+  return (
+    <div className="space-y-5">
+      {/* Post new comment */}
+      {currentUser ? (
+        <div className="space-y-2">
+          <textarea
+            value={newComment}
+            onChange={e => setNewComment(e.target.value)}
+            placeholder="Share your approach, ask a question..."
+            rows={3}
+            className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder-slate-500 resize-none focus:outline-none focus:border-violet-500/60"
+          />
+          <div className="flex justify-end">
+            <button
+              onClick={handlePost}
+              disabled={!newComment.trim() || isPosting}
+              className="px-4 py-1.5 bg-violet-600 hover:bg-violet-500 disabled:opacity-40 text-white text-xs font-bold rounded-lg transition-colors"
+            >
+              {isPosting ? 'Posting...' : 'Post'}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <p className="text-sm text-slate-500 italic">Sign in to join the discussion.</p>
+      )}
+
+      {/* Comments list */}
+      {isLoading ? (
+        <div className="flex justify-center py-8">
+          <div className="w-6 h-6 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+      ) : comments.length === 0 ? (
+        <p className="text-sm text-slate-500 text-center py-8">No comments yet. Be the first!</p>
+      ) : (
+        <div className="space-y-4">
+          {comments.map(comment => (
+            <div key={comment.id} className="space-y-3">
+              {/* Top-level comment */}
+              <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-4">
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-slate-700 flex items-center justify-center text-[10px] font-bold text-violet-400 shrink-0">
+                      {comment.author.username.charAt(0).toUpperCase()}
+                    </div>
+                    <span className="text-xs font-semibold text-slate-300">{comment.author.username}</span>
+                    <span className="text-[10px] text-slate-600">{timeAgo(comment.createdAt)}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {currentUser && (
+                      <button
+                        onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
+                        className="text-[10px] text-slate-500 hover:text-violet-400 transition-colors"
+                      >
+                        Reply
+                      </button>
+                    )}
+                    {currentUser && currentUser.id === comment.author.id && (
+                      <button
+                        onClick={() => handleDelete(comment.id)}
+                        disabled={deletingId === comment.id}
+                        className="text-[10px] text-slate-600 hover:text-red-400 transition-colors disabled:opacity-40"
+                      >
+                        Delete
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <p className="text-sm text-slate-300 whitespace-pre-wrap">{comment.content}</p>
+              </div>
+
+              {/* Replies */}
+              {comment.replies.length > 0 && (
+                <div className="ml-6 space-y-2">
+                  {comment.replies.map(reply => (
+                    <div key={reply.id} className="bg-slate-900/30 border border-slate-800/60 rounded-lg p-3">
+                      <div className="flex items-start justify-between gap-2 mb-1.5">
+                        <div className="flex items-center gap-2">
+                          <div className="w-5 h-5 rounded-full bg-slate-700 flex items-center justify-center text-[9px] font-bold text-violet-400 shrink-0">
+                            {reply.author.username.charAt(0).toUpperCase()}
+                          </div>
+                          <span className="text-xs font-semibold text-slate-300">{reply.author.username}</span>
+                          <span className="text-[10px] text-slate-600">{timeAgo(reply.createdAt)}</span>
+                        </div>
+                        {currentUser && currentUser.id === reply.author.id && (
+                          <button
+                            onClick={() => handleDelete(reply.id, comment.id)}
+                            disabled={deletingId === reply.id}
+                            className="text-[10px] text-slate-600 hover:text-red-400 transition-colors disabled:opacity-40"
+                          >
+                            Delete
+                          </button>
+                        )}
+                      </div>
+                      <p className="text-sm text-slate-300 whitespace-pre-wrap">{reply.content}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Reply input */}
+              {replyingTo === comment.id && (
+                <div className="ml-6 space-y-2">
+                  <textarea
+                    value={replyContent}
+                    onChange={e => setReplyContent(e.target.value)}
+                    placeholder={`Reply to ${comment.author.username}...`}
+                    rows={2}
+                    autoFocus
+                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder-slate-500 resize-none focus:outline-none focus:border-violet-500/60"
+                  />
+                  <div className="flex justify-end gap-2">
+                    <button
+                      onClick={() => { setReplyingTo(null); setReplyContent(''); }}
+                      className="px-3 py-1 text-xs text-slate-500 hover:text-slate-300 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => handleReply(comment.id)}
+                      disabled={!replyContent.trim() || isPostingReply}
+                      className="px-4 py-1 bg-violet-600 hover:bg-violet-500 disabled:opacity-40 text-white text-xs font-bold rounded-lg transition-colors"
+                    >
+                      {isPostingReply ? 'Posting...' : 'Reply'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

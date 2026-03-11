@@ -113,7 +113,7 @@ HTTP Request
 ### Schéma complet
 
 ```
-Users (17 champs)
+Users (21 champs)
 ├── Id (Guid, PK)
 ├── Email (unique)
 ├── PasswordHash
@@ -124,6 +124,9 @@ Users (17 champs)
 ├── RefreshToken?
 ├── RefreshTokenExpiry?
 ├── IsAdmin
+├── FirebaseUid? (nullable, index unique)
+├── PasswordResetToken? (nullable, Guid-based token)
+├── PasswordResetTokenExpiry? (nullable, DateTime, expiry 1h)
 ├── CreatedAt / UpdatedAt
 │
 ├── → Projects (1-N, propriétaire)
@@ -239,6 +242,7 @@ GitCredentials
 | `20260309100000_AddChallengeFunctionMode` | Colonnes IsFunction, TestRunnerPython/JS sur Challenges |
 | `20260310051932_AddStreakAndOfficialSolution` | Streak (ChallengeStreak, BestChallengeStreak, LastChallengeSolvedDate) sur User + OfficialSolutionPython/JS + Hints sur Challenge |
 | `20260310130000_AddFirebaseUid` | Colonne `FirebaseUid` (nullable) sur Users + index unique |
+| `20260310200000_AddPasswordReset` | Colonnes `PasswordResetToken` + `PasswordResetTokenExpiry` (nullable) sur Users |
 
 ---
 
@@ -329,6 +333,9 @@ Challenge en mode IsFunction=true
 | POST | `/auth/register` | Créer un compte |
 | POST | `/auth/refresh` | Renouveler le JWT via refresh token |
 | POST | `/auth/logout` | Invalider le refresh token |
+| POST | `/auth/firebase` | Login/register via Firebase ID token (Google, email Firebase) |
+| POST | `/auth/forgot-password` | Génère un token reset, envoie email via Resend |
+| POST | `/auth/reset-password` | Vérifie token + email, met à jour le mot de passe |
 
 ### Challenges (`/api/challenges`)
 
@@ -452,6 +459,7 @@ Challenge en mode IsFunction=true
 |---|---|---|
 | GET | `/admin/users` | Tous les utilisateurs |
 | POST | `/admin/users/{id}/toggle-admin` | Donner/retirer admin |
+| DELETE | `/admin/users/{id}` | Supprimer un user et toutes ses données (cascade SQL raw + PRAGMA FK OFF) |
 
 ---
 
@@ -479,7 +487,9 @@ Challenge en mode IsFunction=true
 | `/admin/courses/[id]/edit` | Admin courses | Modifier cours |
 | `/profile` | `app/profile/page.tsx` | Profil utilisateur (stats, ELO VS, difficulty breakdown, langages, soumissions récentes, modifier bio/username) |
 | `/u/[username]` | `app/u/[username]/page.tsx` | Profil public read-only d'un utilisateur |
-| `/admin/users` | Admin users | Gérer utilisateurs |
+| `/admin/users` | Admin users | Gérer utilisateurs (liste, promouvoir/rétrograder, supprimer) |
+| `/forgot-password` | `app/forgot-password/page.tsx` | Formulaire de demande de reset de mot de passe |
+| `/reset-password` | `app/reset-password/page.tsx` | Formulaire de saisie du nouveau mot de passe (token en query param) |
 
 ### Composants
 
@@ -508,7 +518,7 @@ Persisté dans `localStorage` (accessToken, refreshToken).
 | `vsApi` | getMyRank, getRank, getLeaderboard, getMatch, getHistory, submit, forfeit |
 | `profileApi` | getMyProfile, updateMyProfile, getPublicProfile(username) |
 | `formattingApi` | format(code, language) |
-| `adminUsersApi` | getAll, toggleAdmin |
+| `adminUsersApi` | getAll, toggleAdmin, deleteUser |
 
 **Intercepteurs Axios** :
 - Request → injecte `Authorization: Bearer {token}`
@@ -575,12 +585,19 @@ Persisté dans `localStorage` (accessToken, refreshToken).
 - Refresh automatique côté frontend (intercepteur Axios)
 - Hashage bcrypt des mots de passe
 - Rôles : User et Admin
-- **Firebase Auth** : email verification automatique à l'inscription, password reset par email, Google Sign-In
+- **Firebase Auth** : email verification automatique à l'inscription, Google Sign-In
   - Backend : `POST /api/auth/firebase` — vérifie Firebase ID token, crée/lie le compte, émet JWT custom
-  - Frontend : `lib/firebase.ts`, authStore mis à jour (login, register, loginWithGoogle, sendPasswordReset)
-  - Page `/forgot-password` avec formulaire de reset
+  - Frontend : `lib/firebase.ts`, authStore mis à jour (login, register, loginWithGoogle)
   - Google Sign-In via popup — username auto-dérivé du displayName Google (suffixe aléatoire si déjà pris)
+  - Fusion de comptes : lookup par `FirebaseUid` puis par email pour migrer les anciens comptes
   - Config : `firebase_key.json` à la racine du projet (service account), `.env.local` pour les clés web
+- **Reset de mot de passe natif** (flow token en DB, standard OWASP) :
+  - Page `/forgot-password` → saisit email → `POST /api/auth/forgot-password`
+  - Backend génère un token Guid, stocké en DB (expiry 1h), envoie email via Resend
+  - Page `/reset-password?token=xxx` → saisit email + nouveau mot de passe
+  - `POST /api/auth/reset-password` vérifie token + email, met à jour hash, efface le token
+  - Fonctionne pour tous les comptes (email pur, compte Firebase/Google hybride)
+  - En dev : lien de reset loggé dans la console backend (`=== PASSWORD RESET LINK ===`)
 
 ### ✅ Leaderboard (COMPLET)
 
@@ -630,7 +647,8 @@ Persisté dans `localStorage` (accessToken, refreshToken).
 
 - Tableau de bord challenges : créer, modifier, publier, supprimer
 - Tableau de bord cours : idem
-- Gestion utilisateurs : liste, donner/retirer les droits admin
+- Gestion utilisateurs : liste, donner/retirer les droits admin, **supprimer un user** (suppression en cascade de toutes ses données)
+- Dashboard `/admin` : KPIs (users, soumissions, challenges, VS matches), graphique 14 jours, top challenges
 - Seeder : relancer l'injection des challenges depuis l'API
 
 ---
@@ -647,7 +665,7 @@ Persisté dans `localStorage` (accessToken, refreshToken).
 | ~~**Hints / indices**~~ | ✅ Implémenté — débloquables un par un dans l'onglet Description | — | — |
 | ~~**Challenge aléatoire**~~ | ✅ Implémenté — bouton Random dans la liste, respecte les filtres actifs | — | — |
 | ~~**Email de vérification**~~ | ✅ Implémenté — Firebase Auth envoie l'email automatiquement à l'inscription | — | — |
-| ~~**Reset de mot de passe**~~ | ✅ Implémenté — page `/forgot-password`, Firebase sendPasswordResetEmail | — | — |
+| ~~**Reset de mot de passe**~~ | ✅ Implémenté — flow natif token DB (pages `/forgot-password` + `/reset-password`), email via Resend | — | — |
 | ~~**Google Sign-In**~~ | ✅ Implémenté — Firebase signInWithPopup, username auto-dérivé, bouton sur login + register | — | — |
 | **Rate limiting soumissions** | Max X soumissions/minute pour éviter l'abus | Faible | Oui — free vs premium |
 | **Challenge aléatoire** | Bouton "Random" sur `/challenges` filtré par difficulté | Très faible | Non |
@@ -686,7 +704,7 @@ Persisté dans `localStorage` (accessToken, refreshToken).
 | ~~**Pas de rate limiting**~~ | ✅ Implémenté — sliding window 15/min (submit) + 30/min (test) | — |
 | **JWT dans localStorage** | XSS vulnérabilité | httpOnly cookie |
 | **Pas de tests automatisés** | Régressions difficiles à détecter | xUnit (backend) + Jest (frontend) |
-| **Pas de SMTP configuré** | Email vérification impossible | Mailgun / SendGrid / Resend |
+| **Resend plan gratuit** | En prod, emails envoyables uniquement à l'email du compte Resend. Vérifier un domaine sur Resend (DNS) pour envoyer à tous | Vérifier domaine sur resend.com |
 | **Logs en console uniquement** | Difficile à déboguer en prod | Serilog + fichier / Datadog |
 | **Pas de backup DB** | Perte données possible | Cron backup SQLite → S3 ou local |
 
@@ -944,4 +962,4 @@ const data = require('fs').readFileSync(0, 'utf8').trim().split('\n');
 
 ---
 
-*Ce guide couvre l'état de l'application au 10 mars 2026. Mettre à jour après chaque feature importante.*
+*Ce guide couvre l'état de l'application au 11 mars 2026. Mettre à jour après chaque feature importante.*

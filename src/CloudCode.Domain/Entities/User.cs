@@ -28,4 +28,5 @@ public class User : BaseEntity
     // Navigation properties
     public virtual ICollection<Project> Projects { get; set; } = new List<Project>();
     public virtual ICollection<Collaboration> Collaborations { get; set; } = new List<Collaboration>();
+    public virtual ICollection<ChallengeComment> Comments { get; set; } = new List<ChallengeComment>();
 }
