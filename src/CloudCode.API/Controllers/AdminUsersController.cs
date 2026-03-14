@@ -70,37 +70,80 @@ public class AdminUsersController : BaseApiController
         var currentUserId = GetCurrentUserId();
 
         var user = await _db.Users.FindAsync(id);
-        if (user == null) return NotFound();
+        if (user == null)
+        {
+            Console.WriteLine($"[DeleteUser] User {id} NOT FOUND in DB");
+            return NotFound();
+        }
+
+        Console.WriteLine($"[DeleteUser] START deleting user: {user.Email} (Id={id})");
 
         if (user.Id == currentUserId)
             return BadRequest(new { message = "Vous ne pouvez pas supprimer votre propre compte." });
 
-        // Désactiver les FK SQLite, tout supprimer en raw SQL, réactiver
-        var uid = id.ToString();
-        await _db.Database.ExecuteSqlRawAsync("PRAGMA foreign_keys = OFF");
         try
         {
-            await _db.Database.ExecuteSqlRawAsync("DELETE FROM UserSubmissions WHERE UserId = {0}", uid);
-            await _db.Database.ExecuteSqlRawAsync("DELETE FROM UserProgress WHERE UserId = {0}", uid);
-            await _db.Database.ExecuteSqlRawAsync("DELETE FROM VsRanks WHERE UserId = {0}", uid);
-            await _db.Database.ExecuteSqlRawAsync("DELETE FROM AuditLogs WHERE UserId = {0}", uid);
-            await _db.Database.ExecuteSqlRawAsync("DELETE FROM Collaborations WHERE UserId = {0}", uid);
-            await _db.Database.ExecuteSqlRawAsync("DELETE FROM GitCredentials WHERE UserId = {0}", uid);
-            await _db.Database.ExecuteSqlRawAsync("DELETE FROM VsMatches WHERE Player1Id = {0} OR Player2Id = {0}", uid);
-            await _db.Database.ExecuteSqlRawAsync("DELETE FROM ExecutionResults WHERE UserId = {0}", uid);
-            await _db.Database.ExecuteSqlRawAsync("DELETE FROM ExecutionResults WHERE ProjectId IN (SELECT Id FROM Projects WHERE OwnerId = {0})", uid);
-            await _db.Database.ExecuteSqlRawAsync("DELETE FROM ProjectDependencies WHERE ProjectId IN (SELECT Id FROM Projects WHERE OwnerId = {0})", uid);
-            await _db.Database.ExecuteSqlRawAsync("DELETE FROM EnvironmentVariables WHERE ProjectId IN (SELECT Id FROM Projects WHERE OwnerId = {0})", uid);
-            await _db.Database.ExecuteSqlRawAsync("DELETE FROM CodeFiles WHERE ProjectId IN (SELECT Id FROM Projects WHERE OwnerId = {0})", uid);
-            await _db.Database.ExecuteSqlRawAsync("DELETE FROM Projects WHERE OwnerId = {0}", uid);
-            await _db.Database.ExecuteSqlRawAsync("DELETE FROM Users WHERE Id = {0}", uid);
-        }
-        finally
-        {
-            await _db.Database.ExecuteSqlRawAsync("PRAGMA foreign_keys = ON");
-        }
+            var comments = await _db.ChallengeComments.Where(c => c.UserId == id).ToListAsync();
+            Console.WriteLine($"[DeleteUser] Comments to delete: {comments.Count}");
+            _db.RemoveRange(comments);
 
-        return Ok(new { message = "Utilisateur supprimé." });
+            var subs = await _db.UserSubmissions.Where(s => s.UserId == id).ToListAsync();
+            Console.WriteLine($"[DeleteUser] Submissions to delete: {subs.Count}");
+            _db.RemoveRange(subs);
+
+            var progress = await _db.UserProgress.Where(p => p.UserId == id).ToListAsync();
+            Console.WriteLine($"[DeleteUser] Progress to delete: {progress.Count}");
+            _db.RemoveRange(progress);
+
+            var ranks = await _db.VsRanks.Where(r => r.UserId == id).ToListAsync();
+            Console.WriteLine($"[DeleteUser] VsRanks to delete: {ranks.Count}");
+            _db.RemoveRange(ranks);
+
+            var logs = await _db.AuditLogs.Where(a => a.UserId == id).ToListAsync();
+            Console.WriteLine($"[DeleteUser] AuditLogs to delete: {logs.Count}");
+            _db.RemoveRange(logs);
+
+            var collabs = await _db.Collaborations.Where(c => c.UserId == id).ToListAsync();
+            Console.WriteLine($"[DeleteUser] Collaborations to delete: {collabs.Count}");
+            _db.RemoveRange(collabs);
+
+            var gitCreds = await _db.GitCredentials.Where(g => g.UserId == id).ToListAsync();
+            Console.WriteLine($"[DeleteUser] GitCredentials to delete: {gitCreds.Count}");
+            _db.RemoveRange(gitCreds);
+
+            // VsMatches: raw SQL car colonne Player1Language manquante en DB
+            Console.WriteLine($"[DeleteUser] Deleting VsMatches via raw SQL...");
+            await _db.Database.ExecuteSqlInterpolatedAsync(
+                $"DELETE FROM VsMatches WHERE Player1Id = {id.ToString()} OR Player2Id = {id.ToString()}");
+
+            var projectIds = await _db.Projects.Where(p => p.OwnerId == id).Select(p => p.Id).ToListAsync();
+            Console.WriteLine($"[DeleteUser] Projects to delete: {projectIds.Count}");
+            if (projectIds.Count > 0)
+            {
+                _db.RemoveRange(await _db.ExecutionResults.Where(e => projectIds.Contains(e.ProjectId)).ToListAsync());
+                _db.RemoveRange(await _db.ProjectDependencies.Where(d => projectIds.Contains(d.ProjectId)).ToListAsync());
+                _db.RemoveRange(await _db.EnvironmentVariables.Where(e => projectIds.Contains(e.ProjectId)).ToListAsync());
+                _db.RemoveRange(await _db.CodeFiles.Where(f => projectIds.Contains(f.ProjectId)).ToListAsync());
+            }
+            _db.RemoveRange(await _db.Projects.Where(p => p.OwnerId == id).ToListAsync());
+
+            var execResults = await _db.ExecutionResults.Where(e => e.UserId == id).ToListAsync();
+            Console.WriteLine($"[DeleteUser] ExecutionResults to delete: {execResults.Count}");
+            _db.RemoveRange(execResults);
+
+            _db.Users.Remove(user);
+
+            Console.WriteLine($"[DeleteUser] Calling SaveChangesAsync...");
+            await _db.SaveChangesAsync();
+            Console.WriteLine($"[DeleteUser] SUCCESS — user {user.Email} deleted");
+            return Ok(new { message = "Utilisateur supprimé." });
+        }
+        catch (Exception ex)
+        {
+            var msg = ex.InnerException?.Message ?? ex.Message;
+            Console.WriteLine($"[DeleteUser] FAILED: {msg}");
+            return StatusCode(500, new { message = $"Erreur: {msg}" });
+        }
     }
 
     private Guid? GetCurrentUserId()

@@ -48,15 +48,19 @@ public class AuthController : BaseApiController
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<AuthResponseDto>> Register([FromBody] RegisterDto dto)
     {
+        Console.WriteLine($"[Auth] Register attempt: email={dto.Email}, username={dto.Username}");
+
         // Vérifier si l'email existe déjà
         if (await _unitOfWork.Users.EmailExistsAsync(dto.Email))
         {
+            Console.WriteLine($"[Auth] Register CONFLICT: email {dto.Email} already exists");
             return Conflict(new { message = "Cet email est déjà utilisé" });
         }
 
         // Vérifier si le username existe déjà
         if (await _unitOfWork.Users.UsernameExistsAsync(dto.Username))
         {
+            Console.WriteLine($"[Auth] Register CONFLICT: username {dto.Username} already taken");
             return Conflict(new { message = "Ce nom d'utilisateur est déjà pris" });
         }
 
@@ -79,6 +83,7 @@ public class AuthController : BaseApiController
 
         await _unitOfWork.Users.AddAsync(user);
         await _unitOfWork.SaveChangesAsync();
+        Console.WriteLine($"[Auth] Register SUCCESS: user {user.Email} (Id={user.Id})");
 
         return Ok(new AuthResponseDto
         {
@@ -97,10 +102,12 @@ public class AuthController : BaseApiController
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<AuthResponseDto>> Login([FromBody] LoginDto dto)
     {
+        Console.WriteLine($"[Auth] Login attempt: email={dto.Email}");
         var user = await _unitOfWork.Users.GetByEmailAsync(dto.Email.ToLower().Trim());
 
         if (user == null || !_passwordHasher.VerifyPassword(dto.Password, user.PasswordHash))
         {
+            Console.WriteLine($"[Auth] Login FAILED: invalid credentials for {dto.Email}");
             return Unauthorized(new { message = "Email ou mot de passe incorrect" });
         }
 
@@ -114,6 +121,7 @@ public class AuthController : BaseApiController
 
         _unitOfWork.Users.Update(user);
         await _unitOfWork.SaveChangesAsync();
+        Console.WriteLine($"[Auth] Login SUCCESS: {user.Email} (Id={user.Id})");
 
         return Ok(new AuthResponseDto
         {
@@ -132,10 +140,12 @@ public class AuthController : BaseApiController
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<AuthResponseDto>> RefreshToken([FromBody] RefreshTokenDto dto)
     {
+        Console.WriteLine("[Auth] Refresh token attempt");
         var user = await _unitOfWork.Users.GetByRefreshTokenAsync(dto.RefreshToken);
 
         if (user == null || user.RefreshTokenExpiry < DateTime.UtcNow)
         {
+            Console.WriteLine("[Auth] Refresh FAILED: invalid or expired token");
             return Unauthorized(new { message = "Token de rafraîchissement invalide ou expiré" });
         }
 
@@ -168,6 +178,7 @@ public class AuthController : BaseApiController
     public async Task<ActionResult> Logout()
     {
         var userId = GetRequiredUserId();
+        Console.WriteLine($"[Auth] Logout: userId={userId}");
         var user = await _unitOfWork.Users.GetByIdAsync(userId);
 
         if (user != null)
@@ -190,13 +201,16 @@ public class AuthController : BaseApiController
     public async Task<ActionResult<UserInfoDto>> GetCurrentUser()
     {
         var userId = GetRequiredUserId();
+        Console.WriteLine($"[Auth] GET /me: userId={userId}");
         var user = await _unitOfWork.Users.GetByIdAsync(userId);
 
         if (user == null)
         {
+            Console.WriteLine($"[Auth] GET /me: user {userId} NOT FOUND");
             return NotFound();
         }
 
+        Console.WriteLine($"[Auth] GET /me: returning {user.Email}");
         return Ok(_mapper.Map<UserInfoDto>(user));
     }
 
@@ -211,6 +225,7 @@ public class AuthController : BaseApiController
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<AuthResponseDto>> FirebaseLogin([FromBody] FirebaseLoginDto dto)
     {
+        Console.WriteLine("[Auth] Firebase login attempt");
         // 1. Vérifier le token Firebase
         FirebaseToken firebaseToken;
         try
@@ -219,10 +234,12 @@ public class AuthController : BaseApiController
         }
         catch
         {
+            Console.WriteLine("[Auth] Firebase login FAILED: invalid token");
             return Unauthorized(new { message = "Firebase token invalide ou expiré" });
         }
 
         var firebaseUid = firebaseToken.Uid;
+        Console.WriteLine($"[Auth] Firebase UID={firebaseUid}");
         var email = firebaseToken.Claims.TryGetValue("email", out var emailClaim)
             ? emailClaim.ToString()!.ToLower().Trim()
             : string.Empty;

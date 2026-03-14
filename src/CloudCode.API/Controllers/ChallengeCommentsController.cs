@@ -21,8 +21,13 @@ public class ChallengeCommentsController : BaseApiController
     [AllowAnonymous]
     public async Task<ActionResult<List<CommentDto>>> GetComments(string slug)
     {
+        Console.WriteLine($"[Comments] GET comments for slug={slug}");
         var challenge = await _db.Challenges.FirstOrDefaultAsync(c => c.Slug == slug && c.IsPublished);
-        if (challenge == null) return NotFound();
+        if (challenge == null)
+        {
+            Console.WriteLine($"[Comments] Challenge slug={slug} NOT FOUND");
+            return NotFound();
+        }
 
         var comments = await _db.ChallengeComments
             .Where(c => c.ChallengeId == challenge.Id && c.ParentId == null)
@@ -58,14 +63,19 @@ public class ChallengeCommentsController : BaseApiController
             })
             .ToListAsync();
 
+        Console.WriteLine($"[Comments] Returning {comments.Count} comments for slug={slug}");
         return Ok(comments);
     }
 
     [HttpPost]
     public async Task<ActionResult<CommentDto>> PostComment(string slug, [FromBody] CreateCommentDto dto)
     {
+        Console.WriteLine($"[Comments] POST comment on slug={slug}, parentId={dto.ParentId}");
         if (string.IsNullOrWhiteSpace(dto.Content) || dto.Content.Length > 2000)
+        {
+            Console.WriteLine("[Comments] POST REJECTED: content length invalid");
             return BadRequest(new { message = "Content must be between 1 and 2000 characters." });
+        }
 
         var challenge = await _db.Challenges.FirstOrDefaultAsync(c => c.Slug == slug && c.IsPublished);
         if (challenge == null) return NotFound();
@@ -90,6 +100,7 @@ public class ChallengeCommentsController : BaseApiController
 
         _db.ChallengeComments.Add(comment);
         await _db.SaveChangesAsync();
+        Console.WriteLine($"[Comments] Comment CREATED: id={comment.Id} by userId={userId}");
 
         var user = await _db.Users.FindAsync(userId.Value);
         return Ok(new CommentDto
@@ -106,6 +117,7 @@ public class ChallengeCommentsController : BaseApiController
     [HttpDelete("{id:guid}")]
     public async Task<ActionResult> DeleteComment(string slug, Guid id)
     {
+        Console.WriteLine($"[Comments] DELETE comment id={id} on slug={slug}");
         var userId = CurrentUserId;
         if (userId == null) return Unauthorized();
 
@@ -123,6 +135,7 @@ public class ChallengeCommentsController : BaseApiController
 
         _db.ChallengeComments.Remove(comment);
         await _db.SaveChangesAsync();
+        Console.WriteLine($"[Comments] Comment {id} DELETED successfully");
 
         return Ok(new { message = "Comment deleted." });
     }
