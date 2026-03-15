@@ -69,7 +69,8 @@ public class ChallengeService : IChallengeService
                     ? Math.Round((double)stats.SolvedUsers / stats.TotalUsers * 100, 1)
                     : 0,
                 IsSolved = progress?.IsSolved,
-                BestScore = progress?.BestScore
+                BestScore = progress?.BestScore,
+                IsPremiumRequired = c.Difficulty == ChallengeDifficulty.Hard
             };
         }).ToList();
     }
@@ -113,7 +114,8 @@ public class ChallengeService : IChallengeService
             SuccessRate = stats != null && stats.TotalUsers > 0
                 ? Math.Round((double)stats.SolvedUsers / stats.TotalUsers * 100, 1) : 0,
             IsSolved = progress?.IsSolved,
-            BestScore = progress?.BestScore
+            BestScore = progress?.BestScore,
+            IsPremiumRequired = challenge.Difficulty == ChallengeDifficulty.Hard
         };
     }
 
@@ -126,11 +128,18 @@ public class ChallengeService : IChallengeService
         if (challenge == null) return null;
 
         UserProgress? progress = null;
+        bool userIsPremium = false;
         if (userId.HasValue)
         {
             progress = await _db.UserProgress
                 .FirstOrDefaultAsync(p => p.UserId == userId.Value && p.ChallengeId == challenge.Id);
+
+            var user = await _db.Users.FindAsync(userId.Value);
+            userIsPremium = (user?.IsPremiumActive ?? false) || (user?.IsAdmin ?? false);
         }
+
+        bool isPremiumRequired = challenge.Difficulty == ChallengeDifficulty.Hard;
+        bool isLocked = isPremiumRequired && !userIsPremium;
 
         return new ChallengeDetailDto
         {
@@ -140,10 +149,10 @@ public class ChallengeService : IChallengeService
             Description = challenge.Description,
             Difficulty = challenge.Difficulty,
             SupportedLanguages = challenge.SupportedLanguages,
-            StarterCodePython = challenge.StarterCodePython,
-            StarterCodeJavaScript = challenge.StarterCodeJavaScript,
+            StarterCodePython = isLocked ? null : challenge.StarterCodePython,
+            StarterCodeJavaScript = isLocked ? null : challenge.StarterCodeJavaScript,
             Tags = DeserializeTags(challenge.Tags),
-            VisibleTestCases = challenge.TestCases
+            VisibleTestCases = isLocked ? [] : challenge.TestCases
                 .Where(t => !t.IsHidden)
                 .Select(t => new TestCaseDto
                 {
@@ -156,7 +165,8 @@ public class ChallengeService : IChallengeService
             TotalTestCases = challenge.TestCases.Count,
             IsSolved = progress?.IsSolved,
             BestScore = progress?.BestScore,
-            Hints = DeserializeHints(challenge.Hints),
+            Hints = isLocked ? [] : DeserializeHints(challenge.Hints),
+            IsPremiumRequired = isPremiumRequired,
             // Solution officielle uniquement si l'user a résolu le challenge (score 100)
             OfficialSolutionPython = (progress?.IsSolved == true) ? challenge.OfficialSolutionPython : null,
             OfficialSolutionJS = (progress?.IsSolved == true) ? challenge.OfficialSolutionJS : null,

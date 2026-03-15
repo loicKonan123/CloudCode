@@ -80,6 +80,7 @@ export interface ChallengeListItem {
   successRate: number;
   isSolved?: boolean;
   bestScore?: number;
+  isPremiumRequired?: boolean;
 }
 
 export interface ChallengeDetail {
@@ -99,6 +100,7 @@ export interface ChallengeDetail {
   hints: string[];
   officialSolutionPython?: string;
   officialSolutionJS?: string;
+  isPremiumRequired?: boolean;
 }
 
 // ===== Profile Types =====
@@ -395,6 +397,191 @@ export const TierGlows: Record<string, string> = {
   Master: 'shadow-purple-400/30',
   Grandmaster: 'shadow-red-400/30',
 };
+
+// ===== Quiz Types =====
+
+export enum QuizCategory {
+  Python = 1,
+  JavaScript = 2,
+  Algorithms = 3,
+  DataStructures = 4,
+  GeneralCS = 5,
+}
+
+export enum QuizDifficulty {
+  Easy = 1,
+  Medium = 2,
+  Hard = 3,
+}
+
+export enum QuizSessionStatus {
+  InProgress = 1,
+  Completed = 2,
+  Abandoned = 3,
+}
+
+export enum QuizVsMatchStatus {
+  Waiting = 1,
+  InProgress = 2,
+  Finished = 3,
+  Cancelled = 4,
+}
+
+export const QuizCategoryNames: Record<QuizCategory, string> = {
+  [QuizCategory.Python]: 'Python',
+  [QuizCategory.JavaScript]: 'JavaScript',
+  [QuizCategory.Algorithms]: 'Algorithms',
+  [QuizCategory.DataStructures]: 'Data Structures',
+  [QuizCategory.GeneralCS]: 'General CS',
+};
+
+export const QuizCategoryIcons: Record<QuizCategory, string> = {
+  [QuizCategory.Python]: '🐍',
+  [QuizCategory.JavaScript]: '⚡',
+  [QuizCategory.Algorithms]: '🔀',
+  [QuizCategory.DataStructures]: '🌳',
+  [QuizCategory.GeneralCS]: '💻',
+};
+
+export const QuizDifficultyNames: Record<QuizDifficulty, string> = {
+  [QuizDifficulty.Easy]: 'Easy',
+  [QuizDifficulty.Medium]: 'Medium',
+  [QuizDifficulty.Hard]: 'Hard',
+};
+
+export interface QuizQuestion {
+  id: string;
+  text: string;
+  optionA: string;
+  optionB: string;
+  optionC: string;
+  optionD: string;
+  category: QuizCategory;
+  difficulty: QuizDifficulty;
+}
+
+export interface QuizQuestionReveal extends QuizQuestion {
+  correctOption: number;
+  explanation?: string;
+}
+
+export interface QuizSessionAnswer {
+  questionIndex: number;
+  questionId: string;
+  selectedOption?: number;
+  isCorrect: boolean;
+  timeTakenMs: number;
+  question: QuizQuestionReveal;
+}
+
+export interface QuizSession {
+  id: string;
+  userId: string;
+  category: QuizCategory;
+  difficulty: QuizDifficulty;
+  status: QuizSessionStatus;
+  score: number;
+  totalQuestions: number;
+  correctAnswers: number;
+  completedAt?: string;
+  createdAt: string;
+  questions: QuizQuestion[];
+  answers: QuizSessionAnswer[];
+}
+
+export interface QuizRank {
+  userId: string;
+  username: string;
+  avatar?: string;
+  elo: number;
+  tier: string;
+  wins: number;
+  losses: number;
+  draws: number;
+  currentStreak: number;
+  bestStreak: number;
+  gamesPlayed: number;
+  winRate: number;
+}
+
+export interface QuizLeaderboardEntry {
+  rank: number;
+  userId: string;
+  username: string;
+  avatar?: string;
+  elo: number;
+  tier: string;
+  wins: number;
+  losses: number;
+  winRate: number;
+}
+
+export interface QuizVsPlayer {
+  id: string;
+  username: string;
+  avatar?: string;
+  elo: number;
+  tier: string;
+  score: number;
+  finished: boolean;
+}
+
+export interface QuizVsMatch {
+  id: string;
+  player1: QuizVsPlayer;
+  player2: QuizVsPlayer;
+  status: QuizVsMatchStatus;
+  winnerId?: string;
+  player1Score: number;
+  player2Score: number;
+  player1EloChange: number;
+  player2EloChange: number;
+  currentQuestionIndex: number;
+  category: QuizCategory;
+  difficulty: QuizDifficulty;
+  startedAt?: string;
+  finishedAt?: string;
+}
+
+// SignalR payloads
+export interface QuizMatchFoundPayload {
+  matchId: string;
+  opponent: QuizVsPlayer;
+  category: QuizCategory;
+  difficulty: QuizDifficulty;
+}
+
+export interface QuizQuestionPayload {
+  questionIndex: number;
+  question: QuizQuestion;
+  timerSeconds: number;
+}
+
+export interface QuizOpponentAnsweredPayload {
+  playerId: string;
+  questionIndex: number;
+}
+
+export interface QuizQuestionResultPayload {
+  questionIndex: number;
+  correctOption: number;
+  explanation?: string;
+  player1Points: number;
+  player2Points: number;
+  player1TotalScore: number;
+  player2TotalScore: number;
+}
+
+export interface QuizMatchEndedPayload {
+  matchId: string;
+  winnerId?: string;
+  winnerUsername?: string;
+  player1Score: number;
+  player2Score: number;
+  player1EloChange: number;
+  player2EloChange: number;
+  isDraw: boolean;
+}
 
 // ===== Admin Types =====
 export interface AdminUser {

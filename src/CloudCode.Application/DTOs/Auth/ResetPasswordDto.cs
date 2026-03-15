@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace CloudCode.Application.DTOs.Auth;
 
 /// <summary>
@@ -5,6 +7,9 @@ namespace CloudCode.Application.DTOs.Auth;
 /// </summary>
 public class ForgotPasswordDto
 {
+    [Required]
+    [EmailAddress]
+    [StringLength(254)]
     public string Email { get; set; } = string.Empty;
 }
 
@@ -13,9 +18,21 @@ public class ForgotPasswordDto
 /// </summary>
 public class ResetPasswordDto
 {
+    [Required]
+    [EmailAddress]
+    [StringLength(254)]
     public string Email { get; set; } = string.Empty;
+
+    [Required]
+    [StringLength(128)]
     public string Token { get; set; } = string.Empty;
+
+    [Required]
+    [StringLength(128, MinimumLength = 8)]
     public string NewPassword { get; set; } = string.Empty;
+
+    [Required]
+    [Compare("NewPassword", ErrorMessage = "Passwords do not match.")]
     public string ConfirmPassword { get; set; } = string.Empty;
 }
 
@@ -24,7 +41,15 @@ public class ResetPasswordDto
 /// </summary>
 public class ChangePasswordDto
 {
+    [Required]
+    [StringLength(128)]
     public string CurrentPassword { get; set; } = string.Empty;
+
+    [Required]
+    [StringLength(128, MinimumLength = 8)]
     public string NewPassword { get; set; } = string.Empty;
+
+    [Required]
+    [Compare("NewPassword", ErrorMessage = "Passwords do not match.")]
     public string ConfirmPassword { get; set; } = string.Empty;
 }

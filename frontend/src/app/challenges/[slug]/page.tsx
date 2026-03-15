@@ -4,7 +4,7 @@ import AnimatedLogo from '@/components/AnimatedLogo';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
-import { challengesApi, formattingApi, commentsApi } from '@/lib/api';
+import { challengesApi, formattingApi, commentsApi, premiumApi } from '@/lib/api';
 import {
   ChallengeDetail,
   ChallengeLanguage,
@@ -51,6 +51,10 @@ export default function ChallengePage() {
   const [testResults, setTestResults] = useState<JudgeResult | null>(null);
   const [selectedTestIndex, setSelectedTestIndex] = useState(0);
 
+  // Premium
+  const [isLocked, setIsLocked] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+
   // Share
   const [copied, setCopied] = useState(false);
   const handleShare = () => {
@@ -89,8 +93,14 @@ export default function ChallengePage() {
     try {
       setIsLoading(true);
       const response = await challengesApi.getBySlug(slug);
-      setChallenge(response.data);
       const c = response.data;
+      setChallenge(c);
+
+      // Check if locked (premium required but no starter code returned)
+      if (c.isPremiumRequired && !c.starterCodePython && !c.starterCodeJavaScript) {
+        setIsLocked(true);
+      }
+
       const defaultLang =
         c.supportedLanguages === ChallengeLanguage.JavaScript
           ? ChallengeLanguage.JavaScript
@@ -106,6 +116,18 @@ export default function ChallengePage() {
       router.push('/challenges');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleUpgrade = async () => {
+    setCheckoutLoading(true);
+    try {
+      const res = await premiumApi.createCheckout();
+      window.location.href = res.data.url;
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to start checkout.');
+    } finally {
+      setCheckoutLoading(false);
     }
   };
 
@@ -209,6 +231,55 @@ export default function ChallengePage() {
     return (
       <div className="min-h-screen flex items-center justify-center app-grid" style={{ backgroundColor: '#101b22' }}>
         <div className="w-8 h-8 border-2 border-[#3caff6] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (isLocked) {
+    return (
+      <div className="min-h-screen flex flex-col app-grid" style={{ backgroundColor: '#101b22', color: '#e2e8f0' }}>
+        <header className="border-b border-slate-800 bg-[#101b22] sticky top-0 z-50 px-4 py-3 flex items-center gap-3">
+          <button onClick={() => router.push('/challenges')} className="text-slate-400 hover:text-white transition-colors">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <span className="font-bold text-white">{challenge.title}</span>
+          <span className="ml-2 px-2 py-0.5 text-[10px] font-bold uppercase rounded bg-rose-500/10 text-rose-400">Hard</span>
+        </header>
+        <div className="flex-1 flex items-center justify-center px-4">
+          <div className="text-center max-w-md">
+            <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-amber-500/10 flex items-center justify-center">
+              <svg className="w-8 h-8 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <h1 className="text-2xl font-bold text-white mb-3">Premium Challenge</h1>
+            <p className="text-slate-400 mb-2">
+              <span className="font-semibold text-white">{challenge.title}</span> is a Hard challenge — available to Premium members only.
+            </p>
+            <p className="text-slate-500 text-sm mb-8">Upgrade to unlock all Hard challenges, hints and more.</p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <button
+                onClick={handleUpgrade}
+                disabled={checkoutLoading}
+                className="bg-[#3caff6] hover:bg-[#3caff6]/90 text-[#101b22] font-bold py-3 px-8 rounded-xl transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {checkoutLoading ? (
+                  <><div className="w-4 h-4 border-2 border-[#101b22] border-t-transparent rounded-full animate-spin" /> Processing...</>
+                ) : (
+                  'Upgrade to Premium — $9/mo'
+                )}
+              </button>
+              <button
+                onClick={() => router.push('/challenges')}
+                className="border border-slate-700 hover:border-slate-500 text-slate-300 font-semibold py-3 px-6 rounded-xl transition-all"
+              >
+                Back to Challenges
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

@@ -1,6 +1,7 @@
 'use client';
 import Navbar from '@/components/Navbar';
 import SoundControl from '@/components/SoundControl';
+import PremiumGate from '@/components/PremiumGate';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -18,7 +19,7 @@ const TIER_ICONS: Record<string, string> = {
   Diamond: '💠', Master: '⚡', Grandmaster: '👑',
 };
 
-export default function VsLobbyPage() {
+function VsLobbyPageInner() {
   const router = useRouter();
   const { user, checkAuth, logout } = useAuthStore();
   const [myRank, setMyRank] = useState<VsRank | null>(null);
@@ -286,5 +287,13 @@ export default function VsLobbyPage() {
         <p>CloudCode © 2026 · <span style={{ color: '#3caff6' }}>VS Mode</span></p>
       </footer>
     </div>
+  );
+}
+
+export default function VsLobbyPage() {
+  return (
+    <PremiumGate feature="VS Mode">
+      <VsLobbyPageInner />
+    </PremiumGate>
   );
 }

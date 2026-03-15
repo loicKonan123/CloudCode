@@ -1,5 +1,6 @@
 'use client';
 import Navbar from '@/components/Navbar';
+import PremiumGate from '@/components/PremiumGate';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
@@ -11,7 +12,7 @@ const LanguageStyles: Record<number, { label: string; badge: string; dot: string
   [ChallengeLanguage.JavaScript]: { label: 'JavaScript', badge: 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20', dot: 'bg-yellow-400' },
 };
 
-export default function CoursesPage() {
+function CoursesPageInner() {
   const router = useRouter();
   const { checkAuth } = useAuthStore();
   const [courses, setCourses] = useState<CourseListItem[]>([]);
@@ -141,5 +142,13 @@ export default function CoursesPage() {
         <p className="text-center text-xs text-slate-600">CloudCode — 2026</p>
       </footer>
     </div>
+  );
+}
+
+export default function CoursesPage() {
+  return (
+    <PremiumGate feature="Courses">
+      <CoursesPageInner />
+    </PremiumGate>
   );
 }

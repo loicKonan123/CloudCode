@@ -10,6 +10,16 @@ using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Limit request body size (1 MB default, 10 MB for code submissions)
+builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 10 * 1024 * 1024; // 10 MB
+});
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Limits.MaxRequestBodySize = 1 * 1024 * 1024; // 1 MB global
+});
+
 // Add services to the container
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -58,9 +68,10 @@ builder.Services.AddHttpClient();
 // Health Checks
 builder.Services.AddHealthChecks();
 
-// Rate Limiting — 15 soumissions/minute par user, 5 tests/minute
+// Rate Limiting
 builder.Services.AddRateLimiter(options =>
 {
+    // Code execution
     options.AddSlidingWindowLimiter("submit", opt =>
     {
         opt.PermitLimit = 15;
@@ -75,6 +86,39 @@ builder.Services.AddRateLimiter(options =>
         opt.SegmentsPerWindow = 3;
         opt.QueueLimit = 0;
     });
+
+    // Auth endpoints — protection brute-force
+    options.AddFixedWindowLimiter("auth-login", opt =>
+    {
+        opt.PermitLimit = 10;
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.QueueLimit = 0;
+    });
+    options.AddFixedWindowLimiter("auth-register", opt =>
+    {
+        opt.PermitLimit = 5;
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.QueueLimit = 0;
+    });
+    options.AddFixedWindowLimiter("auth-forgot-password", opt =>
+    {
+        opt.PermitLimit = 3;
+        opt.Window = TimeSpan.FromMinutes(5);
+        opt.QueueLimit = 0;
+    });
+    options.AddFixedWindowLimiter("auth-refresh", opt =>
+    {
+        opt.PermitLimit = 20;
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.QueueLimit = 0;
+    });
+    options.AddFixedWindowLimiter("comments", opt =>
+    {
+        opt.PermitLimit = 10;
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.QueueLimit = 0;
+    });
+
     options.RejectionStatusCode = 429;
 });
 
@@ -87,8 +131,8 @@ builder.Services.AddCors(options =>
     options.AddPolicy("CorsPolicy", policy =>
     {
         policy.WithOrigins(allowedOrigins)
-              .AllowAnyMethod()
-              .AllowAnyHeader()
+              .WithMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
+              .WithHeaders("Authorization", "Content-Type", "Accept", "X-Requested-With")
               .AllowCredentials();
     });
 });
@@ -127,8 +171,9 @@ catch (Exception ex)
 
 var app = builder.Build();
 
-// Seed challenges
+// Seed challenges + quiz questions
 await ChallengeSeeder.SeedChallengesAsync(app.Services);
+await QuizSeeder.SeedQuestionsAsync(app.Services);
 
 // Global exception handler
 app.UseGlobalExceptionHandler();
@@ -163,6 +208,7 @@ app.MapHealthChecks("/health");
 app.MapHub<CodeHub>("/hubs/code");
 app.MapHub<TerminalHub>("/hubs/terminal");
 app.MapHub<VsHub>("/hubs/vs");
+app.MapHub<QuizHub>("/hubs/quiz");
 Console.WriteLine("CloudCode API running at: http://localhost:5072");
 Console.WriteLine("Swagger UI: http://localhost:5072/swagger");
 

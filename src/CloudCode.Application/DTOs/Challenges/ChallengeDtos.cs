@@ -17,6 +17,8 @@ public class ChallengeListItemDto
     // Per-user fields (null if not authenticated)
     public bool? IsSolved { get; set; }
     public int? BestScore { get; set; }
+    // Premium gate
+    public bool IsPremiumRequired { get; set; }
 }
 
 public class ChallengeDetailDto
@@ -35,11 +37,13 @@ public class ChallengeDetailDto
     // Per-user
     public bool? IsSolved { get; set; }
     public int? BestScore { get; set; }
-    // Hints (toujours visibles, 1 par 1)
+    // Hints — gratuit : hint[0], premium : tous les hints
     public string[] Hints { get; set; } = [];
     // Solution officielle — visible uniquement si l'user a résolu (score 100)
     public string? OfficialSolutionPython { get; set; }
     public string? OfficialSolutionJS { get; set; }
+    // Premium gate
+    public bool IsPremiumRequired { get; set; }
 }
 
 public class TestCaseDto

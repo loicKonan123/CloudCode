@@ -12,11 +12,13 @@ public class VsController : BaseApiController
 {
     private readonly IVsService _vsService;
     private readonly IHubContext<VsHub> _vsHub;
+    private readonly IPremiumService _premiumService;
 
-    public VsController(IVsService vsService, IHubContext<VsHub> vsHub)
+    public VsController(IVsService vsService, IHubContext<VsHub> vsHub, IPremiumService premiumService)
     {
         _vsService = vsService;
         _vsHub = vsHub;
+        _premiumService = premiumService;
     }
 
     /// <summary>Get the current user's VS rank.</summary>
@@ -24,6 +26,9 @@ public class VsController : BaseApiController
     public async Task<ActionResult<VsRankDto>> GetMyRank()
     {
         var userId = GetRequiredUserId();
+        if (!await _premiumService.IsPremiumActiveAsync(userId))
+            return StatusCode(402, new { message = "Premium required to access VS Mode." });
+
         var rank = await _vsService.GetOrCreateRankAsync(userId);
         return Ok(rank);
     }

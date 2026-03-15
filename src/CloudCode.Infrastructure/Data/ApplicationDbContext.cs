@@ -31,6 +31,12 @@ public class ApplicationDbContext : DbContext
     public DbSet<CourseChallenge> CourseChallenges => Set<CourseChallenge>();
     public DbSet<VsMatch> VsMatches => Set<VsMatch>();
     public DbSet<VsRank> VsRanks => Set<VsRank>();
+    public DbSet<QuizQuestion> QuizQuestions => Set<QuizQuestion>();
+    public DbSet<QuizSession> QuizSessions => Set<QuizSession>();
+    public DbSet<QuizSessionAnswer> QuizSessionAnswers => Set<QuizSessionAnswer>();
+    public DbSet<QuizVsMatch> QuizVsMatches => Set<QuizVsMatch>();
+    public DbSet<QuizVsAnswer> QuizVsAnswers => Set<QuizVsAnswer>();
+    public DbSet<QuizRank> QuizRanks => Set<QuizRank>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

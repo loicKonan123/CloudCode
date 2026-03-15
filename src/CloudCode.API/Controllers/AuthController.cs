@@ -8,6 +8,7 @@ using CloudCode.Infrastructure.Services;
 using FirebaseAdmin.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace CloudCode.Controllers;
 
@@ -43,12 +44,20 @@ public class AuthController : BaseApiController
     /// Inscription d'un nouvel utilisateur.
     /// </summary>
     [HttpPost("register")]
+    [EnableRateLimiting("auth-register")]
     [ProducesResponseType(typeof(AuthResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<AuthResponseDto>> Register([FromBody] RegisterDto dto)
     {
         Console.WriteLine($"[Auth] Register attempt: email={dto.Email}, username={dto.Username}");
+
+        // Validate password match
+        if (dto.Password != dto.ConfirmPassword)
+        {
+            Console.WriteLine("[Auth] Register REJECTED: passwords do not match");
+            return BadRequest(new { message = "Les mots de passe ne correspondent pas." });
+        }
 
         // Vérifier si l'email existe déjà
         if (await _unitOfWork.Users.EmailExistsAsync(dto.Email))
@@ -98,6 +107,7 @@ public class AuthController : BaseApiController
     /// Connexion d'un utilisateur.
     /// </summary>
     [HttpPost("login")]
+    [EnableRateLimiting("auth-login")]
     [ProducesResponseType(typeof(AuthResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<AuthResponseDto>> Login([FromBody] LoginDto dto)
@@ -136,6 +146,7 @@ public class AuthController : BaseApiController
     /// Rafraîchir le token d'accès.
     /// </summary>
     [HttpPost("refresh")]
+    [EnableRateLimiting("auth-refresh")]
     [ProducesResponseType(typeof(AuthResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<AuthResponseDto>> RefreshToken([FromBody] RefreshTokenDto dto)
@@ -338,6 +349,7 @@ public class AuthController : BaseApiController
     /// </summary>
     [HttpPost("forgot-password")]
     [AllowAnonymous]
+    [EnableRateLimiting("auth-forgot-password")]
     public async Task<ActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto)
     {
         var user = await _unitOfWork.Users.GetByEmailAsync(dto.Email.ToLower().Trim());

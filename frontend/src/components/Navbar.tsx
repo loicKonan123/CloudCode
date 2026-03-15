@@ -10,6 +10,8 @@ const NAV_ITEMS = [
   { label: 'Courses', path: '/courses' },
   { label: 'Leaderboard', path: '/leaderboard' },
   { label: 'VS Mode', path: '/vs' },
+  { label: 'Quiz', path: '/quiz' },
+  { label: 'Pricing', path: '/pricing' },
 ];
 
 interface NavbarProps {

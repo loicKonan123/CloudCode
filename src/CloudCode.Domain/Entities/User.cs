@@ -25,6 +25,15 @@ public class User : BaseEntity
     public int BestChallengeStreak { get; set; }
     public DateTime? LastChallengeSolvedDate { get; set; }
 
+    // Premium
+    public bool IsPremium { get; set; }
+    public DateTime? PremiumExpiresAt { get; set; }
+    public string? StripeCustomerId { get; set; }
+    public string? StripeSubscriptionId { get; set; }
+
+    public bool IsPremiumActive =>
+        IsPremium && (PremiumExpiresAt == null || PremiumExpiresAt > DateTime.UtcNow);
+
     // Navigation properties
     public virtual ICollection<Project> Projects { get; set; } = new List<Project>();
     public virtual ICollection<Collaboration> Collaborations { get; set; } = new List<Collaboration>();

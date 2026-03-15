@@ -56,6 +56,10 @@ public static class DependencyInjection
         services.AddScoped<ICourseService, CourseService>();
         services.AddScoped<IVsService, VsService>();
         services.AddSingleton<IMatchmakingService, MatchmakingService>();
+        services.AddScoped<IQuizService, QuizService>();
+        services.AddSingleton<IQuizMatchmakingService, QuizMatchmakingService>();
+        services.AddSingleton<QuizMatchState>();
+        services.AddScoped<IPremiumService, PremiumService>();
 
         // JWT Authentication
         var jwtSecretKey = configuration["Jwt:SecretKey"]

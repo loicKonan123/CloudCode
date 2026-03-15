@@ -235,4 +235,54 @@ export const formattingApi = {
     api.post<{ formattedCode: string; success: boolean; error?: string }>('/format', { code, language }),
 };
 
+// ===========================================
+// Quiz API
+// ===========================================
+export const quizApi = {
+  // Solo
+  startSession: (category: number, difficulty: number) =>
+    api.post<import('@/types').QuizSession>('/quiz/sessions', { category, difficulty }),
+
+  getSession: (sessionId: string) =>
+    api.get<import('@/types').QuizSession>(`/quiz/sessions/${sessionId}`),
+
+  getSessionHistory: () =>
+    api.get<import('@/types').QuizSession[]>('/quiz/sessions'),
+
+  submitAnswer: (sessionId: string, questionId: string, questionIndex: number, selectedOption: number | null, timeTakenMs: number) =>
+    api.post<import('@/types').QuizSessionAnswer>(`/quiz/sessions/${sessionId}/answers`, {
+      questionId, questionIndex, selectedOption, timeTakenMs,
+    }),
+
+  abandonSession: (sessionId: string) =>
+    api.post<import('@/types').QuizSession>(`/quiz/sessions/${sessionId}/abandon`),
+
+  // VS
+  getMyRank: () =>
+    api.get<import('@/types').QuizRank>('/quiz/vs/rank'),
+
+  getLeaderboard: () =>
+    api.get<import('@/types').QuizLeaderboardEntry[]>('/quiz/vs/leaderboard'),
+
+  getVsMatch: (matchId: string) =>
+    api.get<import('@/types').QuizVsMatch>(`/quiz/vs/matches/${matchId}`),
+
+  getVsHistory: () =>
+    api.get<import('@/types').QuizVsMatch[]>('/quiz/vs/matches'),
+
+  abandonVsMatch: (matchId: string) =>
+    api.post<import('@/types').QuizVsMatch>(`/quiz/vs/matches/${matchId}/abandon`),
+};
+
+export const premiumApi = {
+  getStatus: () =>
+    api.get<{ isActive: boolean; expiresAt: string | null; plan: string | null }>('/premium/status'),
+
+  createCheckout: () =>
+    api.post<{ url: string }>('/premium/checkout'),
+
+  cancel: () =>
+    api.post<{ message: string }>('/premium/cancel'),
+};
+
 export default api;

@@ -2,7 +2,9 @@ using CloudCode.Domain.Entities;
 using CloudCode.Infrastructure.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using System.Text.RegularExpressions;
 
 namespace CloudCode.Controllers;
 
@@ -68,6 +70,7 @@ public class ChallengeCommentsController : BaseApiController
     }
 
     [HttpPost]
+    [EnableRateLimiting("comments")]
     public async Task<ActionResult<CommentDto>> PostComment(string slug, [FromBody] CreateCommentDto dto)
     {
         Console.WriteLine($"[Comments] POST comment on slug={slug}, parentId={dto.ParentId}");
@@ -90,11 +93,14 @@ public class ChallengeCommentsController : BaseApiController
                 return BadRequest(new { message = "Invalid parent comment." });
         }
 
+        // Strip HTML tags to prevent stored XSS
+        var sanitizedContent = Regex.Replace(dto.Content.Trim(), "<[^>]*>", string.Empty);
+
         var comment = new ChallengeComment
         {
             ChallengeId = challenge.Id,
             UserId = userId.Value,
-            Content = dto.Content.Trim(),
+            Content = sanitizedContent,
             ParentId = dto.ParentId
         };
 

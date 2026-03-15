@@ -236,9 +236,19 @@ export default function ChallengesPage() {
                 <div>
                   {/* Difficulty + Solved status */}
                   <div className="flex justify-between items-start mb-3">
-                    <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded ${DifficultyBadgeStyles[challenge.difficulty]}`}>
-                      {DifficultyNames[challenge.difficulty]}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded ${DifficultyBadgeStyles[challenge.difficulty]}`}>
+                        {DifficultyNames[challenge.difficulty]}
+                      </span>
+                      {challenge.isPremiumRequired && (
+                        <span className="flex items-center gap-1 text-[10px] font-bold uppercase px-2 py-1 rounded bg-amber-500/10 text-amber-400">
+                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                          </svg>
+                          Premium
+                        </span>
+                      )}
+                    </div>
                     {challenge.isSolved ? (
                       <div className="flex items-center gap-1 text-emerald-500">
                         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
