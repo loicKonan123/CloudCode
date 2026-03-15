@@ -160,6 +160,17 @@ export const coursesApi = {
 };
 
 // ===========================================
+// Lessons API
+// ===========================================
+export const lessonsApi = {
+  getByCourse: (courseSlug: string) =>
+    api.get<import('@/types').LessonListItem[]>(`/courses/${courseSlug}/lessons`),
+
+  getBySlug: (courseSlug: string, lessonSlug: string) =>
+    api.get<import('@/types').LessonDetail>(`/courses/${courseSlug}/lessons/${lessonSlug}`),
+};
+
+// ===========================================
 // Admin Users API
 // ===========================================
 export const adminUsersApi = {
@@ -168,6 +179,9 @@ export const adminUsersApi = {
 
   toggleAdmin: (id: string) =>
     api.post<import('@/types').AdminUser>(`/admin/users/${id}/toggle-admin`),
+
+  togglePremium: (id: string) =>
+    api.post<import('@/types').AdminUser>(`/admin/users/${id}/toggle-premium`),
 
   deleteUser: (id: string) =>
     api.delete(`/admin/users/${id}`),

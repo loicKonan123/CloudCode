@@ -5,7 +5,7 @@ import BadgesSection from '@/components/BadgesSection';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
-import { profileApi } from '@/lib/api';
+import { profileApi, premiumApi } from '@/lib/api';
 import { UserProfile, UpdateProfileDto, ChallengeLanguage, TierColors } from '@/types';
 
 const TierGlowColors: Record<string, string> = {
@@ -27,12 +27,18 @@ export default function ProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [editForm, setEditForm] = useState<UpdateProfileDto>({});
+  const [isPremium, setIsPremium] = useState(false);
+  const [premiumExpiresAt, setPremiumExpiresAt] = useState<string | null>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   useEffect(() => {
     checkAuth();
     const token = localStorage.getItem('accessToken');
     if (!token) { router.push('/login'); return; }
     loadProfile();
+    premiumApi.getStatus()
+      .then(r => { setIsPremium(r.data.isActive); setPremiumExpiresAt(r.data.expiresAt ?? null); })
+      .catch(() => {});
   }, [checkAuth, router]);
 
   const loadProfile = async () => {
@@ -61,6 +67,20 @@ export default function ProfilePage() {
       setSaveError(e.response?.data?.message ?? 'Error saving profile');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleCancelPremium = async () => {
+    if (!confirm('Cancel your Premium subscription? You keep access until the end of the billing period.')) return;
+    setIsCancelling(true);
+    try {
+      await premiumApi.cancel();
+      setIsPremium(false);
+      setPremiumExpiresAt(null);
+    } catch {
+      alert('Failed to cancel. Please try again.');
+    } finally {
+      setIsCancelling(false);
     }
   };
 
@@ -160,9 +180,30 @@ export default function ProfilePage() {
                   <span className={`text-sm font-bold ${TierColors[profile.tier] ?? 'text-slate-400'}`}>
                     {profile.tier}
                   </span>
+                  {isPremium && (
+                    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-yellow-400/15 text-yellow-400 border border-yellow-400/30 tracking-widest">
+                      Premium
+                    </span>
+                  )}
                 </div>
                 <p className="text-slate-400 text-sm mt-1">{profile.bio || 'No bio yet.'}</p>
                 <p className="text-slate-500 text-xs mt-2">Member since {memberSince(profile.createdAt)}</p>
+                {isPremium && (
+                  <div className="mt-3 flex items-center gap-3">
+                    {premiumExpiresAt && (
+                      <span className="text-xs text-slate-500">
+                        Renews {new Date(premiumExpiresAt).toLocaleDateString()}
+                      </span>
+                    )}
+                    <button
+                      onClick={handleCancelPremium}
+                      disabled={isCancelling}
+                      className="text-xs text-red-400 hover:text-red-300 underline underline-offset-2 transition disabled:opacity-50"
+                    >
+                      {isCancelling ? 'Cancelling…' : 'Cancel subscription'}
+                    </button>
+                  </div>
+                )}
               </>
             )}
           </div>

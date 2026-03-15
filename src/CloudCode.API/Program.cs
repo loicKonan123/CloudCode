@@ -171,9 +171,11 @@ catch (Exception ex)
 
 var app = builder.Build();
 
-// Seed challenges + quiz questions
+// Seed challenges + quiz questions + courses + lessons
 await ChallengeSeeder.SeedChallengesAsync(app.Services);
 await QuizSeeder.SeedQuestionsAsync(app.Services);
+await CourseSeeder.SeedCoursesAsync(app.Services);
+await LessonSeeder.SeedLessonsAsync(app.Services);
 
 // Global exception handler
 app.UseGlobalExceptionHandler();

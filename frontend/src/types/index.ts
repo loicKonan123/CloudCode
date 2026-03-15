@@ -252,6 +252,7 @@ export interface CourseListItem {
   description: string;
   language: ChallengeLanguage;
   challengeCount: number;
+  lessonCount: number;
   isPublished: boolean;
   orderIndex: number;
 }
@@ -266,6 +267,29 @@ export interface CourseChallengeItem {
   isSolved: boolean;
 }
 
+export interface LessonListItem {
+  id: string;
+  title: string;
+  slug: string;
+  orderIndex: number;
+  isPublished: boolean;
+  hasChallenge: boolean;
+  challengeSlug?: string;
+}
+
+export interface LessonDetail {
+  id: string;
+  title: string;
+  slug: string;
+  content: string;
+  orderIndex: number;
+  isPublished: boolean;
+  challengeSlug?: string;
+  challengeTitle?: string;
+  nextLessonSlug?: string;
+  prevLessonSlug?: string;
+}
+
 export interface CourseDetail {
   id: string;
   title: string;
@@ -275,6 +299,8 @@ export interface CourseDetail {
   isPublished: boolean;
   orderIndex: number;
   challenges: CourseChallengeItem[];
+  lessons: LessonListItem[];
+  lessonCount: number;
 }
 
 export interface CreateCourseDto {
@@ -589,6 +615,7 @@ export interface AdminUser {
   email: string;
   username: string;
   isAdmin: boolean;
+  isPremium: boolean;
   createdAt: string;
 }
 

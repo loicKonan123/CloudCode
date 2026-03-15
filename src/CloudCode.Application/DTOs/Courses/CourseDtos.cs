@@ -8,6 +8,7 @@ public class CourseListItemDto
     public string Description { get; set; } = string.Empty;
     public int Language { get; set; }
     public int ChallengeCount { get; set; }
+    public int LessonCount { get; set; }
     public bool IsPublished { get; set; }
     public int OrderIndex { get; set; }
 }
@@ -33,6 +34,8 @@ public class CourseDetailDto
     public bool IsPublished { get; set; }
     public int OrderIndex { get; set; }
     public List<CourseChallengeDto> Challenges { get; set; } = [];
+    public List<LessonListItemDto> Lessons { get; set; } = [];
+    public int LessonCount { get; set; }
 }
 
 public class CreateCourseDto

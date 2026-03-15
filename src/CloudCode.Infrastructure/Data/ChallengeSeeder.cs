@@ -1330,6 +1330,857 @@ console.log(majorityElement(nums));",
                     new TestCase { Input = "6 5 5 5 6 5 5", ExpectedOutput = "5", IsHidden = true, OrderIndex = 3, Description = "Larger" },
                 ]
             },
+
+            // ===== PYTHON COURSE — Level 1 Beginner — Chapter 1: Introduction & Fundamentals =====
+
+            // 26. Temperature Converter (Lesson 1.2 — Variables & Types)
+            new Challenge
+            {
+                Title = "Temperature Converter",
+                Slug = "temperature-converter",
+                Description = @"# Temperature Converter
+
+Convert a temperature from Celsius to Fahrenheit.
+
+> **Lesson 1.2**: This challenge practices variables and type conversion. The formula uses basic arithmetic operations.
+
+## Formula
+`F = C × 9/5 + 32`
+
+## Function Signature
+```python
+def celsius_to_fahrenheit(celsius: float) -> float:
+```
+
+## Examples
+```
+celsius_to_fahrenheit(0)    →  32.0
+celsius_to_fahrenheit(100)  →  212.0
+celsius_to_fahrenheit(-40)  →  -40.0
+```
+
+## Constraints
+- Result must be rounded to 1 decimal place",
+                Difficulty = ChallengeDifficulty.Easy,
+                SupportedLanguages = ChallengeLanguage.Python,
+                IsFunction = true,
+                StarterCodePython =
+@"def celsius_to_fahrenheit(celsius: float) -> float:
+    # Formula: F = C * 9/5 + 32
+    pass",
+                StarterCodeJavaScript = null,
+                TestRunnerPython =
+@"c = float(input())
+print(round(celsius_to_fahrenheit(c), 1))",
+                TestRunnerJavaScript = null,
+                Tags = JsonSerializer.Serialize(new[] { "python", "variables", "types", "python-course-ch1" }),
+                IsPublished = true,
+                TestCases =
+                [
+                    new TestCase { Input = "0",     ExpectedOutput = "32.0",  IsHidden = false, OrderIndex = 0, Description = "Freezing point" },
+                    new TestCase { Input = "100",   ExpectedOutput = "212.0", IsHidden = false, OrderIndex = 1, Description = "Boiling point" },
+                    new TestCase { Input = "-40",   ExpectedOutput = "-40.0", IsHidden = false, OrderIndex = 2, Description = "Crossover point" },
+                    new TestCase { Input = "37",    ExpectedOutput = "98.6",  IsHidden = true,  OrderIndex = 3, Description = "Body temperature" },
+                    new TestCase { Input = "22.5",  ExpectedOutput = "72.5",  IsHidden = true,  OrderIndex = 4, Description = "Decimal" },
+                ]
+            },
+
+            // 27. Simple Calculator (Lesson 1.3 — Operators & Expressions)
+            new Challenge
+            {
+                Title = "Simple Calculator",
+                Slug = "simple-calculator",
+                Description = @"# Simple Calculator
+
+Implement a calculator that performs a basic operation between two numbers.
+
+> **Lesson 1.3**: This challenge practices arithmetic operators and Python expressions.
+
+## Function Signature
+```python
+def calculate(a: float, b: float, op: str) -> float:
+```
+
+## Supported Operators
+- `+` : addition
+- `-` : subtraction
+- `*` : multiplication
+- `/` : division (return `0` if division by zero)
+
+## Examples
+```
+calculate(10, 3, '+')  →  13.0
+calculate(10, 3, '-')  →  7.0
+calculate(10, 3, '*')  →  30.0
+calculate(10, 3, '/')  →  3.33
+```
+
+## Constraints
+- Result must be rounded to 2 decimal places",
+                Difficulty = ChallengeDifficulty.Easy,
+                SupportedLanguages = ChallengeLanguage.Python,
+                IsFunction = true,
+                StarterCodePython =
+@"def calculate(a: float, b: float, op: str) -> float:
+    # Use if/elif for each operator
+    pass",
+                StarterCodeJavaScript = null,
+                TestRunnerPython =
+@"a = float(input())
+b = float(input())
+op = input().strip()
+print(round(calculate(a, b, op), 2))",
+                TestRunnerJavaScript = null,
+                Tags = JsonSerializer.Serialize(new[] { "python", "operators", "expressions", "python-course-ch1" }),
+                IsPublished = true,
+                TestCases =
+                [
+                    new TestCase { Input = "10\n3\n+",  ExpectedOutput = "13.0",  IsHidden = false, OrderIndex = 0, Description = "Addition" },
+                    new TestCase { Input = "10\n3\n-",  ExpectedOutput = "7.0",   IsHidden = false, OrderIndex = 1, Description = "Subtraction" },
+                    new TestCase { Input = "10\n3\n*",  ExpectedOutput = "30.0",  IsHidden = false, OrderIndex = 2, Description = "Multiplication" },
+                    new TestCase { Input = "10\n3\n/",  ExpectedOutput = "3.33",  IsHidden = true,  OrderIndex = 3, Description = "Division" },
+                    new TestCase { Input = "5\n0\n/",   ExpectedOutput = "0",     IsHidden = true,  OrderIndex = 4, Description = "Division by zero" },
+                ]
+            },
+
+            // 28. Greeting Format (Lesson 1.4 — User Interaction & Display)
+            new Challenge
+            {
+                Title = "Greeting Message",
+                Slug = "greeting-format",
+                Description = @"# Greeting Message
+
+Create a formatted greeting message from a name and an age.
+
+> **Lesson 1.4**: This challenge practices string formatting with f-strings, Python's most powerful display tool.
+
+## Function Signature
+```python
+def format_greeting(name: str, age: int) -> str:
+```
+
+## Expected Format
+`Hello, {name}! You are {age} years old.`
+
+## Examples
+```
+format_greeting(""Alice"", 25)  →  ""Hello, Alice! You are 25 years old.""
+format_greeting(""Bob"", 30)    →  ""Hello, Bob! You are 30 years old.""
+```",
+                Difficulty = ChallengeDifficulty.Easy,
+                SupportedLanguages = ChallengeLanguage.Python,
+                IsFunction = true,
+                StarterCodePython =
+@"def format_greeting(name: str, age: int) -> str:
+    # Use an f-string: f""...{variable}...""
+    pass",
+                StarterCodeJavaScript = null,
+                TestRunnerPython =
+@"name = input()
+age = int(input())
+print(format_greeting(name, age))",
+                TestRunnerJavaScript = null,
+                Tags = JsonSerializer.Serialize(new[] { "python", "strings", "f-strings", "python-course-ch1" }),
+                IsPublished = true,
+                TestCases =
+                [
+                    new TestCase { Input = "Alice\n25",   ExpectedOutput = "Hello, Alice! You are 25 years old.",  IsHidden = false, OrderIndex = 0, Description = "Basic case" },
+                    new TestCase { Input = "Bob\n30",     ExpectedOutput = "Hello, Bob! You are 30 years old.",    IsHidden = false, OrderIndex = 1, Description = "Another name" },
+                    new TestCase { Input = "Charlie\n18", ExpectedOutput = "Hello, Charlie! You are 18 years old.", IsHidden = true,  OrderIndex = 2, Description = "Teen" },
+                    new TestCase { Input = "X\n1",        ExpectedOutput = "Hello, X! You are 1 years old.",       IsHidden = true,  OrderIndex = 3, Description = "Short name" },
+                ]
+            },
+
+            // 29. Grade Classifier (Lesson 1.5 — Conditionals)
+            new Challenge
+            {
+                Title = "Grade Classifier",
+                Slug = "grade-classifier",
+                Description = @"# Grade Classifier
+
+Convert a numeric score (0-100) to a letter grade according to the following scale:
+
+> **Lesson 1.5**: This challenge practices conditional statements `if`, `elif`, `else`.
+
+## Scale
+| Score | Grade |
+|-------|-------|
+| 90-100 | A |
+| 80-89 | B |
+| 70-79 | C |
+| 60-69 | D |
+| 0-59 | F |
+
+## Function Signature
+```python
+def classify_grade(score: int) -> str:
+```
+
+## Examples
+```
+classify_grade(95)  →  ""A""
+classify_grade(82)  →  ""B""
+classify_grade(45)  →  ""F""
+```",
+                Difficulty = ChallengeDifficulty.Easy,
+                SupportedLanguages = ChallengeLanguage.Python,
+                IsFunction = true,
+                StarterCodePython =
+@"def classify_grade(score: int) -> str:
+    # Use if/elif/else to classify the score
+    pass",
+                StarterCodeJavaScript = null,
+                TestRunnerPython =
+@"score = int(input())
+print(classify_grade(score))",
+                TestRunnerJavaScript = null,
+                Tags = JsonSerializer.Serialize(new[] { "python", "conditions", "if-elif-else", "python-course-ch1" }),
+                IsPublished = true,
+                TestCases =
+                [
+                    new TestCase { Input = "95",  ExpectedOutput = "A", IsHidden = false, OrderIndex = 0, Description = "Excellent" },
+                    new TestCase { Input = "82",  ExpectedOutput = "B", IsHidden = false, OrderIndex = 1, Description = "Good" },
+                    new TestCase { Input = "73",  ExpectedOutput = "C", IsHidden = false, OrderIndex = 2, Description = "Average" },
+                    new TestCase { Input = "65",  ExpectedOutput = "D", IsHidden = true,  OrderIndex = 3, Description = "Below average" },
+                    new TestCase { Input = "45",  ExpectedOutput = "F", IsHidden = true,  OrderIndex = 4, Description = "Failing" },
+                    new TestCase { Input = "90",  ExpectedOutput = "A", IsHidden = true,  OrderIndex = 5, Description = "A boundary" },
+                    new TestCase { Input = "0",   ExpectedOutput = "F", IsHidden = true,  OrderIndex = 6, Description = "Zero" },
+                ]
+            },
+
+            // 30. Sum of Multiples (Lesson 1.6 — Loops & Iteration)
+            new Challenge
+            {
+                Title = "Sum of Multiples",
+                Slug = "sum-multiples",
+                Description = @"# Sum of Multiples
+
+Calculate the sum of all multiples of 3 or 5 strictly below `n`.
+
+> **Lesson 1.6**: This challenge practices `for` loops with `range()` and conditions inside a loop.
+
+## Function Signature
+```python
+def sum_multiples(n: int) -> int:
+```
+
+## Examples
+```
+sum_multiples(10)   →  23    (3 + 5 + 6 + 9)
+sum_multiples(20)   →  78    (3 + 5 + 6 + 9 + 10 + 12 + 15 + 18)
+sum_multiples(1)    →  0
+```
+
+## Constraints
+- 1 ≤ n ≤ 10000",
+                Difficulty = ChallengeDifficulty.Easy,
+                SupportedLanguages = ChallengeLanguage.Python,
+                IsFunction = true,
+                StarterCodePython =
+@"def sum_multiples(n: int) -> int:
+    # Use a for loop with range()
+    # Check if each number is a multiple of 3 or 5
+    pass",
+                StarterCodeJavaScript = null,
+                TestRunnerPython =
+@"n = int(input())
+print(sum_multiples(n))",
+                TestRunnerJavaScript = null,
+                Tags = JsonSerializer.Serialize(new[] { "python", "loops", "for", "range", "python-course-ch1" }),
+                IsPublished = true,
+                TestCases =
+                [
+                    new TestCase { Input = "10",   ExpectedOutput = "23",      IsHidden = false, OrderIndex = 0, Description = "n=10" },
+                    new TestCase { Input = "20",   ExpectedOutput = "78",      IsHidden = false, OrderIndex = 1, Description = "n=20" },
+                    new TestCase { Input = "1",    ExpectedOutput = "0",       IsHidden = false, OrderIndex = 2, Description = "n=1" },
+                    new TestCase { Input = "100",  ExpectedOutput = "2318",    IsHidden = true,  OrderIndex = 3, Description = "n=100" },
+                    new TestCase { Input = "1000", ExpectedOutput = "233168",  IsHidden = true,  OrderIndex = 4, Description = "n=1000" },
+                ]
+            },
+
+            // 31. Countdown (Lesson 1.6 — While Loops)
+            new Challenge
+            {
+                Title = "Countdown",
+                Slug = "countdown",
+                Description = @"# Countdown
+
+Generate a countdown from `n` down to 1, followed by `Go!`.
+
+> **Lesson 1.6**: This challenge practices the `while` loop with a stop condition and decrementing.
+
+## Function Signature
+```python
+def countdown(n: int) -> str:
+```
+
+## Examples
+```
+countdown(3)  →  ""3 2 1 Go!""
+countdown(5)  →  ""5 4 3 2 1 Go!""
+countdown(1)  →  ""1 Go!""
+```
+
+## Constraints
+- 1 ≤ n ≤ 100
+- Numbers are separated by spaces, followed by `Go!`",
+                Difficulty = ChallengeDifficulty.Easy,
+                SupportedLanguages = ChallengeLanguage.Python,
+                IsFunction = true,
+                StarterCodePython =
+@"def countdown(n: int) -> str:
+    # Use a while loop that decrements n
+    pass",
+                StarterCodeJavaScript = null,
+                TestRunnerPython =
+@"n = int(input())
+print(countdown(n))",
+                TestRunnerJavaScript = null,
+                Tags = JsonSerializer.Serialize(new[] { "python", "loops", "while", "python-course-ch1" }),
+                IsPublished = true,
+                TestCases =
+                [
+                    new TestCase { Input = "3",   ExpectedOutput = "3 2 1 Go!",         IsHidden = false, OrderIndex = 0, Description = "n=3" },
+                    new TestCase { Input = "5",   ExpectedOutput = "5 4 3 2 1 Go!",     IsHidden = false, OrderIndex = 1, Description = "n=5" },
+                    new TestCase { Input = "1",   ExpectedOutput = "1 Go!",             IsHidden = false, OrderIndex = 2, Description = "n=1" },
+                    new TestCase { Input = "10",  ExpectedOutput = "10 9 8 7 6 5 4 3 2 1 Go!", IsHidden = true, OrderIndex = 3, Description = "n=10" },
+                ]
+            },
+
+            // ===== PYTHON COURSE — Level 2: Pythonic Foundations (Fluent Python) =====
+
+            // 32. Vector Add (Lesson 6.3 — Data Model)
+            new Challenge
+            {
+                Title = "Vector Addition",
+                Slug = "vector-add",
+                Description = @"# Vector Addition
+
+Implement a function that adds two vectors (lists of integers) element by element.
+
+> **Lesson 6.3**: This challenge illustrates the concept of special methods in Python (*The Python Data Model*). In idiomatic Python, you would override `__add__` on a Vector class to write `v1 + v2`.
+
+## Function Signature
+```python
+def vector_add(v1: list[int], v2: list[int]) -> list[int]:
+```
+
+## Examples
+```
+vector_add([1, 2, 3], [4, 5, 6])  →  [5, 7, 9]
+vector_add([0, 0], [0, 0])        →  [0, 0]
+vector_add([-1, 3], [1, -3])      →  [0, 0]
+```
+
+## Constraints
+- Both vectors always have the same length
+- 1 ≤ len(v) ≤ 1000",
+                Difficulty = ChallengeDifficulty.Easy,
+                SupportedLanguages = ChallengeLanguage.Python,
+                IsFunction = true,
+                StarterCodePython =
+@"def vector_add(v1: list[int], v2: list[int]) -> list[int]:
+    # Hint: use zip() and a list comprehension
+    pass",
+                StarterCodeJavaScript = null,
+                TestRunnerPython =
+@"v1 = list(map(int, input().split()))
+v2 = list(map(int, input().split()))
+print(*vector_add(v1, v2))",
+                TestRunnerJavaScript = null,
+                Tags = JsonSerializer.Serialize(new[] { "python", "data-model", "list", "python-course-ch6" }),
+                IsPublished = true,
+                TestCases =
+                [
+                    new TestCase { Input = "1 2 3\n4 5 6",     ExpectedOutput = "5 7 9",   IsHidden = false, OrderIndex = 0, Description = "Basic" },
+                    new TestCase { Input = "0 0\n0 0",          ExpectedOutput = "0 0",     IsHidden = false, OrderIndex = 1, Description = "Zeros" },
+                    new TestCase { Input = "-1 3\n1 -3",        ExpectedOutput = "0 0",     IsHidden = false, OrderIndex = 2, Description = "Negatives" },
+                    new TestCase { Input = "10 20 30 40\n1 2 3 4", ExpectedOutput = "11 22 33 44", IsHidden = true, OrderIndex = 3, Description = "Longer" },
+                    new TestCase { Input = "100\n-100",         ExpectedOutput = "0",       IsHidden = true, OrderIndex = 4, Description = "Single element" },
+                ]
+            },
+
+            // 33. Matrix Flatten (Lesson 6.2 — Sequences)
+            new Challenge
+            {
+                Title = "Flatten a Matrix",
+                Slug = "matrix-flatten",
+                Description = @"# Flatten a Matrix
+
+Given a matrix (list of lists of integers), return a flat list containing all elements in row order.
+
+> **Lesson 6.2**: This challenge illustrates mastery of Python sequences (*An Array of Sequences*). The idiomatic solution uses a **nested list comprehension**: `[x for row in matrix for x in row]`.
+
+## Function Signature
+```python
+def flatten(matrix: list[list[int]]) -> list[int]:
+```
+
+## Examples
+```
+flatten([[1, 2], [3, 4], [5, 6]])  →  [1, 2, 3, 4, 5, 6]
+flatten([[1]])                      →  [1]
+flatten([[], [1], []])              →  [1]
+```
+
+## Constraints
+- 1 ≤ len(matrix) ≤ 100
+- Sub-lists can be empty",
+                Difficulty = ChallengeDifficulty.Easy,
+                SupportedLanguages = ChallengeLanguage.Python,
+                IsFunction = true,
+                StarterCodePython =
+@"def flatten(matrix: list[list[int]]) -> list[int]:
+    # Hint: a nested list comprehension does this in one line
+    pass",
+                StarterCodeJavaScript = null,
+                TestRunnerPython =
+@"import ast, sys
+matrix = ast.literal_eval(sys.stdin.read().strip())
+print(*flatten(matrix))",
+                TestRunnerJavaScript = null,
+                Tags = JsonSerializer.Serialize(new[] { "python", "sequences", "list-comprehension", "python-course-ch6" }),
+                IsPublished = true,
+                TestCases =
+                [
+                    new TestCase { Input = "[[1, 2], [3, 4], [5, 6]]", ExpectedOutput = "1 2 3 4 5 6", IsHidden = false, OrderIndex = 0, Description = "3x2 matrix" },
+                    new TestCase { Input = "[[1]]",                     ExpectedOutput = "1",           IsHidden = false, OrderIndex = 1, Description = "Single element" },
+                    new TestCase { Input = "[[], [1], []]",             ExpectedOutput = "1",           IsHidden = false, OrderIndex = 2, Description = "Empty lists" },
+                    new TestCase { Input = "[[1, 2, 3], [4], [5, 6]]", ExpectedOutput = "1 2 3 4 5 6", IsHidden = true,  OrderIndex = 3, Description = "Different sizes" },
+                    new TestCase { Input = "[[10, 20], [30, 40], [50, 60], [70, 80]]", ExpectedOutput = "10 20 30 40 50 60 70 80", IsHidden = true, OrderIndex = 4, Description = "4x2 matrix" },
+                ]
+            },
+
+            // 34. Word Frequency (Lesson 6.3 — Dictionaries and Sets)
+            new Challenge
+            {
+                Title = "Word Frequency",
+                Slug = "word-frequency",
+                Description = @"# Word Frequency
+
+Given a string of space-separated words, return a dictionary counting the number of occurrences of each word (lowercase).
+
+> **Lesson 6.3**: This challenge illustrates the power of Python dictionaries (*Dictionaries and Sets*). The idiomatic solution uses `collections.Counter` or `defaultdict(int)`.
+
+## Function Signature
+```python
+def word_count(text: str) -> dict[str, int]:
+```
+
+## Examples
+```
+word_count(""the cat and the dog"")  →  {""the"": 2, ""cat"": 1, ""and"": 1, ""dog"": 1}
+word_count(""a a a b b"")            →  {""a"": 3, ""b"": 2}
+```
+
+## Output
+Pairs `word:count` sorted alphabetically, one per line.
+
+## Constraints
+- Words contain only letters and are separated by spaces
+- 1 ≤ number of words ≤ 1000",
+                Difficulty = ChallengeDifficulty.Easy,
+                SupportedLanguages = ChallengeLanguage.Python,
+                IsFunction = true,
+                StarterCodePython =
+@"def word_count(text: str) -> dict[str, int]:
+    # Hint: try collections.Counter or defaultdict
+    pass",
+                StarterCodeJavaScript = null,
+                TestRunnerPython =
+@"text = input()
+result = word_count(text)
+for k in sorted(result):
+    print(f'{k}:{result[k]}')",
+                TestRunnerJavaScript = null,
+                Tags = JsonSerializer.Serialize(new[] { "python", "dictionaries", "counter", "python-course-ch6" }),
+                IsPublished = true,
+                TestCases =
+                [
+                    new TestCase { Input = "the cat and the dog",  ExpectedOutput = "and:1\ncat:1\ndog:1\nthe:2",  IsHidden = false, OrderIndex = 0, Description = "Simple sentence" },
+                    new TestCase { Input = "a a a b b",            ExpectedOutput = "a:3\nb:2",                     IsHidden = false, OrderIndex = 1, Description = "Repetitions" },
+                    new TestCase { Input = "python",               ExpectedOutput = "python:1",                     IsHidden = false, OrderIndex = 2, Description = "Single word" },
+                    new TestCase { Input = "x y z x y x",          ExpectedOutput = "x:3\ny:2\nz:1",               IsHidden = true,  OrderIndex = 3, Description = "Three distinct words" },
+                    new TestCase { Input = "hello hello world world world", ExpectedOutput = "hello:2\nworld:3", IsHidden = true, OrderIndex = 4, Description = "Two words" },
+                ]
+            },
+
+            // 35. Caesar Cipher (Lesson 9.1 — Text versus Bytes)
+            new Challenge
+            {
+                Title = "Caesar Cipher",
+                Slug = "caesar-cipher",
+                Description = @"# Caesar Cipher
+
+Implement the Caesar cipher: shift each letter of the alphabet by `shift` positions. Non-alphabetic characters remain unchanged. Preserve case.
+
+> **Lesson 9.1**: This challenge illustrates text and character manipulation (*Text versus Bytes*). You will use `ord()` and `chr()` to work at the Unicode code point level.
+
+## Function Signature
+```python
+def caesar_cipher(text: str, shift: int) -> str:
+```
+
+## Examples
+```
+caesar_cipher(""abc"", 1)           →  ""bcd""
+caesar_cipher(""xyz"", 3)           →  ""abc""
+caesar_cipher(""Hello, World!"", 5) →  ""Mjqqt, Btwqi!""
+```
+
+## Constraints
+- 0 ≤ shift ≤ 25
+- Text may contain letters, spaces and punctuation",
+                Difficulty = ChallengeDifficulty.Easy,
+                SupportedLanguages = ChallengeLanguage.Python,
+                IsFunction = true,
+                StarterCodePython =
+@"def caesar_cipher(text: str, shift: int) -> str:
+    # Hint: use ord() and chr() to manipulate characters
+    pass",
+                StarterCodeJavaScript = null,
+                TestRunnerPython =
+@"text = input()
+shift = int(input())
+print(caesar_cipher(text, shift))",
+                TestRunnerJavaScript = null,
+                Tags = JsonSerializer.Serialize(new[] { "python", "text", "unicode", "python-course-ch9" }),
+                IsPublished = true,
+                TestCases =
+                [
+                    new TestCase { Input = "abc\n1",            ExpectedOutput = "bcd",            IsHidden = false, OrderIndex = 0, Description = "Simple shift" },
+                    new TestCase { Input = "xyz\n3",            ExpectedOutput = "abc",            IsHidden = false, OrderIndex = 1, Description = "Wrap around" },
+                    new TestCase { Input = "Hello, World!\n5",  ExpectedOutput = "Mjqqt, Btwqi!",  IsHidden = false, OrderIndex = 2, Description = "Mixed" },
+                    new TestCase { Input = "Python 3.12\n13",   ExpectedOutput = "Clguba 3.12",    IsHidden = true,  OrderIndex = 3, Description = "With digits" },
+                    new TestCase { Input = "abcdefghijklmnopqrstuvwxyz\n0", ExpectedOutput = "abcdefghijklmnopqrstuvwxyz", IsHidden = true, OrderIndex = 4, Description = "No shift" },
+                ]
+            },
+
+            // ═══════════════════════════════════════════════════════════
+            // Chapter 2 — Data Structures (python-beginner-ch2)
+            // ═══════════════════════════════════════════════════════════
+
+            // 36. List Stats (Lesson 2.1 — Lists)
+            new Challenge
+            {
+                Title = "List Statistics",
+                Slug = "list-stats",
+                Description = @"# List Statistics
+
+Given a list of integers, compute and return basic statistics.
+
+> **Lesson 2.1**: This challenge practices list operations — accessing elements, using built-in functions like `min()`, `max()`, `sum()`, `len()`, and `round()`.
+
+## Function Signature
+```python
+def list_stats(numbers: list[int]) -> str:
+```
+
+## Expected Format
+Return a string in the format: `min:X max:Y sum:Z avg:A`
+where `A` is rounded to **1 decimal place**.
+
+## Examples
+```
+list_stats([4, 2, 9, 1, 7])  →  ""min:1 max:9 sum:23 avg:4.6""
+list_stats([10])              →  ""min:10 max:10 sum:10 avg:10.0""
+list_stats([1, 2, 3])        →  ""min:1 max:3 sum:6 avg:2.0""
+```
+
+## Constraints
+- List always has at least 1 element",
+                Difficulty = ChallengeDifficulty.Easy,
+                SupportedLanguages = ChallengeLanguage.Python,
+                IsFunction = true,
+                StarterCodePython =
+@"def list_stats(numbers: list[int]) -> str:
+    # Use min(), max(), sum(), len(), round()
+    pass",
+                StarterCodeJavaScript = null,
+                TestRunnerPython =
+@"import json
+numbers = json.loads(input())
+print(list_stats(numbers))",
+                TestRunnerJavaScript = null,
+                Tags = JsonSerializer.Serialize(new[] { "python", "lists", "builtins", "python-course-ch2" }),
+                IsPublished = true,
+                TestCases =
+                [
+                    new TestCase { Input = "[4, 2, 9, 1, 7]",  ExpectedOutput = "min:1 max:9 sum:23 avg:4.6",     IsHidden = false, OrderIndex = 0, Description = "Mixed values" },
+                    new TestCase { Input = "[10]",              ExpectedOutput = "min:10 max:10 sum:10 avg:10.0",   IsHidden = false, OrderIndex = 1, Description = "Single element" },
+                    new TestCase { Input = "[1, 2, 3]",         ExpectedOutput = "min:1 max:3 sum:6 avg:2.0",      IsHidden = false, OrderIndex = 2, Description = "Simple list" },
+                    new TestCase { Input = "[-5, 0, 5, 10]",    ExpectedOutput = "min:-5 max:10 sum:10 avg:2.5",   IsHidden = true,  OrderIndex = 3, Description = "Negatives" },
+                    new TestCase { Input = "[100, 200, 300]",   ExpectedOutput = "min:100 max:300 sum:600 avg:200.0", IsHidden = true, OrderIndex = 4, Description = "Large values" },
+                ]
+            },
+
+            // 37. Sort by Score (Lesson 2.2 — Tuples)
+            new Challenge
+            {
+                Title = "Sort by Score",
+                Slug = "sort-by-score",
+                Description = @"# Sort by Score
+
+Given a list of `[name, score]` pairs, sort them by score in **descending order** and return the names.
+
+> **Lesson 2.2**: This challenge practices tuples, unpacking, and sorting with a custom key.
+
+## Function Signature
+```python
+def sort_by_score(students: list) -> list:
+```
+
+## Examples
+```
+sort_by_score([[""Alice"", 85], [""Bob"", 92], [""Charlie"", 78]])
+→  [""Bob"", ""Alice"", ""Charlie""]
+
+sort_by_score([[""X"", 50], [""Y"", 50], [""Z"", 100]])
+→  [""Z"", ""X"", ""Y""]
+```
+
+## Constraints
+- If two students have the same score, preserve original order (stable sort)
+- At least 1 student",
+                Difficulty = ChallengeDifficulty.Easy,
+                SupportedLanguages = ChallengeLanguage.Python,
+                IsFunction = true,
+                StarterCodePython =
+@"def sort_by_score(students: list) -> list:
+    # Hint: use sorted() with key= and reverse=
+    pass",
+                StarterCodeJavaScript = null,
+                TestRunnerPython =
+@"import json
+data = json.loads(input())
+result = sort_by_score(data)
+print("" "".join(result))",
+                TestRunnerJavaScript = null,
+                Tags = JsonSerializer.Serialize(new[] { "python", "tuples", "sorting", "python-course-ch2" }),
+                IsPublished = true,
+                TestCases =
+                [
+                    new TestCase { Input = "[[\"Alice\", 85], [\"Bob\", 92], [\"Charlie\", 78]]", ExpectedOutput = "Bob Alice Charlie", IsHidden = false, OrderIndex = 0, Description = "Three students" },
+                    new TestCase { Input = "[[\"X\", 50], [\"Y\", 50], [\"Z\", 100]]",            ExpectedOutput = "Z X Y",            IsHidden = false, OrderIndex = 1, Description = "Tie + highest" },
+                    new TestCase { Input = "[[\"Solo\", 99]]",                                     ExpectedOutput = "Solo",             IsHidden = false, OrderIndex = 2, Description = "Single student" },
+                    new TestCase { Input = "[[\"A\", 10], [\"B\", 30], [\"C\", 20], [\"D\", 30]]", ExpectedOutput = "B D C A",          IsHidden = true,  OrderIndex = 3, Description = "Stable sort" },
+                    new TestCase { Input = "[[\"Z\", 1], [\"Y\", 2], [\"X\", 3], [\"W\", 4], [\"V\", 5]]", ExpectedOutput = "V W X Y Z", IsHidden = true, OrderIndex = 4, Description = "Reverse alpha" },
+                ]
+            },
+
+            // 38. Invert Dictionary (Lesson 2.3 — Dictionaries)
+            new Challenge
+            {
+                Title = "Invert Dictionary",
+                Slug = "dict-invert",
+                Description = @"# Invert Dictionary
+
+Swap the keys and values of a dictionary. All values in the input are guaranteed to be unique.
+
+> **Lesson 2.3**: This challenge practices dictionary creation, iteration with `.items()`, and building a new dict.
+
+## Function Signature
+```python
+def invert_dict(d: dict) -> dict:
+```
+
+## Examples
+```
+invert_dict({""a"": 1, ""b"": 2, ""c"": 3})  →  {1: ""a"", 2: ""b"", 3: ""c""}
+invert_dict({""x"": ""hello""})               →  {""hello"": ""x""}
+```
+
+## Output Format
+Print each `key:value` pair on its own line, sorted by key (converted to string for sorting).
+
+## Constraints
+- All values are unique (no collision)
+- Dict has at least 1 entry",
+                Difficulty = ChallengeDifficulty.Easy,
+                SupportedLanguages = ChallengeLanguage.Python,
+                IsFunction = true,
+                StarterCodePython =
+@"def invert_dict(d: dict) -> dict:
+    # Hint: iterate with d.items() and swap k, v
+    pass",
+                StarterCodeJavaScript = null,
+                TestRunnerPython =
+@"import json
+d = json.loads(input())
+result = invert_dict(d)
+for k in sorted(result.keys(), key=str):
+    print(f""{k}:{result[k]}"")",
+                TestRunnerJavaScript = null,
+                Tags = JsonSerializer.Serialize(new[] { "python", "dictionaries", "iteration", "python-course-ch2" }),
+                IsPublished = true,
+                TestCases =
+                [
+                    new TestCase { Input = "{\"a\": 1, \"b\": 2, \"c\": 3}",  ExpectedOutput = "1:a\n2:b\n3:c",            IsHidden = false, OrderIndex = 0, Description = "String to int" },
+                    new TestCase { Input = "{\"x\": \"hello\"}",               ExpectedOutput = "hello:x",                   IsHidden = false, OrderIndex = 1, Description = "Single entry" },
+                    new TestCase { Input = "{\"name\": \"age\", \"city\": \"zip\"}", ExpectedOutput = "age:name\nzip:city",  IsHidden = false, OrderIndex = 2, Description = "String to string" },
+                    new TestCase { Input = "{\"a\": 10, \"b\": 20, \"c\": 30, \"d\": 40}", ExpectedOutput = "10:a\n20:b\n30:c\n40:d", IsHidden = true, OrderIndex = 3, Description = "Four entries" },
+                    new TestCase { Input = "{\"z\": 1, \"y\": 2, \"x\": 3}",  ExpectedOutput = "1:z\n2:y\n3:x",            IsHidden = true,  OrderIndex = 4, Description = "Reverse alpha keys" },
+                ]
+            },
+
+            // 39. Common Elements (Lesson 2.4 — Sets)
+            new Challenge
+            {
+                Title = "Common Elements",
+                Slug = "common-elements",
+                Description = @"# Common Elements
+
+Find all elements that appear in **both** lists. Return them sorted in ascending order.
+
+> **Lesson 2.4**: This challenge practices set operations — converting lists to sets and using intersection.
+
+## Function Signature
+```python
+def common_elements(list1: list, list2: list) -> list:
+```
+
+## Examples
+```
+common_elements([1,2,3,4,5], [3,4,5,6,7])  →  [3, 4, 5]
+common_elements([1,2], [3,4])               →  []
+common_elements([5,5,5], [5])               →  [5]
+```
+
+## Constraints
+- Result must be sorted ascending
+- No duplicates in result",
+                Difficulty = ChallengeDifficulty.Easy,
+                SupportedLanguages = ChallengeLanguage.Python,
+                IsFunction = true,
+                StarterCodePython =
+@"def common_elements(list1: list, list2: list) -> list:
+    # Hint: use set() and the & operator
+    pass",
+                StarterCodeJavaScript = null,
+                TestRunnerPython =
+@"import json
+list1 = json.loads(input())
+list2 = json.loads(input())
+result = common_elements(list1, list2)
+print("" "".join(str(x) for x in result) if result else ""empty"")",
+                TestRunnerJavaScript = null,
+                Tags = JsonSerializer.Serialize(new[] { "python", "sets", "intersection", "python-course-ch2" }),
+                IsPublished = true,
+                TestCases =
+                [
+                    new TestCase { Input = "[1,2,3,4,5]\n[3,4,5,6,7]",  ExpectedOutput = "3 4 5",     IsHidden = false, OrderIndex = 0, Description = "Overlap" },
+                    new TestCase { Input = "[1,2]\n[3,4]",               ExpectedOutput = "empty",     IsHidden = false, OrderIndex = 1, Description = "No common" },
+                    new TestCase { Input = "[5,5,5]\n[5]",               ExpectedOutput = "5",         IsHidden = false, OrderIndex = 2, Description = "Duplicates" },
+                    new TestCase { Input = "[10,20,30,40,50]\n[25,30,35,40,45,50]", ExpectedOutput = "30 40 50", IsHidden = true, OrderIndex = 3, Description = "Larger lists" },
+                    new TestCase { Input = "[1,1,2,2,3,3]\n[2,2,3,3,4,4]", ExpectedOutput = "2 3",    IsHidden = true,  OrderIndex = 4, Description = "Many dupes" },
+                ]
+            },
+
+            // 40. Even Squares (Lesson 2.5 — Comprehensions)
+            new Challenge
+            {
+                Title = "Even Squares",
+                Slug = "even-squares",
+                Description = @"# Even Squares
+
+Return the **squares** of all **even** numbers from 1 to `n` (inclusive).
+
+> **Lesson 2.5**: This challenge practices list comprehensions — the Pythonic way to filter and transform data in one line.
+
+## Function Signature
+```python
+def even_squares(n: int) -> list[int]:
+```
+
+## Examples
+```
+even_squares(10)  →  [4, 16, 36, 64, 100]
+even_squares(6)   →  [4, 16, 36]
+even_squares(1)   →  []
+```
+
+## Constraints
+- 1 ≤ n ≤ 100
+- Use a list comprehension for a Pythonic solution!",
+                Difficulty = ChallengeDifficulty.Easy,
+                SupportedLanguages = ChallengeLanguage.Python,
+                IsFunction = true,
+                StarterCodePython =
+@"def even_squares(n: int) -> list[int]:
+    # Hint: [expression for x in range(...) if condition]
+    pass",
+                StarterCodeJavaScript = null,
+                TestRunnerPython =
+@"n = int(input())
+result = even_squares(n)
+print("" "".join(str(x) for x in result) if result else ""empty"")",
+                TestRunnerJavaScript = null,
+                Tags = JsonSerializer.Serialize(new[] { "python", "comprehensions", "lists", "python-course-ch2" }),
+                IsPublished = true,
+                TestCases =
+                [
+                    new TestCase { Input = "10",  ExpectedOutput = "4 16 36 64 100",                 IsHidden = false, OrderIndex = 0, Description = "n=10" },
+                    new TestCase { Input = "6",   ExpectedOutput = "4 16 36",                        IsHidden = false, OrderIndex = 1, Description = "n=6" },
+                    new TestCase { Input = "1",   ExpectedOutput = "empty",                          IsHidden = false, OrderIndex = 2, Description = "n=1" },
+                    new TestCase { Input = "2",   ExpectedOutput = "4",                              IsHidden = true,  OrderIndex = 3, Description = "n=2" },
+                    new TestCase { Input = "20",  ExpectedOutput = "4 16 36 64 100 144 196 256 324 400", IsHidden = true, OrderIndex = 4, Description = "n=20" },
+                ]
+            },
+
+            // 41. Group by First Letter (Lesson 2.3+2.5 — Dicts + Comprehensions)
+            new Challenge
+            {
+                Title = "Group by First Letter",
+                Slug = "group-by-first",
+                Description = @"# Group by First Letter
+
+Group a list of words by their first letter (lowercased). Return a dictionary where each key is a letter and the value is a sorted list of words starting with that letter.
+
+> **Lesson 2.3 + 2.5**: This challenge combines dictionaries and comprehensions — building a dict with lists as values.
+
+## Function Signature
+```python
+def group_by_first(words: list[str]) -> dict:
+```
+
+## Examples
+```
+group_by_first([""apple"", ""banana"", ""avocado"", ""blueberry"", ""cherry""])
+→  {""a"": [""apple"", ""avocado""], ""b"": [""banana"", ""blueberry""], ""c"": [""cherry""]}
+```
+
+## Output Format
+Print each group on its own line: `letter:word1,word2,...` sorted by letter.
+
+## Constraints
+- Words are lowercase
+- At least 1 word",
+                Difficulty = ChallengeDifficulty.Easy,
+                SupportedLanguages = ChallengeLanguage.Python,
+                IsFunction = true,
+                StarterCodePython =
+@"def group_by_first(words: list[str]) -> dict:
+    # Hint: iterate words, use setdefault() or defaultdict
+    pass",
+                StarterCodeJavaScript = null,
+                TestRunnerPython =
+@"import json
+words = json.loads(input())
+result = group_by_first(words)
+for k in sorted(result.keys()):
+    print(f""{k}:{"","".join(sorted(result[k]))}"")",
+                TestRunnerJavaScript = null,
+                Tags = JsonSerializer.Serialize(new[] { "python", "dictionaries", "comprehensions", "grouping", "python-course-ch2" }),
+                IsPublished = true,
+                TestCases =
+                [
+                    new TestCase { Input = "[\"apple\", \"banana\", \"avocado\", \"blueberry\", \"cherry\"]", ExpectedOutput = "a:apple,avocado\nb:banana,blueberry\nc:cherry", IsHidden = false, OrderIndex = 0, Description = "Fruits" },
+                    new TestCase { Input = "[\"hello\"]",                                                       ExpectedOutput = "h:hello",                                      IsHidden = false, OrderIndex = 1, Description = "Single word" },
+                    new TestCase { Input = "[\"cat\", \"car\", \"dog\", \"dove\", \"cow\"]",                    ExpectedOutput = "c:car,cat,cow\nd:dog,dove",                    IsHidden = false, OrderIndex = 2, Description = "Mixed" },
+                    new TestCase { Input = "[\"zen\", \"zoo\", \"zero\", \"alpha\"]",                           ExpectedOutput = "a:alpha\nz:zen,zero,zoo",                      IsHidden = true,  OrderIndex = 3, Description = "Z words" },
+                    new TestCase { Input = "[\"a\", \"b\", \"c\", \"d\", \"e\"]",                               ExpectedOutput = "a:a\nb:b\nc:c\nd:d\ne:e",                     IsHidden = true,  OrderIndex = 4, Description = "Single chars" },
+                ]
+            },
         ];
     }
 }

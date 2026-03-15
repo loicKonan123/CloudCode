@@ -124,8 +124,44 @@ export default function CourseDetailPage() {
               </div>
             </aside>
 
-            {/* Challenge list */}
+            {/* Lessons + Challenges */}
             <div className="flex-1">
+              {/* Lessons section */}
+              {course.lessons && course.lessons.length > 0 && (
+                <>
+                  <h2 className="text-lg font-bold text-white mb-4">
+                    {course.lessons.length} Lesson{course.lessons.length !== 1 ? 's' : ''}
+                  </h2>
+                  <div className="space-y-3 mb-8">
+                    {course.lessons.map((lesson, idx) => (
+                      <button
+                        key={lesson.id}
+                        onClick={() => router.push(`/courses/${slug}/lessons/${lesson.slug}`)}
+                        className="w-full text-left bg-slate-800/30 border border-slate-800 rounded-xl px-5 py-4 hover:border-[#3caff6]/30 hover:bg-slate-800/50 transition-all group flex items-center gap-4"
+                      >
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0 bg-[#3caff6]/10 text-[#3caff6]">
+                          {idx + 1}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="font-semibold text-white group-hover:text-[#3caff6] transition-colors text-sm">
+                            {lesson.title}
+                          </span>
+                          {lesson.hasChallenge && (
+                            <span className="ml-2 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400">
+                              Exercise
+                            </span>
+                          )}
+                        </div>
+                        <svg className="w-4 h-4 text-slate-600 group-hover:text-[#3caff6] shrink-0 group-hover:translate-x-0.5 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {/* Challenges section */}
               <h2 className="text-lg font-bold text-white mb-4">
                 {total} Challenge{total !== 1 ? 's' : ''}
               </h2>

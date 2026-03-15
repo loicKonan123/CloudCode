@@ -29,6 +29,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<ChallengeComment> ChallengeComments => Set<ChallengeComment>();
     public DbSet<Course> Courses => Set<Course>();
     public DbSet<CourseChallenge> CourseChallenges => Set<CourseChallenge>();
+    public DbSet<Lesson> Lessons => Set<Lesson>();
     public DbSet<VsMatch> VsMatches => Set<VsMatch>();
     public DbSet<VsRank> VsRanks => Set<VsRank>();
     public DbSet<QuizQuestion> QuizQuestions => Set<QuizQuestion>();

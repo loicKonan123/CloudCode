@@ -27,7 +27,7 @@
 
 CloudCode est une **plateforme de coding compétitif** style LeetCode, avec :
 
-- **Challenges de code** : 55 challenges en mode fonction (Python + JavaScript), testés automatiquement
+- **Challenges de code** : 61 challenges en mode fonction (Python + JavaScript), testés automatiquement
 - **Mode VS** : 1v1 en temps réel avec système ELO
 - **Cours** : Parcours d'apprentissage guidé
 - **Classement** : Leaderboard global et par challenge
@@ -189,10 +189,18 @@ UserProgress (clé composite UserId+ChallengeId)
 Courses (7 champs)
 ├── Id, Title, Slug, Description
 ├── Language, OrderIndex, IsPublished
-└── → CourseChallenges (1-N)
+├── → CourseChallenges (1-N)
+└── → Lessons (1-N)
 
 CourseChallenges
 ├── CourseId, ChallengeId, OrderIndex
+
+Lessons (10 champs)
+├── Id, CourseId, Title, Slug (unique par cours)
+├── Content (markdown), OrderIndex
+├── IsPublished, ChallengeId? (lien optionnel)
+├── CreatedAt / UpdatedAt
+└── FK: Course (Cascade), Challenge (SetNull)
 
 VsMatches (14 champs)
 ├── Id, Player1Id, Player2Id, ChallengeId, WinnerId?
@@ -312,6 +320,10 @@ Challenge en mode IsFunction=true
 
 **ChallengeSeeder** : s'exécute au démarrage de l'app, upsert par slug (met à jour les existants, ajoute les nouveaux).
 
+**CourseSeeder** : per-slug — ne crée un cours que si son slug n'existe pas encore. Permet d'ajouter de nouveaux cours sans écraser les existants.
+
+**LessonSeeder** : per-course — ne crée les leçons d'un cours que si ce cours n'a aucune leçon. 14 leçons markdown (7 Ch1 + 7 Ch2) avec challenges liés.
+
 ### API (CloudCode.API)
 
 **SignalR Hubs** :
@@ -369,12 +381,17 @@ Challenge en mode IsFunction=true
 | Méthode | Route | Auth | Description |
 |---|---|---|---|
 | GET | `/courses` | ✓ | Liste des cours publiés |
-| GET | `/courses/{slug}` | ✓ | Détail cours + challenges (avec isSolved) |
+| GET | `/courses/{slug}` | ✓ | Détail cours + challenges + lessons |
+| GET | `/courses/{slug}/lessons` | ✓ | Liste des leçons d'un cours |
+| GET | `/courses/{slug}/lessons/{lessonSlug}` | ✓ | Contenu markdown d'une leçon (avec prev/next) |
 | GET | `/admin/courses` | Admin | Tous les cours |
 | POST | `/admin/courses` | Admin | Créer |
 | PUT | `/admin/courses/{id}` | Admin | Modifier |
 | DELETE | `/admin/courses/{id}` | Admin | Supprimer |
 | POST | `/admin/courses/{id}/publish` | Admin | Publier/dépublier |
+| POST | `/admin/courses/{id}/lessons` | Admin | Créer une leçon |
+| PUT | `/admin/courses/{id}/lessons/{lessonId}` | Admin | Modifier une leçon |
+| DELETE | `/admin/courses/{id}/lessons/{lessonId}` | Admin | Supprimer une leçon |
 
 ### VS Mode (`/api/vs`)
 
@@ -460,6 +477,7 @@ Challenge en mode IsFunction=true
 |---|---|---|
 | GET | `/admin/users` | Tous les utilisateurs |
 | POST | `/admin/users/{id}/toggle-admin` | Donner/retirer admin |
+| POST | `/admin/users/{id}/toggle-premium` | Activer/désactiver premium manuellement |
 | DELETE | `/admin/users/{id}` | Supprimer un user et toutes ses données (cascade SQL raw + PRAGMA FK OFF) |
 
 ---
@@ -477,7 +495,8 @@ Challenge en mode IsFunction=true
 | `/challenges/[slug]` | `app/challenges/[slug]/page.tsx` | IDE challenge (éditeur Monaco, run/submit, résultats, timer, historique) |
 | `/leaderboard` | `app/leaderboard/page.tsx` | Classement global |
 | `/courses` | `app/courses/page.tsx` | Liste des cours |
-| `/courses/[slug]` | `app/courses/[slug]/page.tsx` | Cours avec liste de challenges et progression |
+| `/courses/[slug]` | `app/courses/[slug]/page.tsx` | Cours avec liste de leçons, challenges et progression |
+| `/courses/[slug]/lessons/[lessonSlug]` | Lesson page | Leçon markdown avec syntax highlighting, navigation prev/next, challenge lié |
 | `/vs` | `app/vs/page.tsx` | Accueil VS mode (ELO, recherche adversaire, historique) |
 | `/vs/[matchId]` | `app/vs/[matchId]/page.tsx` | Match en cours (IDE dual, timer, résultats temps réel) |
 | `/admin/challenges` | Admin challenges | Tableau de bord challenges |
@@ -519,7 +538,7 @@ Persisté dans `localStorage` (accessToken, refreshToken).
 | `vsApi` | getMyRank, getRank, getLeaderboard, getMatch, getHistory, submit, forfeit |
 | `profileApi` | getMyProfile, updateMyProfile, getPublicProfile(username) |
 | `formattingApi` | format(code, language) |
-| `adminUsersApi` | getAll, toggleAdmin, deleteUser |
+| `adminUsersApi` | getAll, toggleAdmin, togglePremium, deleteUser |
 
 **Intercepteurs Axios** :
 - Request → injecte `Authorization: Bearer {token}`
@@ -531,7 +550,7 @@ Persisté dans `localStorage` (accessToken, refreshToken).
 
 ### ✅ Challenges (COMPLET)
 
-- **55 challenges** en base de données, tous publiés (31 Easy, 17 Medium, 7 Hard)
+- **67 challenges** en base de données, tous publiés (37 Easy, 17 Medium, 7 Hard)
 - Format fonction LeetCode : l'user écrit uniquement la fonction
 - Python + JavaScript supportés (la plupart supportent les deux)
 - Test cases visibles (exemples) + cachés (soumission complète)
@@ -564,6 +583,7 @@ Persisté dans `localStorage` (accessToken, refreshToken).
 | Scheduling | Job Scheduling |
 | Binary Search | Binary Search, Median Two Sorted Arrays |
 | Miscellaneous | Valid Parentheses, Flatten List, Max Element |
+| Python Course Ch2 | List Statistics, Sort by Score, Invert Dictionary, Common Elements, Even Squares, Group by First Letter |
 
 ### ✅ Quiz Mode (COMPLET)
 
@@ -592,7 +612,9 @@ Persisté dans `localStorage` (accessToken, refreshToken).
 
 ### ✅ Cours (COMPLET)
 
-- Cours Python et JavaScript
+- **3 cours Python** : Beginner Ch1 (Fundamentals, 7 leçons, 6 challenges), Beginner Ch2 (Data Structures, 7 leçons, 6 challenges), Intermediate (Data Model, 4 challenges)
+- Leçons markdown avec rendu riche (syntax highlighting, code blocks, tables, blockquotes)
+- Navigation prev/next entre leçons, challenge lié optionnel par leçon
 - Challenges ordonnés dans chaque cours
 - Progression : isSolved par challenge
 - Admin : créer, modifier, ordonner, publier/dépublier
@@ -666,7 +688,7 @@ Persisté dans `localStorage` (accessToken, refreshToken).
 
 - Tableau de bord challenges : créer, modifier, publier, supprimer
 - Tableau de bord cours : idem
-- Gestion utilisateurs : liste, donner/retirer les droits admin, **supprimer un user** (suppression en cascade via EF Core RemoveRange — VsMatches via raw SQL car colonne manquante en DB)
+- Gestion utilisateurs : liste, donner/retirer les droits admin, **activer/désactiver premium manuellement**, **supprimer un user** (suppression en cascade via EF Core RemoveRange — VsMatches via raw SQL car colonne manquante en DB)
 - Dashboard `/admin` : KPIs (users, soumissions, challenges, VS matches), graphique 14 jours, top challenges
 - Seeder : relancer l'injection des challenges depuis l'API
 
@@ -688,10 +710,10 @@ Persisté dans `localStorage` (accessToken, refreshToken).
 
 | Catégorie | Détail |
 |---|---|
-| **Challenges** | 51 challenges (Easy/Medium/Hard), mode fonction, Python + JS, hints, solution officielle, streak, challenge du jour, leaderboard |
+| **Challenges** | 67 challenges (Easy/Medium/Hard), mode fonction, Python + JS, hints, solution officielle, streak, challenge du jour, leaderboard |
 | **VS Mode** | Matchmaking ELO temps réel, SignalR, historique, classement |
 | **Quiz** | Solo (10 questions, timer, score) + VS 1v1 (SignalR, 5 questions) |
-| **Cours** | Parcours Python + JS avec leçons et exercices |
+| **Cours** | 3 parcours Python avec **14 leçons markdown** + exercices. Ch1 Fundamentals (7 leçons, 6 challenges), Ch2 Data Structures (7 leçons, 6 challenges), Intermediate Data Model (4 challenges). Entité `Lesson` (contenu markdown, challenge lié, navigation prev/next) |
 | **Premium / Stripe** | Checkout Session, webhooks, annulation, gating Courses/Quiz/VS/Hard challenges |
 | **Profil** | Stats, heatmap, badges, profil public `/u/{username}` |
 | **Auth** | Email/password, Google Sign-In (Firebase), reset password, email vérification |
@@ -704,11 +726,11 @@ Persisté dans `localStorage` (accessToken, refreshToken).
 
 | # | Quoi | Où | Effort |
 |---|---|---|---|
-| 1 | **Badge Premium + bouton annuler** sur `/profile` | `frontend/src/app/profile/page.tsx` | 1h |
-| 2 | **Toggle premium admin** dans le panel admin (activer/désactiver pour un user) | `AdminUsersController` + page admin | 2h |
+| ~~1~~ | ~~**Badge Premium + bouton annuler** sur `/profile`~~ | ✅ Fait | — |
+| ~~2~~ | ~~**Toggle premium admin** dans le panel admin~~ | ✅ Fait (`POST /api/admin/users/{id}/toggle-premium`) | — |
 | 3 | **Appliquer la migration** `AddPremiumToUsers` sur la DB de prod | `dotnet ef database update` | 5min |
 | 4 | **Vérifier domaine Resend** (DNS) pour envoyer des emails à n'importe qui | resend.com → Domains | 30min |
-| 5 | **Secrets hors du code** — JWT, Resend, Stripe dans variables d'env | `appsettings.json` → env vars | 1h |
+| ~~5~~ | ~~**Secrets hors du code**~~ | ✅ Fait — `appsettings.json` vidé, secrets dans `appsettings.Development.json` (dev) et env vars (prod) | — |
 
 ---
 
@@ -745,19 +767,29 @@ Persisté dans `localStorage` (accessToken, refreshToken).
 □ 2. Créer compte Railway → déployer backend .NET
 □ 3. Créer DB PostgreSQL sur Railway (ou garder SQLite au début)
 □ 4. Appliquer toutes les migrations EF Core sur la DB prod
-□ 5. Configurer variables d'environnement sur Railway :
-      Jwt__SecretKey=<32+ chars aléatoires>
-      Resend__ApiKey=re_xxx
-      Stripe__SecretKey=sk_live_xxx
-      Stripe__PriceId=price_xxx
-      Stripe__WebhookSecret=whsec_xxx
-      App__FrontendUrl=https://ton-domaine.com
+□ 5. Configurer variables d'environnement sur Railway (voir section Variables d'environnement ci-dessous)
 □ 6. Déployer frontend sur Vercel → connecter au backend Railway
 □ 7. Configurer domaine custom sur Railway + Vercel
 □ 8. Créer webhook Stripe prod → URL : https://api.ton-domaine.com/api/premium/webhook
 □ 9. Tester checkout complet avec carte live $0,50
 □ 10. Activer HSTS dans Program.cs
 ```
+
+### Variables d'environnement (production)
+
+En production, .NET lit les variables d'environnement avec `__` comme séparateur de section.
+
+| Variable d'env | Config JSON équivalente | Valeur |
+|---|---|---|
+| `Jwt__SecretKey` | `Jwt:SecretKey` | Chaîne aléatoire 64+ caractères |
+| `Resend__ApiKey` | `Resend:ApiKey` | `re_xxxxx` (depuis resend.com) |
+| `Stripe__SecretKey` | `Stripe:SecretKey` | `sk_live_xxxxx` |
+| `Stripe__PriceId` | `Stripe:PriceId` | `price_xxxxx` |
+| `Stripe__WebhookSecret` | `Stripe:WebhookSecret` | `whsec_xxxxx` |
+| `App__FrontendUrl` | `App:FrontendUrl` | `https://ton-domaine.com` |
+| `ConnectionStrings__DefaultConnection` | SQLite ou PostgreSQL | `Data Source=CloudCode.db` ou `Host=...` |
+
+**Développement local** : les secrets dev sont dans `src/CloudCode.API/appsettings.Development.json` (JWT key + Resend key). Ce fichier est commité — n'y mettre que des clés de dev/test, jamais les clés live.
 
 ---
 
@@ -1197,8 +1229,9 @@ cd src/CloudCode.API
 dotnet run
 # Démarre sur http://localhost:5072
 # Les migrations sont appliquées automatiquement au démarrage
-# Le seeder injecte les 25 challenges de base au démarrage (upsert par slug)
-# Les 30 challenges supplémentaires ont été ajoutés directement en DB via script Python
+# Le seeder injecte les 35 challenges de base au démarrage (upsert par slug)
+# Les 26 challenges supplémentaires ont été ajoutés directement en DB via script Python
+# Le CourseSeeder crée 2 cours Python avec leurs challenges associés
 ```
 
 ### Frontend

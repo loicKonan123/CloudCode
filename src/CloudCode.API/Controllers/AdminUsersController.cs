@@ -31,6 +31,7 @@ public class AdminUsersController : BaseApiController
                 Email = u.Email,
                 Username = u.Username,
                 IsAdmin = u.IsAdmin,
+                IsPremium = u.IsPremium && (u.PremiumExpiresAt == null || u.PremiumExpiresAt > DateTime.UtcNow),
                 CreatedAt = u.CreatedAt
             })
             .ToListAsync();
@@ -60,6 +61,38 @@ public class AdminUsersController : BaseApiController
             Email = user.Email,
             Username = user.Username,
             IsAdmin = user.IsAdmin,
+            IsPremium = user.IsPremiumActive,
+            CreatedAt = user.CreatedAt,
+        });
+    }
+
+    [HttpPost("{id:guid}/toggle-premium")]
+    public async Task<ActionResult<AdminUserDto>> TogglePremium(Guid id)
+    {
+        var user = await _db.Users.FindAsync(id);
+        if (user == null) return NotFound();
+
+        if (user.IsPremium)
+        {
+            user.IsPremium = false;
+            user.PremiumExpiresAt = null;
+            user.StripeSubscriptionId = null;
+        }
+        else
+        {
+            user.IsPremium = true;
+            user.PremiumExpiresAt = DateTime.UtcNow.AddYears(100); // manual premium
+        }
+        user.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+
+        return Ok(new AdminUserDto
+        {
+            Id = user.Id,
+            Email = user.Email,
+            Username = user.Username,
+            IsAdmin = user.IsAdmin,
+            IsPremium = user.IsPremiumActive,
             CreatedAt = user.CreatedAt
         });
     }
@@ -159,5 +192,6 @@ public class AdminUserDto
     public string Email { get; set; } = string.Empty;
     public string Username { get; set; } = string.Empty;
     public bool IsAdmin { get; set; }
+    public bool IsPremium { get; set; }
     public DateTime CreatedAt { get; set; }
 }

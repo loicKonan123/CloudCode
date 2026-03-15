@@ -54,6 +54,7 @@ public static class DependencyInjection
         services.AddScoped<IChallengeService, ChallengeService>();
         services.AddScoped<IJudgeService, JudgeService>();
         services.AddScoped<ICourseService, CourseService>();
+        services.AddScoped<ILessonService, LessonService>();
         services.AddScoped<IVsService, VsService>();
         services.AddSingleton<IMatchmakingService, MatchmakingService>();
         services.AddScoped<IQuizService, QuizService>();

@@ -27,6 +27,7 @@ public class CourseService : ICourseService
             .OrderBy(c => c.OrderIndex)
             .ThenBy(c => c.Title)
             .Include(c => c.CourseChallenges)
+            .Include(c => c.Lessons)
             .ToListAsync();
 
         return courses.Select(c => new CourseListItemDto
@@ -37,6 +38,7 @@ public class CourseService : ICourseService
             Description = c.Description,
             Language = c.Language,
             ChallengeCount = c.CourseChallenges.Count,
+            LessonCount = c.Lessons.Count(l => l.IsPublished),
             IsPublished = c.IsPublished,
             OrderIndex = c.OrderIndex
         }).ToList();
@@ -47,6 +49,8 @@ public class CourseService : ICourseService
         var course = await _db.Courses
             .Include(c => c.CourseChallenges)
                 .ThenInclude(cc => cc.Challenge)
+            .Include(c => c.Lessons.OrderBy(l => l.OrderIndex))
+                .ThenInclude(l => l.Challenge)
             .FirstOrDefaultAsync(c => c.Slug == slug);
 
         if (course == null) return null;
@@ -84,7 +88,20 @@ public class CourseService : ICourseService
             Language = course.Language,
             IsPublished = course.IsPublished,
             OrderIndex = course.OrderIndex,
-            Challenges = challenges
+            Challenges = challenges,
+            Lessons = course.Lessons
+                .Where(l => l.IsPublished)
+                .Select(l => new LessonListItemDto
+                {
+                    Id = l.Id,
+                    Title = l.Title,
+                    Slug = l.Slug,
+                    OrderIndex = l.OrderIndex,
+                    IsPublished = l.IsPublished,
+                    HasChallenge = l.ChallengeId.HasValue,
+                    ChallengeSlug = l.Challenge?.Slug
+                }).ToList(),
+            LessonCount = course.Lessons.Count(l => l.IsPublished)
         };
     }
 
@@ -94,6 +111,7 @@ public class CourseService : ICourseService
             .OrderBy(c => c.Language)
             .ThenBy(c => c.OrderIndex)
             .Include(c => c.CourseChallenges)
+            .Include(c => c.Lessons)
             .ToListAsync();
 
         return courses.Select(c => new CourseListItemDto
@@ -104,6 +122,7 @@ public class CourseService : ICourseService
             Description = c.Description,
             Language = c.Language,
             ChallengeCount = c.CourseChallenges.Count,
+            LessonCount = c.Lessons.Count(l => l.IsPublished),
             IsPublished = c.IsPublished,
             OrderIndex = c.OrderIndex
         }).ToList();

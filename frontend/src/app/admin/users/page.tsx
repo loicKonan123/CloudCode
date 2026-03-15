@@ -13,6 +13,7 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [togglingPremiumId, setTogglingPremiumId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -50,6 +51,20 @@ export default function AdminUsersPage() {
       alert('Error while changing role.');
     } finally {
       setTogglingId(null);
+    }
+  };
+
+  const handleTogglePremium = async (u: AdminUser) => {
+    const action = u.isPremium ? 'remove premium from' : 'grant premium to';
+    if (!confirm(`Do you want to ${action} "${u.username}"?`)) return;
+    setTogglingPremiumId(u.id);
+    try {
+      const res = await adminUsersApi.togglePremium(u.id);
+      setUsers(prev => prev.map(x => x.id === u.id ? res.data : x));
+    } catch {
+      alert('Error while changing premium status.');
+    } finally {
+      setTogglingPremiumId(null);
     }
   };
 
@@ -120,10 +135,11 @@ export default function AdminUsersPage() {
         ) : (
           <div className="rounded-xl border border-slate-800 overflow-hidden">
             {/* Table header */}
-            <div className="hidden md:grid grid-cols-[2fr_2fr_1fr_180px] gap-4 px-6 py-3 bg-slate-800/50 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-800">
+            <div className="hidden md:grid grid-cols-[2fr_2fr_1fr_1fr_220px] gap-4 px-6 py-3 bg-slate-800/50 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-800">
               <span>User</span>
               <span>Email</span>
               <span>Role</span>
+              <span>Premium</span>
               <span className="text-right">Actions</span>
             </div>
 
@@ -133,7 +149,7 @@ export default function AdminUsersPage() {
               users.map((u, i) => (
                 <div
                   key={u.id}
-                  className={`grid grid-cols-1 md:grid-cols-[2fr_2fr_1fr_180px] gap-4 px-6 py-4 items-center transition-colors hover:bg-slate-800/30 ${
+                  className={`grid grid-cols-1 md:grid-cols-[2fr_2fr_1fr_1fr_220px] gap-4 px-6 py-4 items-center transition-colors hover:bg-slate-800/30 ${
                     i !== users.length - 1 ? 'border-b border-slate-800' : ''
                   } ${u.id === user?.id ? 'bg-[#3caff6]/5' : ''}`}
                 >
@@ -164,8 +180,19 @@ export default function AdminUsersPage() {
                     </span>
                   </div>
 
+                  {/* Premium badge */}
+                  <div>
+                    <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded ${
+                      u.isPremium
+                        ? 'bg-yellow-400/10 text-yellow-400'
+                        : 'bg-slate-700 text-slate-500'
+                    }`}>
+                      {u.isPremium ? 'Premium' : 'Free'}
+                    </span>
+                  </div>
+
                   {/* Actions */}
-                  <div className="flex items-center gap-2 justify-start md:justify-end">
+                  <div className="flex items-center gap-2 justify-start md:justify-end flex-wrap">
                     {/* Promote / Demote */}
                     <button
                       onClick={() => handleToggleAdmin(u)}
@@ -178,6 +205,20 @@ export default function AdminUsersPage() {
                       {togglingId === u.id ? (
                         <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
                       ) : u.isAdmin ? 'Demote' : 'Promote'}
+                    </button>
+
+                    {/* Toggle Premium */}
+                    <button
+                      onClick={() => handleTogglePremium(u)}
+                      disabled={togglingPremiumId === u.id}
+                      title={u.isPremium ? 'Remove premium' : 'Grant premium'}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors disabled:opacity-40 ${
+                        u.isPremium ? 'bg-yellow-400/10 text-yellow-400 hover:bg-yellow-400/20' : 'bg-yellow-400/10 text-yellow-600 hover:bg-yellow-400/20'
+                      }`}
+                    >
+                      {togglingPremiumId === u.id ? (
+                        <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                      ) : u.isPremium ? 'Revoke' : 'Grant'}
                     </button>
 
                     {/* Delete */}

@@ -11,4 +11,5 @@ public class Course : BaseEntity
     public int OrderIndex { get; set; }
     public bool IsPublished { get; set; }
     public virtual ICollection<CourseChallenge> CourseChallenges { get; set; } = new List<CourseChallenge>();
+    public virtual ICollection<Lesson> Lessons { get; set; } = new List<Lesson>();
 }
