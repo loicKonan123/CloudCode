@@ -22,6 +22,11 @@ public static class CourseSeeder
             "common-elements", "even-squares", "group-by-first",
             // Chapter 6 — Intermediate (Fluent Python)
             "vector-add", "matrix-flatten", "word-frequency", "caesar-cipher",
+            // JS Ch1
+            "js-greet", "js-is-even", "js-count-vowels",
+            "js-fizzbuzz-single", "js-sum-array", "js-reverse-string",
+            // JS Ch2
+            "js-array-max", "js-count-words", "js-unique", "js-flatten-once",
         };
 
         var allChallenges = await db.Challenges
@@ -104,6 +109,54 @@ This course is for developers who know Python syntax but still write code that l
                     CreatedAt = DateTime.UtcNow
                 },
                 new[] { "vector-add", "matrix-flatten", "word-frequency", "caesar-cipher" }
+            ),
+            (
+                new Course
+                {
+                    Id = Guid.NewGuid(),
+                    Title = "JavaScript Beginner — Chapter 1: Introduction & Fundamentals",
+                    Slug = "js-beginner-ch1",
+                    Description = @"## Level 1: Beginner — Chapter 1
+
+This course covers the essential basics of JavaScript: variables, types, operators, strings, conditionals, loops, and an introduction to functions.
+
+### Lessons covered
+1. **First Steps with JavaScript** — console.log(), Node.js vs browser
+2. **Variables & Data Types** — var, let, const, primitive types, typeof
+3. **Operators & Expressions** — arithmetic, comparison (=== vs ==), logical
+4. **Strings** — String methods, template literals
+5. **Conditionals** — if/else, ternary, switch, truthy/falsy
+6. **Loops & Iteration** — for, while, for...of, break, continue
+7. **Introduction to Functions** — function, arrow functions, return",
+                    Language = 2, // JavaScript
+                    OrderIndex = 4,
+                    IsPublished = true,
+                    CreatedAt = DateTime.UtcNow
+                },
+                new[] { "js-greet", "js-is-even", "js-count-vowels",
+                        "js-fizzbuzz-single", "js-sum-array", "js-reverse-string" }
+            ),
+            (
+                new Course
+                {
+                    Id = Guid.NewGuid(),
+                    Title = "JavaScript Beginner — Chapter 2: Essential Data Structures",
+                    Slug = "js-beginner-ch2",
+                    Description = @"## Level 1: Beginner — Chapter 2
+
+Master JavaScript's native data structures: arrays, objects, Map/Set, and modern destructuring syntax.
+
+### Lessons covered
+1. **Arrays** — mutation methods, functional methods, spread
+2. **Objects** — literals, access, Object.keys/values/entries, spread
+3. **Map and Set** — Map vs object, Set for unique values
+4. **Destructuring & Spread/Rest** — array/object destructuring, rest params",
+                    Language = 2, // JavaScript
+                    OrderIndex = 5,
+                    IsPublished = true,
+                    CreatedAt = DateTime.UtcNow
+                },
+                new[] { "js-array-max", "js-count-words", "js-unique", "js-flatten-once" }
             ),
         };
 

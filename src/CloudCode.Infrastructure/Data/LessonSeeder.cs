@@ -14,12 +14,17 @@ public static class LessonSeeder
         // Get all challenge IDs we need for linking
         var challengeSlugs = new[]
         {
-            // Ch1
+            // Python Ch1
             "temperature-converter", "simple-calculator", "greeting-format",
             "grade-classifier", "sum-multiples", "countdown",
-            // Ch2
+            // Python Ch2
             "list-stats", "sort-by-score", "dict-invert",
             "common-elements", "even-squares", "group-by-first",
+            // JS Ch1
+            "js-greet", "js-is-even", "js-count-vowels",
+            "js-fizzbuzz-single", "js-sum-array", "js-reverse-string",
+            // JS Ch2
+            "js-array-max", "js-count-words", "js-unique", "js-flatten-once",
         };
 
         var challengesBySlug = await db.Challenges
@@ -29,6 +34,8 @@ public static class LessonSeeder
         // Seed each course's lessons independently — skip courses that already have lessons
         await SeedCourseIfEmpty(db, "python-beginner-ch1", challengesBySlug, GetChapter1Lessons);
         await SeedCourseIfEmpty(db, "python-beginner-ch2", challengesBySlug, GetChapter2Lessons);
+        await SeedCourseIfEmpty(db, "js-beginner-ch1", challengesBySlug, GetJsChapter1Lessons);
+        await SeedCourseIfEmpty(db, "js-beginner-ch2", challengesBySlug, GetJsChapter2Lessons);
     }
 
     private static async Task SeedCourseIfEmpty(
@@ -42,13 +49,26 @@ public static class LessonSeeder
             .FirstOrDefaultAsync(c => c.Slug == courseSlug);
 
         if (course == null) return;
-        if (course.Lessons.Count > 0) return; // Already has lessons — admin manages them
 
         var lessons = getLessons(challenges);
+        var existingBySlug = course.Lessons.ToDictionary(l => l.Slug);
+
         foreach (var seed in lessons)
         {
-            seed.CourseId = course.Id;
-            db.Lessons.Add(seed);
+            if (existingBySlug.TryGetValue(seed.Slug, out var existing))
+            {
+                // Upsert — update content in place, preserve ID
+                existing.Title = seed.Title;
+                existing.Content = seed.Content;
+                existing.OrderIndex = seed.OrderIndex;
+                existing.IsPublished = seed.IsPublished;
+                existing.ChallengeId = seed.ChallengeId;
+            }
+            else
+            {
+                seed.CourseId = course.Id;
+                db.Lessons.Add(seed);
+            }
         }
 
         await db.SaveChangesAsync();
@@ -2155,6 +2175,948 @@ first_letters = {word[0]: [w for w in words if w[0] == word[0]] for word in word
 ### Your Challenge
 
 Combine dictionaries and lists: group words by their first letter!"
+            },
+        ];
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // JS Chapter 1 — Introduction & Fundamentals
+    // ═══════════════════════════════════════════════════════════════
+
+    private static List<Lesson> GetJsChapter1Lessons(Dictionary<string, Guid> challenges)
+    {
+        return
+        [
+            // Lesson 1: First Steps with JavaScript
+            new Lesson
+            {
+                Title = "First Steps with JavaScript",
+                Slug = "js-ch1-premiers-pas",
+                OrderIndex = 0,
+                IsPublished = true,
+                Content = @"## Welcome to Chapter 1! 🟨
+
+Welcome to JavaScript! This course takes you from zero to writing your first functional scripts.
+
+### What is JavaScript?
+
+JavaScript is the **only programming language native to web browsers**. Created in 1995 by Brendan Eich, it runs:
+- **In the browser** — to make web pages interactive
+- **On the server** — with **Node.js** (what this platform uses for challenges)
+- **Everywhere** — mobile apps, IoT, games, AI...
+
+### Node.js vs Browser
+
+| Context | Access to | Example |
+|---------|-----------|---------|
+| Browser | DOM, window, fetch | Manipulate web pages |
+| Node.js | File system, processes | Scripts, APIs, servers |
+
+All challenges on this platform run in **Node.js**.
+
+### console.log()
+
+The basic way to print output:
+
+```js
+console.log('Hello, world!');
+console.log(42);
+console.log(true);
+console.log(1 + 2); // 3
+```
+
+You can log multiple values at once:
+
+```js
+console.log('Value:', 42, 'Type:', typeof 42);
+```
+
+### Comments
+
+```js
+// Single line comment
+
+/* Multi-line
+   comment */
+```
+
+### Your first script
+
+```js
+let message = 'I am coding in JavaScript!';
+console.log(message);
+```
+
+Run this in your browser (F12 → Console) or with `node file.js`."
+            },
+
+            // Lesson 2: Variables & Data Types
+            new Lesson
+            {
+                Title = "Variables & Data Types",
+                Slug = "js-ch1-variables-types",
+                OrderIndex = 1,
+                IsPublished = true,
+                Content = @"## Variables & Data Types
+
+### Declaring a variable
+
+JavaScript has three keywords to declare variables:
+
+```js
+var old = 'avoid this';    // old syntax, function scope
+let counter = 0;            // reassignable variable
+const PI = 3.14159;         // constant (cannot be reassigned)
+```
+
+**Golden rule**: use `const` by default, `let` when you need to reassign. Forget `var`.
+
+```js
+const name = 'Alice';
+let age = 25;
+age = 26; // ✅ OK
+// name = 'Bob'; // ❌ TypeError: Assignment to constant variable
+```
+
+### Primitive types
+
+JavaScript has **7 primitive types**:
+
+| Type | Example | Description |
+|------|---------|-------------|
+| `number` | `42`, `3.14`, `-7` | Integers AND decimals |
+| `string` | `'hello'`, `""world""` | Text |
+| `boolean` | `true`, `false` | True or false |
+| `null` | `null` | Intentional absence of value |
+| `undefined` | `undefined` | Declared but not initialized |
+| `symbol` | `Symbol('id')` | Unique identifier |
+| `bigint` | `9007199254740993n` | Very large integer |
+
+### The typeof operator
+
+```js
+typeof 42           // 'number'
+typeof 'hello'      // 'string'
+typeof true         // 'boolean'
+typeof undefined    // 'undefined'
+typeof null         // 'object' ← historical bug in JS!
+typeof {}           // 'object'
+typeof []           // 'object'
+typeof function(){} // 'function'
+```
+
+### Dynamic typing
+
+JavaScript is **dynamically typed**: a variable can change type.
+
+```js
+let x = 42;
+console.log(typeof x); // 'number'
+x = 'hello';
+console.log(typeof x); // 'string'
+```
+
+### Type conversion
+
+```js
+Number('42')       // 42
+Number(true)       // 1
+Number(false)      // 0
+Number('abc')      // NaN
+
+String(42)         // '42'
+String(true)       // 'true'
+
+Boolean(0)         // false
+Boolean('')        // false
+Boolean(null)      // false
+Boolean(undefined) // false
+Boolean('hello')   // true
+Boolean(1)         // true
+```"
+            },
+
+            // Lesson 3: Operators & Expressions
+            new Lesson
+            {
+                Title = "Operators & Expressions",
+                Slug = "js-ch1-operateurs",
+                OrderIndex = 2,
+                IsPublished = true,
+                Content = @"## Operators & Expressions
+
+### Arithmetic operators
+
+```js
+5 + 3   // 8   addition
+5 - 3   // 2   subtraction
+5 * 3   // 15  multiplication
+5 / 2   // 2.5 division (always decimal)
+5 % 2   // 1   modulo (remainder)
+5 ** 3  // 125 exponentiation
+```
+
+### Comparison operators
+
+```js
+5 == '5'    // true  loose equality (with coercion)
+5 === '5'   // false strict equality (type + value)
+5 != '5'    // false
+5 !== '5'   // true  ← always use !==
+5 > 3       // true
+5 >= 5      // true
+```
+
+> **Golden rule**: always use `===` and `!==` to avoid coercion surprises.
+
+### Loose equality traps
+
+```js
+0 == false         // true  😱
+'' == false        // true  😱
+null == undefined  // true  😱
+```
+
+With `===`: none of those would be `true`.
+
+### Logical operators
+
+```js
+true && false  // false  AND
+true || false  // true   OR
+!true          // false  NOT
+
+// Nullish coalescing — right side if left is null/undefined
+null ?? 'default'       // 'default'
+undefined ?? 'default'  // 'default'
+0 ?? 'default'          // 0 (0 is not null/undefined)
+```
+
+### Assignment operators
+
+```js
+let x = 10;
+x += 5;   // 15
+x -= 3;   // 12
+x *= 2;   // 24
+x /= 4;   // 6
+x %= 4;   // 2
+x **= 3;  // 8
+x++;      // 9
+x--;      // 8
+```"
+            },
+
+            // Lesson 4: Strings
+            new Lesson
+            {
+                Title = "Strings",
+                Slug = "js-ch1-strings",
+                OrderIndex = 3,
+                IsPublished = true,
+                Content = @"## Strings
+
+### Creating a string
+
+```js
+const s1 = 'single quotes';
+const s2 = ""double quotes"";
+const s3 = `backticks (template literal)`;
+```
+
+### Template Literals (ES6)
+
+Backticks let you **interpolate** variables and write multi-line strings:
+
+```js
+const name = 'Alice';
+const age = 25;
+console.log(`My name is ${name} and I am ${age} years old.`);
+
+const multiline = `Line 1
+Line 2
+Line 3`;
+```
+
+### Essential properties and methods
+
+```js
+const s = 'Hello, World!';
+
+s.length              // 13
+s.toUpperCase()       // 'HELLO, WORLD!'
+s.toLowerCase()       // 'hello, world!'
+s.trim()              // removes leading/trailing spaces
+s.includes('World')   // true
+s.startsWith('Hello') // true
+s.endsWith('!')       // true
+s.indexOf('o')        // 4 (first occurrence)
+s.lastIndexOf('o')    // 8 (last occurrence)
+
+s.replace('World', 'JS')  // 'Hello, JS!'
+s.replaceAll('l', 'L')    // 'HeLLo, WorLd!'
+
+s.slice(0, 5)    // 'Hello'
+s.slice(7)       // 'World!'
+s.slice(-6)      // 'World!'
+
+s.split(', ')    // ['Hello', 'World!']
+s.split('')      // ['H', 'e', 'l', ...]
+
+'ha'.repeat(3)        // 'hahaha'
+'5'.padStart(3, '0')  // '005'
+'5'.padEnd(3, '0')    // '500'
+
+s[0]             // 'H'
+s.charCodeAt(0)  // 72
+```
+
+### Concatenation
+
+```js
+const first = 'John';
+const last = 'Doe';
+
+// Old way
+const full1 = first + ' ' + last;
+
+// Modern way (preferred)
+const full2 = `${first} ${last}`;
+```"
+            },
+
+            // Lesson 5: Conditionals
+            new Lesson
+            {
+                Title = "Conditionals",
+                Slug = "js-ch1-conditionnelles",
+                OrderIndex = 4,
+                IsPublished = true,
+                Content = @"## Conditionals
+
+### if / else if / else
+
+```js
+const age = 18;
+
+if (age < 13) {
+    console.log('Child');
+} else if (age < 18) {
+    console.log('Teen');
+} else {
+    console.log('Adult');
+}
+```
+
+### Ternary operator
+
+Perfect for a single-line condition:
+
+```js
+const status = age >= 18 ? 'Adult' : 'Minor';
+console.log(status); // 'Adult'
+```
+
+### switch / case
+
+```js
+const day = 'monday';
+
+switch (day) {
+    case 'saturday':
+    case 'sunday':
+        console.log('Weekend!');
+        break;
+    case 'monday':
+        console.log('Start of week');
+        break;
+    default:
+        console.log('Regular day');
+}
+```
+
+> Don't forget `break`! Without it, execution ""falls through"" to the next case.
+
+### Truthy and Falsy values
+
+Every value in JavaScript is either **truthy** or **falsy** in a boolean context.
+
+**The 6 falsy values:**
+```js
+false, 0, '', null, undefined, NaN
+```
+
+**Everything else is truthy:**
+```js
+1, -1, 'hello', [], {}, function(){}
+```
+
+Examples:
+```js
+if (0)           { } // ❌ falsy — does not run
+if ('')          { } // ❌ falsy
+if ([])          { } // ✅ truthy — empty array!
+if (0 || 'JS')   { console.log('truthy'); } // ✅
+
+// Default value pattern
+function greet(name) {
+    name = name || 'stranger';
+    return `Hello, ${name}!`;
+}
+```"
+            },
+
+            // Lesson 6: Loops & Iteration
+            new Lesson
+            {
+                Title = "Loops & Iteration",
+                Slug = "js-ch1-boucles",
+                OrderIndex = 5,
+                IsPublished = true,
+                Content = @"## Loops & Iteration
+
+### Classic for loop
+
+```js
+for (let i = 0; i < 5; i++) {
+    console.log(i); // 0, 1, 2, 3, 4
+}
+
+// Count down
+for (let i = 5; i > 0; i--) {
+    console.log(i); // 5, 4, 3, 2, 1
+}
+```
+
+### while
+
+```js
+let n = 1;
+while (n <= 5) {
+    console.log(n);
+    n++;
+}
+```
+
+### do...while
+
+Runs **at least once** before checking the condition:
+
+```js
+let x = 0;
+do {
+    console.log(x);
+    x++;
+} while (x < 3); // 0, 1, 2
+```
+
+### for...of (iterate over values)
+
+The modern way to loop over arrays and strings:
+
+```js
+const fruits = ['apple', 'banana', 'cherry'];
+for (const fruit of fruits) {
+    console.log(fruit);
+}
+
+// Iterate over a string character by character
+for (const char of 'hello') {
+    console.log(char); // h, e, l, l, o
+}
+```
+
+### for...in (iterate over object keys)
+
+```js
+const person = { name: 'Alice', age: 25 };
+for (const key in person) {
+    console.log(key, ':', person[key]);
+}
+// name : Alice
+// age : 25
+```
+
+### break and continue
+
+```js
+// break — exit the loop early
+for (let i = 0; i < 10; i++) {
+    if (i === 5) break;
+    console.log(i); // 0, 1, 2, 3, 4
+}
+
+// continue — skip to next iteration
+for (let i = 0; i < 5; i++) {
+    if (i === 2) continue;
+    console.log(i); // 0, 1, 3, 4
+}
+```"
+            },
+
+            // Lesson 7: Introduction to Functions
+            new Lesson
+            {
+                Title = "Introduction to Functions",
+                Slug = "js-ch1-fonctions",
+                OrderIndex = 6,
+                IsPublished = true,
+                ChallengeId = challenges.TryGetValue("js-greet", out var jsGreetId) ? jsGreetId : null,
+                Content = @"## Introduction to Functions
+
+The challenges in this course ask you to write a **function**. Here is everything you need to get started.
+
+### Declaring a function
+
+```js
+function sayHello(name) {
+    return 'Hello, ' + name + '!';
+}
+
+console.log(sayHello('Alice')); // 'Hello, Alice!'
+```
+
+Anatomy of a function:
+- `function` — keyword
+- `sayHello` — name of the function
+- `(name)` — parameter(s)
+- `{ ... }` — function body
+- `return` — value returned (function stops here)
+
+### return
+
+Without `return`, the function returns `undefined`:
+
+```js
+function noReturn() {
+    let x = 2 + 2; // computed but never returned
+}
+console.log(noReturn()); // undefined
+
+function withReturn() {
+    return 2 + 2;
+}
+console.log(withReturn()); // 4
+```
+
+### Arrow Functions
+
+Shorter syntax, widely used in modern JavaScript:
+
+```js
+// Classic function
+function square(n) {
+    return n * n;
+}
+
+// Arrow function equivalent
+const square = (n) => {
+    return n * n;
+};
+
+// Even shorter (implicit return on one line)
+const square = n => n * n;
+
+console.log(square(5)); // 25
+```
+
+### Multiple parameters
+
+```js
+function add(a, b) {
+    return a + b;
+}
+
+console.log(add(3, 7)); // 10
+```
+
+### Practical examples
+
+```js
+function isEven(n) {
+    return n % 2 === 0;
+}
+
+function greet(name) {
+    return `Hello, ${name}!`;
+}
+
+function sumArray(arr) {
+    let total = 0;
+    for (const n of arr) {
+        total += n;
+    }
+    return total;
+}
+```
+
+### Your first challenge
+
+Write the function `greet` that takes a name and returns `Hello, {name}!`.
+
+```js
+function greet(name) {
+    // Your code here
+}
+```"
+            },
+        ];
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // JS Chapter 2 — Essential Data Structures
+    // ═══════════════════════════════════════════════════════════════
+
+    private static List<Lesson> GetJsChapter2Lessons(Dictionary<string, Guid> challenges)
+    {
+        return
+        [
+            // Lesson 1: Arrays
+            new Lesson
+            {
+                Title = "Arrays",
+                Slug = "js-ch2-arrays",
+                OrderIndex = 0,
+                IsPublished = true,
+                ChallengeId = challenges.TryGetValue("js-array-max", out var arrayMaxId) ? arrayMaxId : null,
+                Content = @"## Arrays
+
+An array is an **ordered list** of values. It can hold any type: numbers, strings, objects, other arrays.
+
+### Creating and accessing
+
+```js
+const fruits = ['apple', 'banana', 'cherry'];
+console.log(fruits[0]); // 'apple'
+console.log(fruits[2]); // 'cherry'
+console.log(fruits.length); // 3
+```
+
+### Mutation methods (modify in place)
+
+```js
+const arr = [1, 2, 3];
+arr.push(4);         // [1, 2, 3, 4] — add at end
+arr.pop();           // [1, 2, 3]    — remove from end
+arr.unshift(0);      // [0, 1, 2, 3] — add at start
+arr.shift();         // [1, 2, 3]    — remove from start
+arr.reverse();       // [3, 2, 1]    — reverse in place
+arr.sort();          // sorts in place (lexicographic by default)
+arr.sort((a, b) => a - b); // numeric sort ascending
+arr.splice(1, 1);    // removes 1 element at index 1
+```
+
+### Functional methods (return a new array)
+
+```js
+const nums = [1, 2, 3, 4, 5];
+
+nums.map(n => n * 2)         // [2, 4, 6, 8, 10]
+nums.filter(n => n % 2 === 0) // [2, 4]
+nums.reduce((sum, n) => sum + n, 0) // 15
+nums.slice(1, 3)             // [2, 3] (from index 1 to 3 exclusive)
+nums.flat()                  // flattens one level
+nums.concat([6, 7])          // [1, 2, 3, 4, 5, 6, 7]
+```
+
+### Search methods
+
+```js
+const arr = [10, 20, 30, 20];
+
+arr.indexOf(20)      // 1
+arr.lastIndexOf(20)  // 3
+arr.includes(30)     // true
+arr.find(n => n > 15)      // 20
+arr.findIndex(n => n > 15) // 1
+arr.some(n => n > 25)      // true
+arr.every(n => n > 5)      // true
+```
+
+### Other useful methods
+
+```js
+arr.join(', ')       // '10, 20, 30, 20'
+arr.forEach(n => console.log(n))
+
+// Spread operator
+const copy = [...arr];
+const merged = [...arr, ...otherArr];
+
+// Destructuring
+const [first, second, ...rest] = [1, 2, 3, 4];
+// first=1, second=2, rest=[3,4]
+```
+
+### Finding the max
+
+```js
+const nums = [3, 1, 4, 1, 5, 9];
+Math.max(...nums)  // 9 — spread turns array into args
+```"
+            },
+
+            // Lesson 2: Objects
+            new Lesson
+            {
+                Title = "Objects",
+                Slug = "js-ch2-objects",
+                OrderIndex = 1,
+                IsPublished = true,
+                ChallengeId = challenges.TryGetValue("js-count-words", out var countWordsId) ? countWordsId : null,
+                Content = @"## Objects
+
+An object stores **key-value pairs**. Keys are strings (or symbols), values can be anything.
+
+### Creating an object
+
+```js
+const person = {
+    name: 'Alice',
+    age: 25,
+    isAdmin: false
+};
+```
+
+### Accessing properties
+
+```js
+person.name      // 'Alice'  — dot notation
+person['age']    // 25       — bracket notation (useful with variables)
+
+const key = 'name';
+person[key]      // 'Alice'
+```
+
+### Adding, modifying, deleting
+
+```js
+person.email = 'alice@example.com'; // add
+person.age = 26;                     // modify
+delete person.isAdmin;               // delete
+```
+
+### Object methods
+
+```js
+const obj = { a: 1, b: 2, c: 3 };
+
+Object.keys(obj)    // ['a', 'b', 'c']
+Object.values(obj)  // [1, 2, 3]
+Object.entries(obj) // [['a', 1], ['b', 2], ['c', 3]]
+
+// Iterate
+for (const [key, value] of Object.entries(obj)) {
+    console.log(key, ':', value);
+}
+
+// Merge objects
+const merged = Object.assign({}, obj1, obj2);
+const merged2 = { ...obj1, ...obj2 }; // spread (preferred)
+
+// Convert entries back to object
+Object.fromEntries([['a', 1], ['b', 2]]) // { a: 1, b: 2 }
+```
+
+### Object as a map / counter
+
+A common pattern — use an object to count or group things:
+
+```js
+function countWords(str) {
+    const count = {};
+    for (const word of str.split(' ')) {
+        count[word] = (count[word] || 0) + 1;
+    }
+    return count;
+}
+
+countWords('hello world hello');
+// { hello: 2, world: 1 }
+```
+
+### Shorthand and computed properties
+
+```js
+const x = 1, y = 2;
+const point = { x, y };           // { x: 1, y: 2 }
+
+const key = 'dynamic';
+const obj = { [key]: 42 };        // { dynamic: 42 }
+```"
+            },
+
+            // Lesson 3: Map and Set
+            new Lesson
+            {
+                Title = "Map and Set",
+                Slug = "js-ch2-map-set",
+                OrderIndex = 2,
+                IsPublished = true,
+                ChallengeId = challenges.TryGetValue("js-unique", out var uniqueId) ? uniqueId : null,
+                Content = @"## Map and Set
+
+### Set — unique values
+
+A `Set` stores **unique values** in insertion order.
+
+```js
+const s = new Set([1, 2, 1, 3, 2]);
+console.log(s); // Set { 1, 2, 3 }
+s.size          // 3
+s.has(2)        // true
+s.add(4)        // Set { 1, 2, 3, 4 }
+s.delete(1)     // Set { 2, 3, 4 }
+
+// Convert back to array
+const unique = [...s]; // [2, 3, 4]
+```
+
+**Common pattern**: remove duplicates from an array:
+
+```js
+const arr = [1, 2, 1, 3, 2, 4];
+const unique = [...new Set(arr)]; // [1, 2, 3, 4]
+```
+
+### Map — key-value store
+
+A `Map` is like an object but **keys can be any type** and it maintains insertion order.
+
+```js
+const m = new Map();
+m.set('name', 'Alice');
+m.set(42, 'the answer');
+m.set(true, 'yes');
+
+m.get('name')   // 'Alice'
+m.has(42)       // true
+m.size          // 3
+m.delete(true)
+
+// Iterate
+for (const [key, value] of m) {
+    console.log(key, '->', value);
+}
+```
+
+### Map vs Object — when to use which
+
+| | Object | Map |
+|--|--------|-----|
+| Key types | string/symbol only | any type |
+| Insertion order | not guaranteed (older JS) | guaranteed |
+| Size | manual (`Object.keys().length`) | `.size` |
+| Best for | structured data, configs | dynamic key-value store, counters |
+
+### WeakMap and WeakSet
+
+Similar but hold **weak references** — keys are garbage-collected when no longer referenced elsewhere. Use for caching or storing private data tied to objects.
+
+```js
+const cache = new WeakMap();
+// keys must be objects (not primitives)
+```"
+            },
+
+            // Lesson 4: Destructuring and Spread/Rest
+            new Lesson
+            {
+                Title = "Destructuring & Spread/Rest",
+                Slug = "js-ch2-destructuring",
+                OrderIndex = 3,
+                IsPublished = true,
+                ChallengeId = challenges.TryGetValue("js-flatten-once", out var flattenId) ? flattenId : null,
+                Content = @"## Destructuring & Spread/Rest
+
+### Array destructuring
+
+```js
+const [a, b, c] = [1, 2, 3];
+// a=1, b=2, c=3
+
+// Skip elements
+const [first, , third] = [1, 2, 3];
+// first=1, third=3
+
+// Default values
+const [x = 0, y = 0] = [5];
+// x=5, y=0
+
+// Swap two variables
+let p = 1, q = 2;
+[p, q] = [q, p];
+// p=2, q=1
+```
+
+### Rest in destructuring
+
+```js
+const [head, ...tail] = [1, 2, 3, 4];
+// head=1, tail=[2,3,4]
+```
+
+### Object destructuring
+
+```js
+const person = { name: 'Alice', age: 25, city: 'Paris' };
+
+const { name, age } = person;
+// name='Alice', age=25
+
+// Rename while destructuring
+const { name: fullName } = person;
+// fullName='Alice'
+
+// Default values
+const { country = 'Unknown' } = person;
+// country='Unknown'
+```
+
+### Nested destructuring
+
+```js
+const user = { profile: { name: 'Bob', score: 100 } };
+const { profile: { name, score } } = user;
+// name='Bob', score=100
+```
+
+### Spread operator `...`
+
+```js
+// Copy an array
+const copy = [...original];
+
+// Merge arrays
+const merged = [...arr1, ...arr2];
+
+// Flatten one level — arr.flat()
+const nested = [[1, 2], [3, 4], [5]];
+console.log(nested.flat()); // [1, 2, 3, 4, 5]
+
+// Copy an object
+const clone = { ...obj };
+
+// Merge objects (last one wins on conflict)
+const result = { ...defaults, ...overrides };
+```
+
+### Rest parameters
+
+```js
+function sum(...numbers) {
+    return numbers.reduce((total, n) => total + n, 0);
+}
+sum(1, 2, 3, 4); // 10
+```
+
+### Object.assign vs spread
+
+```js
+// Both merge objects, but spread is cleaner:
+const a = Object.assign({}, obj1, obj2); // old way
+const b = { ...obj1, ...obj2 };          // modern way
+```"
             },
         ];
     }

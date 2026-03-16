@@ -2181,6 +2181,458 @@ for k in sorted(result.keys()):
                     new TestCase { Input = "[\"a\", \"b\", \"c\", \"d\", \"e\"]",                               ExpectedOutput = "a:a\nb:b\nc:c\nd:d\ne:e",                     IsHidden = true,  OrderIndex = 4, Description = "Single chars" },
                 ]
             },
+
+            // ─── JS Ch1 Challenges ───────────────────────────────────────────
+
+            // js-greet
+            new Challenge
+            {
+                Title = "Greet",
+                Slug = "js-greet",
+                Description = @"# Greet
+
+Write a function `greet` that takes a name and returns a greeting string.
+
+## Function Signature
+```js
+function greet(name) { }
+```
+
+## Examples
+```
+greet(""Alice"")  →  ""Hello, Alice!""
+greet(""World"")  →  ""Hello, World!""
+```",
+                Difficulty = ChallengeDifficulty.Easy,
+                SupportedLanguages = ChallengeLanguage.JavaScript,
+                IsFunction = true,
+                StarterCodeJavaScript =
+@"function greet(name) {
+    // Your code here
+}",
+                TestRunnerJavaScript =
+@"const name = require('fs').readFileSync(0, 'utf8').trim();
+console.log(greet(name));",
+                Tags = JsonSerializer.Serialize(new[] { "js", "strings", "js-course-ch1" }),
+                IsPublished = true,
+                TestCases =
+                [
+                    new TestCase { Input = "Alice",   ExpectedOutput = "Hello, Alice!",   IsHidden = false, OrderIndex = 0, Description = "Alice" },
+                    new TestCase { Input = "World",   ExpectedOutput = "Hello, World!",   IsHidden = false, OrderIndex = 1, Description = "World" },
+                    new TestCase { Input = "Bob",     ExpectedOutput = "Hello, Bob!",     IsHidden = true,  OrderIndex = 2, Description = "Bob" },
+                    new TestCase { Input = "Claude",  ExpectedOutput = "Hello, Claude!",  IsHidden = true,  OrderIndex = 3, Description = "Claude" },
+                ]
+            },
+
+            // js-is-even
+            new Challenge
+            {
+                Title = "Is Even",
+                Slug = "js-is-even",
+                Description = @"# Is Even
+
+Write a function `isEven` that returns `true` if a number is even, `false` otherwise.
+
+## Function Signature
+```js
+function isEven(n) { }
+```
+
+## Examples
+```
+isEven(4)   →  true
+isEven(7)   →  false
+isEven(0)   →  true
+```",
+                Difficulty = ChallengeDifficulty.Easy,
+                SupportedLanguages = ChallengeLanguage.JavaScript,
+                IsFunction = true,
+                StarterCodeJavaScript =
+@"function isEven(n) {
+    // Your code here
+}",
+                TestRunnerJavaScript =
+@"const n = parseInt(require('fs').readFileSync(0, 'utf8').trim());
+console.log(isEven(n));",
+                Tags = JsonSerializer.Serialize(new[] { "js", "operators", "js-course-ch1" }),
+                IsPublished = true,
+                TestCases =
+                [
+                    new TestCase { Input = "4",   ExpectedOutput = "true",  IsHidden = false, OrderIndex = 0, Description = "Even" },
+                    new TestCase { Input = "7",   ExpectedOutput = "false", IsHidden = false, OrderIndex = 1, Description = "Odd" },
+                    new TestCase { Input = "0",   ExpectedOutput = "true",  IsHidden = false, OrderIndex = 2, Description = "Zero" },
+                    new TestCase { Input = "13",  ExpectedOutput = "false", IsHidden = true,  OrderIndex = 3, Description = "Odd 13" },
+                    new TestCase { Input = "100", ExpectedOutput = "true",  IsHidden = true,  OrderIndex = 4, Description = "Even 100" },
+                ]
+            },
+
+            // js-count-vowels
+            new Challenge
+            {
+                Title = "Count Vowels",
+                Slug = "js-count-vowels",
+                Description = @"# Count Vowels
+
+Write a function `countVowels` that counts the number of vowels (`a`, `e`, `i`, `o`, `u`) in a string (case-insensitive).
+
+## Function Signature
+```js
+function countVowels(str) { }
+```
+
+## Examples
+```
+countVowels(""hello"")        →  2
+countVowels(""JavaScript"")   →  3
+countVowels(""rhythm"")       →  0
+```",
+                Difficulty = ChallengeDifficulty.Easy,
+                SupportedLanguages = ChallengeLanguage.JavaScript,
+                IsFunction = true,
+                StarterCodeJavaScript =
+@"function countVowels(str) {
+    // Your code here
+}",
+                TestRunnerJavaScript =
+@"const str = require('fs').readFileSync(0, 'utf8').trim();
+console.log(countVowels(str));",
+                Tags = JsonSerializer.Serialize(new[] { "js", "strings", "loops", "js-course-ch1" }),
+                IsPublished = true,
+                TestCases =
+                [
+                    new TestCase { Input = "hello",      ExpectedOutput = "2", IsHidden = false, OrderIndex = 0, Description = "hello" },
+                    new TestCase { Input = "JavaScript",  ExpectedOutput = "3", IsHidden = false, OrderIndex = 1, Description = "JavaScript" },
+                    new TestCase { Input = "rhythm",     ExpectedOutput = "0", IsHidden = false, OrderIndex = 2, Description = "No vowels" },
+                    new TestCase { Input = "aeiou",      ExpectedOutput = "5", IsHidden = true,  OrderIndex = 3, Description = "All vowels" },
+                    new TestCase { Input = "HELLO",      ExpectedOutput = "2", IsHidden = true,  OrderIndex = 4, Description = "Uppercase" },
+                ]
+            },
+
+            // js-fizzbuzz-single
+            new Challenge
+            {
+                Title = "FizzBuzz Single",
+                Slug = "js-fizzbuzz-single",
+                Description = @"# FizzBuzz Single
+
+Write a function `fizzBuzz` that takes a number `n` and returns:
+- `""FizzBuzz""` if divisible by both 3 and 5
+- `""Fizz""` if divisible by 3
+- `""Buzz""` if divisible by 5
+- The number as a string otherwise
+
+## Function Signature
+```js
+function fizzBuzz(n) { }
+```
+
+## Examples
+```
+fizzBuzz(3)   →  ""Fizz""
+fizzBuzz(5)   →  ""Buzz""
+fizzBuzz(15)  →  ""FizzBuzz""
+fizzBuzz(7)   →  ""7""
+```",
+                Difficulty = ChallengeDifficulty.Easy,
+                SupportedLanguages = ChallengeLanguage.JavaScript,
+                IsFunction = true,
+                StarterCodeJavaScript =
+@"function fizzBuzz(n) {
+    // Your code here
+}",
+                TestRunnerJavaScript =
+@"const n = parseInt(require('fs').readFileSync(0, 'utf8').trim());
+console.log(fizzBuzz(n));",
+                Tags = JsonSerializer.Serialize(new[] { "js", "conditionals", "js-course-ch1" }),
+                IsPublished = true,
+                TestCases =
+                [
+                    new TestCase { Input = "3",  ExpectedOutput = "Fizz",     IsHidden = false, OrderIndex = 0, Description = "Fizz" },
+                    new TestCase { Input = "5",  ExpectedOutput = "Buzz",     IsHidden = false, OrderIndex = 1, Description = "Buzz" },
+                    new TestCase { Input = "15", ExpectedOutput = "FizzBuzz", IsHidden = false, OrderIndex = 2, Description = "FizzBuzz" },
+                    new TestCase { Input = "7",  ExpectedOutput = "7",        IsHidden = false, OrderIndex = 3, Description = "Plain number" },
+                    new TestCase { Input = "30", ExpectedOutput = "FizzBuzz", IsHidden = true,  OrderIndex = 4, Description = "30 = FizzBuzz" },
+                    new TestCase { Input = "11", ExpectedOutput = "11",       IsHidden = true,  OrderIndex = 5, Description = "11 = plain" },
+                ]
+            },
+
+            // js-sum-array
+            new Challenge
+            {
+                Title = "Sum Array",
+                Slug = "js-sum-array",
+                Description = @"# Sum Array
+
+Write a function `sumArray` that takes an array of numbers and returns their sum.
+
+## Function Signature
+```js
+function sumArray(arr) { }
+```
+
+## Examples
+```
+sumArray([1, 2, 3])        →  6
+sumArray([10, -5, 3])      →  8
+sumArray([])               →  0
+```",
+                Difficulty = ChallengeDifficulty.Easy,
+                SupportedLanguages = ChallengeLanguage.JavaScript,
+                IsFunction = true,
+                StarterCodeJavaScript =
+@"function sumArray(arr) {
+    // Your code here
+}",
+                TestRunnerJavaScript =
+@"const line = require('fs').readFileSync(0, 'utf8').trim();
+const arr = line === '' ? [] : line.split(' ').map(Number);
+console.log(sumArray(arr));",
+                Tags = JsonSerializer.Serialize(new[] { "js", "arrays", "loops", "js-course-ch1" }),
+                IsPublished = true,
+                TestCases =
+                [
+                    new TestCase { Input = "1 2 3",      ExpectedOutput = "6",   IsHidden = false, OrderIndex = 0, Description = "Basic" },
+                    new TestCase { Input = "10 -5 3",    ExpectedOutput = "8",   IsHidden = false, OrderIndex = 1, Description = "Negative" },
+                    new TestCase { Input = "",            ExpectedOutput = "0",   IsHidden = false, OrderIndex = 2, Description = "Empty" },
+                    new TestCase { Input = "5 5 5 5",    ExpectedOutput = "20",  IsHidden = true,  OrderIndex = 3, Description = "Same values" },
+                    new TestCase { Input = "100",        ExpectedOutput = "100", IsHidden = true,  OrderIndex = 4, Description = "Single element" },
+                ]
+            },
+
+            // js-reverse-string
+            new Challenge
+            {
+                Title = "Reverse String",
+                Slug = "js-reverse-string",
+                Description = @"# Reverse String
+
+Write a function `reverseString` that returns the reversed version of a string.
+
+## Function Signature
+```js
+function reverseString(str) { }
+```
+
+## Examples
+```
+reverseString(""hello"")    →  ""olleh""
+reverseString(""JavaScript"")  →  ""tpircSavaJ""
+reverseString(""a"")        →  ""a""
+```",
+                Difficulty = ChallengeDifficulty.Easy,
+                SupportedLanguages = ChallengeLanguage.JavaScript,
+                IsFunction = true,
+                StarterCodeJavaScript =
+@"function reverseString(str) {
+    // Your code here
+}",
+                TestRunnerJavaScript =
+@"const str = require('fs').readFileSync(0, 'utf8').trim();
+console.log(reverseString(str));",
+                Tags = JsonSerializer.Serialize(new[] { "js", "strings", "js-course-ch1" }),
+                IsPublished = true,
+                TestCases =
+                [
+                    new TestCase { Input = "hello",      ExpectedOutput = "olleh",      IsHidden = false, OrderIndex = 0, Description = "hello" },
+                    new TestCase { Input = "JavaScript", ExpectedOutput = "tpircSavaJ", IsHidden = false, OrderIndex = 1, Description = "JavaScript" },
+                    new TestCase { Input = "a",          ExpectedOutput = "a",          IsHidden = false, OrderIndex = 2, Description = "Single char" },
+                    new TestCase { Input = "racecar",    ExpectedOutput = "racecar",    IsHidden = true,  OrderIndex = 3, Description = "Palindrome" },
+                    new TestCase { Input = "12345",      ExpectedOutput = "54321",      IsHidden = true,  OrderIndex = 4, Description = "Numbers as string" },
+                ]
+            },
+
+            // ─── JS Ch2 Challenges ───────────────────────────────────────────
+
+            // js-array-max
+            new Challenge
+            {
+                Title = "Array Max",
+                Slug = "js-array-max",
+                Description = @"# Array Max
+
+Write a function `maxArray` that returns the maximum value in an array of numbers.
+
+## Function Signature
+```js
+function maxArray(arr) { }
+```
+
+## Examples
+```
+maxArray([3, 1, 4, 1, 5, 9])  →  9
+maxArray([-5, -1, -3])         →  -1
+maxArray([42])                 →  42
+```",
+                Difficulty = ChallengeDifficulty.Easy,
+                SupportedLanguages = ChallengeLanguage.JavaScript,
+                IsFunction = true,
+                StarterCodeJavaScript =
+@"function maxArray(arr) {
+    // Your code here
+}",
+                TestRunnerJavaScript =
+@"const line = require('fs').readFileSync(0, 'utf8').trim();
+const arr = line.split(' ').map(Number);
+console.log(maxArray(arr));",
+                Tags = JsonSerializer.Serialize(new[] { "js", "arrays", "js-course-ch2" }),
+                IsPublished = true,
+                TestCases =
+                [
+                    new TestCase { Input = "3 1 4 1 5 9", ExpectedOutput = "9",  IsHidden = false, OrderIndex = 0, Description = "Basic" },
+                    new TestCase { Input = "42",          ExpectedOutput = "42", IsHidden = false, OrderIndex = 1, Description = "Single element" },
+                    new TestCase { Input = "-5 -1 -3",   ExpectedOutput = "-1", IsHidden = false, OrderIndex = 2, Description = "All negative" },
+                    new TestCase { Input = "0 0 0",       ExpectedOutput = "0",  IsHidden = true,  OrderIndex = 3, Description = "All zeros" },
+                    new TestCase { Input = "100 50 75",   ExpectedOutput = "100",IsHidden = true,  OrderIndex = 4, Description = "Max at start" },
+                ]
+            },
+
+            // js-count-words
+            new Challenge
+            {
+                Title = "Word Count",
+                Slug = "js-count-words",
+                Description = @"# Word Count
+
+Write a function `countWords` that counts the frequency of each word in a sentence (case-insensitive).
+
+Return an object `{ word: count }`.
+
+## Function Signature
+```js
+function countWords(str) { }
+```
+
+## Examples
+```
+countWords(""hello world hello"")
+→  { hello: 2, world: 1 }
+
+countWords(""one two one"")
+→  { one: 2, two: 1 }
+```
+
+**Output format**: one line per word, sorted alphabetically, format `word:count`.
+
+```
+hello:2
+world:1
+```",
+                Difficulty = ChallengeDifficulty.Easy,
+                SupportedLanguages = ChallengeLanguage.JavaScript,
+                IsFunction = true,
+                StarterCodeJavaScript =
+@"function countWords(str) {
+    // Your code here
+    // Return an object { word: count }
+}",
+                TestRunnerJavaScript =
+@"const str = require('fs').readFileSync(0, 'utf8').trim();
+const result = countWords(str);
+const output = Object.entries(result)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([k, v]) => k + ':' + v)
+    .join('\n');
+console.log(output);",
+                Tags = JsonSerializer.Serialize(new[] { "js", "objects", "strings", "js-course-ch2" }),
+                IsPublished = true,
+                TestCases =
+                [
+                    new TestCase { Input = "hello world hello",      ExpectedOutput = "hello:2\nworld:1",              IsHidden = false, OrderIndex = 0, Description = "Basic" },
+                    new TestCase { Input = "le chat et le chien",    ExpectedOutput = "chat:1\nchien:1\net:1\nle:2",   IsHidden = false, OrderIndex = 1, Description = "French sentence" },
+                    new TestCase { Input = "a",                      ExpectedOutput = "a:1",                           IsHidden = false, OrderIndex = 2, Description = "Single word" },
+                    new TestCase { Input = "one two three one two",  ExpectedOutput = "one:2\nthree:1\ntwo:2",          IsHidden = true,  OrderIndex = 3, Description = "Three distinct" },
+                    new TestCase { Input = "go go go go",            ExpectedOutput = "go:4",                          IsHidden = true,  OrderIndex = 4, Description = "All same" },
+                ]
+            },
+
+            // js-unique
+            new Challenge
+            {
+                Title = "Unique Elements",
+                Slug = "js-unique",
+                Description = @"# Unique Elements
+
+Write a function `unique` that returns an array with duplicates removed, preserving the original order.
+
+## Function Signature
+```js
+function unique(arr) { }
+```
+
+## Examples
+```
+unique([1, 2, 1, 3, 2, 4])  →  [1, 2, 3, 4]
+unique([5, 5, 5])            →  [5]
+unique([1, 2, 3])            →  [1, 2, 3]
+```",
+                Difficulty = ChallengeDifficulty.Easy,
+                SupportedLanguages = ChallengeLanguage.JavaScript,
+                IsFunction = true,
+                StarterCodeJavaScript =
+@"function unique(arr) {
+    // Your code here
+}",
+                TestRunnerJavaScript =
+@"const line = require('fs').readFileSync(0, 'utf8').trim();
+const arr = line.split(' ');
+console.log(unique(arr).join(' '));",
+                Tags = JsonSerializer.Serialize(new[] { "js", "set", "arrays", "js-course-ch2" }),
+                IsPublished = true,
+                TestCases =
+                [
+                    new TestCase { Input = "1 2 1 3 2 4",   ExpectedOutput = "1 2 3 4", IsHidden = false, OrderIndex = 0, Description = "Duplicates middle" },
+                    new TestCase { Input = "5 5 5",          ExpectedOutput = "5",       IsHidden = false, OrderIndex = 1, Description = "All same" },
+                    new TestCase { Input = "1 2 3",          ExpectedOutput = "1 2 3",   IsHidden = false, OrderIndex = 2, Description = "Already unique" },
+                    new TestCase { Input = "a b a c b d",    ExpectedOutput = "a b c d", IsHidden = true,  OrderIndex = 3, Description = "Strings" },
+                    new TestCase { Input = "x",              ExpectedOutput = "x",       IsHidden = true,  OrderIndex = 4, Description = "Single element" },
+                ]
+            },
+
+            // js-flatten-once
+            new Challenge
+            {
+                Title = "Flatten Array",
+                Slug = "js-flatten-once",
+                Description = @"# Flatten Array
+
+Write a function `flattenOnce` that flattens a nested array by one level of depth.
+
+## Function Signature
+```js
+function flattenOnce(arr) { }
+```
+
+## Examples
+```
+flattenOnce([[1, 2], [3, 4], [5]])  →  [1, 2, 3, 4, 5]
+flattenOnce([[10, 20], [30]])       →  [10, 20, 30]
+flattenOnce([[7]])                  →  [7]
+```
+
+**Input format**: a JSON array (e.g. `[[1,2],[3,4]]`)
+**Output format**: elements separated by spaces",
+                Difficulty = ChallengeDifficulty.Easy,
+                SupportedLanguages = ChallengeLanguage.JavaScript,
+                IsFunction = true,
+                StarterCodeJavaScript =
+@"function flattenOnce(arr) {
+    // Your code here
+}",
+                TestRunnerJavaScript =
+@"const input = require('fs').readFileSync(0, 'utf8').trim();
+const arr = JSON.parse(input);
+console.log(flattenOnce(arr).join(' '));",
+                Tags = JsonSerializer.Serialize(new[] { "js", "arrays", "flat", "js-course-ch2" }),
+                IsPublished = true,
+                TestCases =
+                [
+                    new TestCase { Input = "[[1,2],[3,4],[5]]",  ExpectedOutput = "1 2 3 4 5", IsHidden = false, OrderIndex = 0, Description = "Basic" },
+                    new TestCase { Input = "[[10,20],[30]]",     ExpectedOutput = "10 20 30",  IsHidden = false, OrderIndex = 1, Description = "Two groups" },
+                    new TestCase { Input = "[[7]]",              ExpectedOutput = "7",          IsHidden = false, OrderIndex = 2, Description = "Single element" },
+                    new TestCase { Input = "[[1],[2],[3],[4]]",  ExpectedOutput = "1 2 3 4",   IsHidden = true,  OrderIndex = 3, Description = "All singles" },
+                    new TestCase { Input = "[[5,6,7],[8,9]]",   ExpectedOutput = "5 6 7 8 9", IsHidden = true,  OrderIndex = 4, Description = "Uneven groups" },
+                ]
+            },
         ];
     }
 }

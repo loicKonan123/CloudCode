@@ -322,7 +322,7 @@ Challenge en mode IsFunction=true
 
 **CourseSeeder** : per-slug — ne crée un cours que si son slug n'existe pas encore. Permet d'ajouter de nouveaux cours sans écraser les existants.
 
-**LessonSeeder** : per-course — ne crée les leçons d'un cours que si ce cours n'a aucune leçon. 14 leçons markdown (7 Ch1 + 7 Ch2) avec challenges liés.
+**LessonSeeder** : **upsert par slug** — met à jour le contenu des leçons existantes (Title, Content, OrderIndex, IsPublished, ChallengeId) et ajoute les nouvelles. Ne supprime jamais. 14 leçons markdown (7 Ch1 + 7 Ch2) avec challenges liés. Ch2 contient le référentiel complet de toutes les méthodes built-in Python pour Lists, Tuples, Dicts, Sets et Comprehensions (tables GFM rendues via `remark-gfm`).
 
 ### API (CloudCode.API)
 
@@ -495,8 +495,8 @@ Challenge en mode IsFunction=true
 | `/challenges/[slug]` | `app/challenges/[slug]/page.tsx` | IDE challenge (éditeur Monaco, run/submit, résultats, timer, historique) |
 | `/leaderboard` | `app/leaderboard/page.tsx` | Classement global |
 | `/courses` | `app/courses/page.tsx` | Liste des cours |
-| `/courses/[slug]` | `app/courses/[slug]/page.tsx` | Cours avec liste de leçons, challenges et progression |
-| `/courses/[slug]/lessons/[lessonSlug]` | Lesson page | Leçon markdown avec syntax highlighting, navigation prev/next, challenge lié |
+| `/courses/[slug]` | `app/courses/[slug]/page.tsx` | **Hero redesigné** : gradient coloré par langage, cercle de progression animé, bouton Start/Continue/Review, tabs "Lessons / Challenges", timeline leçons avec ligne verticale |
+| `/courses/[slug]/lessons/[lessonSlug]` | Lesson page | Leçon markdown avec syntax highlighting, navigation prev/next, challenge lié. **Tables GFM rendues** via `remark-gfm` |
 | `/vs` | `app/vs/page.tsx` | Accueil VS mode (ELO, recherche adversaire, historique) |
 | `/vs/[matchId]` | `app/vs/[matchId]/page.tsx` | Match en cours (IDE dual, timer, résultats temps réel) |
 | `/admin/challenges` | Admin challenges | Tableau de bord challenges |
@@ -535,6 +535,7 @@ Persisté dans `localStorage` (accessToken, refreshToken).
 | `authApi` | login, register, logout, refresh |
 | `challengesApi` | getAll, getDaily, getBySlug, test, submit, getSubmissions, getLeaderboard + admin CRUD |
 | `coursesApi` | getAll, getBySlug + admin CRUD |
+| `lessonsApi` | getBySlug(courseSlug, lessonSlug) |
 | `vsApi` | getMyRank, getRank, getLeaderboard, getMatch, getHistory, submit, forfeit |
 | `profileApi` | getMyProfile, updateMyProfile, getPublicProfile(username) |
 | `formattingApi` | format(code, language) |
@@ -713,7 +714,7 @@ Persisté dans `localStorage` (accessToken, refreshToken).
 | **Challenges** | 67 challenges (Easy/Medium/Hard), mode fonction, Python + JS, hints, solution officielle, streak, challenge du jour, leaderboard |
 | **VS Mode** | Matchmaking ELO temps réel, SignalR, historique, classement |
 | **Quiz** | Solo (10 questions, timer, score) + VS 1v1 (SignalR, 5 questions) |
-| **Cours** | 3 parcours Python avec **14 leçons markdown** + exercices. Ch1 Fundamentals (7 leçons, 6 challenges), Ch2 Data Structures (7 leçons, 6 challenges), Intermediate Data Model (4 challenges). Entité `Lesson` (contenu markdown, challenge lié, navigation prev/next) |
+| **Cours** | 3 parcours Python avec **14 leçons markdown** + exercices. Ch1 Fundamentals (7 leçons, 6 challenges), Ch2 Data Structures (7 leçons, 6 challenges — contenu complet toutes méthodes built-in), Intermediate Data Model (4 challenges). Entité `Lesson` (contenu markdown, challenge lié, navigation prev/next). Tables GFM (`remark-gfm`) rendues dans le frontend. Plan de cours JS créé dans `docs/javascript.md` |
 | **Premium / Stripe** | Checkout Session, webhooks, annulation, gating Courses/Quiz/VS/Hard challenges |
 | **Profil** | Stats, heatmap, badges, profil public `/u/{username}` |
 | **Auth** | Email/password, Google Sign-In (Firebase), reset password, email vérification |

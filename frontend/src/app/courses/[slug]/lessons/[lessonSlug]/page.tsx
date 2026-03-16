@@ -7,6 +7,7 @@ import { lessonsApi } from '@/lib/api';
 import { LessonDetail } from '@/types';
 import AnimatedLogo from '@/components/AnimatedLogo';
 import ReactMarkdown, { Components } from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
@@ -264,7 +265,7 @@ export default function LessonPage() {
 
             {/* Markdown content */}
             <article className="lesson-content">
-              <ReactMarkdown components={mdComponents}>
+              <ReactMarkdown components={mdComponents} remarkPlugins={[remarkGfm]}>
                 {lesson.content}
               </ReactMarkdown>
             </article>
